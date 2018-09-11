@@ -1,15 +1,17 @@
-import DeepPredict.arguments as op
+import DMP.arguments as op
 from .myOneHotEncoder import MyOneHotEncoder
 from .variables import DUMP_FILE, DUMP_PATH
 from collections import OrderedDict
 import json
 
 
-class MyVector:
-    def __init__(self, my_data):
-        self.my_data = my_data
-        self.file_name = my_data.file_name.split('.')[0]
+class VectorMaker():
+    def __init__(self):
+        self.dataHandler = None
         self.vector_list = list()
+
+    def set_data_handler(self, data_handler):
+        self.dataHandler = data_handler
 
     def encoding(self):
         def __init_vector_dict():
@@ -42,12 +44,12 @@ class MyVector:
             return x_dict
 
         # copy DataHandler to local variables
-        x_data_dict = self.my_data.data_dict
-        y_data = self.my_data.y_data
+        x_data_dict = self.dataHandler.data_dict
+        y_data = self.dataHandler.y_data
 
         # init encoder
         my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)
-        my_encoder.encoding(x_data_dict)
+        # my_encoder.encoding(x_data_dict)
 
         # # k-fold validation
         # if op.NUM_FOLDS > 1:
@@ -82,7 +84,7 @@ class MyVector:
         #
         #     self.vector_list.append(__init_vector_dict())
 
-        del self.my_data
+        # del self.dataHandler
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):
