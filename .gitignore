@@ -1,0 +1,10 @@
+dataset/*.csv
+dataset/origin/
+modeling/vectors/
+modeling/save/
+reference/
+result/
+make/
+logs/
+
+
