@@ -4,14 +4,14 @@ import json
 from os import path
 
 try:
-    import DeepPredict
+    import DMP
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DeepPredict.dataset.variables import DATA_FILE
-from DeepPredict.modeling.variables import DUMP_PATH, DUMP_FILE
-from DeepPredict.learning.train import MyPredict
-import DeepPredict.arguments as op
+from DMP.dataset.variables import DATA_FILE
+from DMP.modeling.variables import DUMP_PATH, DUMP_FILE
+from DMP.learning.train import MyPredict
+import DMP.arguments as op
 
 
 if __name__ == '__main__':

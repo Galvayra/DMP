@@ -4,14 +4,14 @@ import json
 from os import path
 
 try:
-    import DeepPredict
+    import DMP
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DeepPredict.dataset.variables import DATA_FILE
-from DeepPredict.modeling.variables import DUMP_PATH, DUMP_FILE
-from DeepPredict.learning.train import MyTrain
-import DeepPredict.arguments as op
+from DMP.dataset.variables import DATA_FILE
+from DMP.modeling.variables import DUMP_PATH, DUMP_FILE
+from DMP.learning.train import MyTrain
+import DMP.arguments as op
 
 
 if __name__ == '__main__':
@@ -43,11 +43,11 @@ if __name__ == '__main__':
         print("\nRead vectors -", file_name)
         op.show_options()
 
-        for vector_dict in vector_list:
-            for k in vector_dict:
-                if type(vector_dict[k]) is dict:
-                    for j in vector_dict[k]:
-                        print(j)
+        # for vector_dict in vector_list:
+        #     for k in vector_dict:
+        #         if type(vector_dict[k]) is dict:
+        #             for j in vector_dict[k]:
+        #                 print(j)
 
         train = MyTrain(vector_list)
         train.training()

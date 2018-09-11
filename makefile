@@ -3,11 +3,11 @@ clean:
 	rm -r */__pycache__
 
 clean-saves:
-	rm -r logs/log_*
+	rm -r logs/*
 	rm -rf modeling/save/h_*
 
-clean-log:
-	rm -r logs/log_*
+clean-logs:
+	rm -r logs/*
 
 clean-save:
 	rm -rf modeling/save/h_*

@@ -49,38 +49,38 @@ class MyVector:
         my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)
         my_encoder.encoding(x_data_dict)
 
-        # k-fold validation
-        if op.NUM_FOLDS > 1:
-            subset_size = int(len(y_data) / op.NUM_FOLDS) + 1
-
-            if op.IS_CLOSED:
-                for i in range(op.NUM_FOLDS):
-                    y_train = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
-                    y_test = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
-                    x_train = my_encoder.fit(__set_x_data_dict(), len(y_train))
-                    x_test = my_encoder.fit(__set_x_data_dict(), len(y_test))
-                    self.vector_list.append(__init_vector_dict())
-            else:
-                for i in range(op.NUM_FOLDS):
-                    y_train = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
-                    y_test = y_data[i * subset_size:][:subset_size]
-                    x_train = my_encoder.fit(__set_x_data_dict(), len(y_train))
-                    x_test = my_encoder.fit(__set_x_data_dict(is_test=True), len(y_test))
-                    self.vector_list.append(__init_vector_dict())
-
-        # one fold
-        else:
-            subset_size = int(len(y_data) / op.RATIO)
-
-            y_train = y_data[subset_size:]
-            y_test = y_data[:subset_size]
-            x_train = my_encoder.fit(__set_x_data_dict(is_manual=True), len(y_train))
-            # my_encoder.show_vectors(__set_x_data_dict(is_manual=True), "AD")
-
-            x_test = my_encoder.fit(__set_x_data_dict(is_manual=True, is_test=True), len(y_test))
-            # my_encoder.show_vectors(__set_x_data_dict(is_manual=True, is_test=True), "AD")
-
-            self.vector_list.append(__init_vector_dict())
+        # # k-fold validation
+        # if op.NUM_FOLDS > 1:
+        #     subset_size = int(len(y_data) / op.NUM_FOLDS) + 1
+        #
+        #     if op.IS_CLOSED:
+        #         for i in range(op.NUM_FOLDS):
+        #             y_train = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
+        #             y_test = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
+        #             x_train = my_encoder.fit(__set_x_data_dict(), len(y_train))
+        #             x_test = my_encoder.fit(__set_x_data_dict(), len(y_test))
+        #             self.vector_list.append(__init_vector_dict())
+        #     else:
+        #         for i in range(op.NUM_FOLDS):
+        #             y_train = y_data[:i * subset_size] + y_data[(i + 1) * subset_size:]
+        #             y_test = y_data[i * subset_size:][:subset_size]
+        #             x_train = my_encoder.fit(__set_x_data_dict(), len(y_train))
+        #             x_test = my_encoder.fit(__set_x_data_dict(is_test=True), len(y_test))
+        #             self.vector_list.append(__init_vector_dict())
+        #
+        # # one fold
+        # else:
+        #     subset_size = int(len(y_data) / op.RATIO)
+        #
+        #     y_train = y_data[subset_size:]
+        #     y_test = y_data[:subset_size]
+        #     x_train = my_encoder.fit(__set_x_data_dict(is_manual=True), len(y_train))
+        #     # my_encoder.show_vectors(__set_x_data_dict(is_manual=True), "AD")
+        #
+        #     x_test = my_encoder.fit(__set_x_data_dict(is_manual=True, is_test=True), len(y_test))
+        #     # my_encoder.show_vectors(__set_x_data_dict(is_manual=True, is_test=True), "AD")
+        #
+        #     self.vector_list.append(__init_vector_dict())
 
         del self.my_data
 

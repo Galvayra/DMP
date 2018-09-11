@@ -228,10 +228,11 @@ class MyOneHotEncoder:
                 if k in columns[columns_key]:
                     self.vector_dict[k] = __set_mal_type_dict(data_dict[k])
 
-        for k in data_dict:
-            for columns in columns_dict.values():
-                for columns_key in columns:
-                    __set_vector_dict()
+        __inspect_columns()
+        # for k in data_dict:
+        #     for columns in columns_dict.values():
+        #         for columns_key in columns:
+        #             __set_vector_dict()
 
         # print("\n\n=== AD ===")
         # for k in sorted(self.vector_dict["AD"]):

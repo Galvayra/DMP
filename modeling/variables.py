@@ -62,6 +62,11 @@ ct_columns = {
     "class": ['CO', 'CP']
 }
 
+final_diagnosis_columns = {
+    "class": ['CQ', 'CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX'],
+    "diagnosis": ['CY']
+}
+
 columns_dict = OrderedDict()
 columns_dict["default"] = default_info_columns
 columns_dict["initial"] = initial_info_columns
@@ -72,3 +77,4 @@ columns_dict["abga"] = abga_columns
 columns_dict["culture"] = culture_columns
 columns_dict["influenza"] = influenza_columns
 columns_dict["ct"] = ct_columns
+columns_dict["f_diagnosis"] = final_diagnosis_columns
