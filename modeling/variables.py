@@ -8,63 +8,62 @@ LOAD_WORD2VEC = "GoogleNews-vectors-negative300.bin"
 
 default_info_columns = {
     "scalar": {
-        "0": ['D']
+        "0": ['E']
     },
-    "class": ['E']
+    "class": ['F'],
+    "id": ["C"]
 }
 
 initial_info_columns = {
     "scalar": {
-        "0": ['G', 'I', 'L', 'M', 'N', 'O'],
-        "start_1": ['H', 'J'],
-        "start_1#end_1": ['K']
+        "0": ["H", 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
     },
-    "class": ['P', 'Q', 'R', 'S', 'T'],
-    "symptom": ['F']
+    "class": ['Q', 'R', 'S', 'T', 'U'],
+    "symptom": ['G']
 }
 
 past_history_columns = {
-    "class": ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC'],
-    "mal_type": ['AD']
+    "class": ['V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD'],
+    "mal_type": ['AE']
 }
 
 blood_count_columns = {
     "scalar": {
-        "0": ['AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN']
+        "0": ['AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO']
     }
 }
 
 blood_chemistry_columns = {
     "scalar": {
-        "0": ['AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
-              'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK', 'BL', 'BN', 'BO', 'BP',
-              'BQ', 'BR', 'BS']
+        "0": ['AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
+              'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP',
+              'BQ', 'BR', 'BS', 'BT']
     },
-    "class": ['BT', 'BU', 'BV']
+    "class": ['BU', 'BV', 'BW']
 }
 
 abga_columns = {
     "scalar": {
-        "0": ['BW', 'BX', 'BY', 'BZ', 'CA', 'CB', 'CC']
+        "0": ['BX', 'BY', 'BZ', 'CA', 'CB', 'CC', 'CD']
     }
 }
 
 culture_columns = {
-    "class": ['CD', 'CE', 'CG', 'CH',  'CJ', 'CK'],
-    "word": ['CF', 'CI', 'CL']
+    "class": ['CE', 'CF', 'CH', 'CI', 'CK', 'CL'],
+    "word": ['CG', 'CJ', 'CM']
 }
 
 influenza_columns = {
-    "class": ['CM', 'CN']
+    "class": ['CN', 'CO']
 }
 
 ct_columns = {
-    "class": ['CO', 'CP']
+    "class": ['CP', 'CQ']
 }
 
 final_diagnosis_columns = {
-    "class": ['CQ', 'CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX'],
-    "diagnosis": ['CY']
+    "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY'],
+    "diagnosis": ['CZ']
 }
 
 columns_dict = OrderedDict()
