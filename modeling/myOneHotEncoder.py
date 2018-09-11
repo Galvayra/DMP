@@ -19,6 +19,7 @@ class MyOneHotEncoder:
             print("\nRead w2v file -", DUMP_PATH + LOAD_WORD2VEC)
         else:
             print("\nNot using Word2vec")
+        print("\n\n")
 
     @property
     def vector(self):
@@ -38,14 +39,15 @@ class MyOneHotEncoder:
             k_dict = dict()
 
             for _k, v in data_dict.items():
-                type_dict = dict()
+                type_dict = {"total": 0}
 
                 for i, value in enumerate(data_dict[_k]):
                     key = 0
                     if type(value) is float:
                         if math.isnan(value):
-                            continue
-                        key = "float"
+                            key = "nan"
+                        else:
+                            key = "float"
                     elif type(value) is str:
                         key = "str"
                     elif type(value) is int:
@@ -55,6 +57,7 @@ class MyOneHotEncoder:
                         type_dict[key] = 1
                     else:
                         type_dict[key] += 1
+                    type_dict["total"] += 1
 
                 k_dict[_k] = type_dict
 
@@ -228,7 +231,6 @@ class MyOneHotEncoder:
                 if k in columns[columns_key]:
                     self.vector_dict[k] = __set_mal_type_dict(data_dict[k])
 
-        __inspect_columns()
         # for k in data_dict:
         #     for columns in columns_dict.values():
         #         for columns_key in columns:

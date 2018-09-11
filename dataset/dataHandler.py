@@ -7,52 +7,62 @@ from .variables import *
 # ### refer to reference file ###
 class DataHandler:
     def __init__(self, is_reverse=False):
+        # file name
         file_name = DATA_PATH + DATA_FILE
         print("Read csv file -", file_name, "\n\n")
+        self.file_name = DATA_FILE
 
         if is_reverse:
             print("make reverse y labels!\n\n")
 
         self.__is_reverse = is_reverse
-        self.__rows_data = pd.read_csv(file_name)
-
-        self.file_name = DATA_FILE
+        
+        # read csv file
+        self.__raw_data = pd.read_csv(file_name)
 
         # header of data
         # [ 'C', 'E', .... 'CZ' ], E=4, CZ=103
-        self.header_list = self.__set_header_list(start=4, end=103)
+        self.__header_list = self.__set_header_list(start=4, end=103)
+
         # a dictionary of header
         # { header: name of column }
-        self.__head_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.rows_data)}
+        self.__head_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
+
         # a length of data
         self.__data_count = int()
+
         # a dictionary of data
         # { header: a dictionary of data }
-        self.data_dict = self.__init_data_dict()
-        # except for data which is not necessary
-        # [ position 1, ... position n ]
-        self.__erase_index_list = self.__init_erase_index_list()
-
-        # set a dictionary of data using erase index list
-        self.__set_data_dict()
+        self.x_data_dict = self.__init_x_data_dict()
 
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
-        self.y_data = self.__set_labels()
-        self.__free()
+        self.y_data = list()
+
+        # except for data which is not necessary
+        # [ position 1, ... position n ]
+        self.__erase_index_list = self.__init_erase_index_list()
 
     @property
     def is_reverse(self):
         return self.__is_reverse
 
     @property
-    def rows_data(self):
-        return self.__rows_data
+    def raw_data(self):
+        return self.__raw_data
+
+    @property
+    def header_list(self):
+        return self.__header_list
 
     @property
     def head_dict(self):
         return self.__head_dict
 
+    @property
+    def erase_index_list(self):
+        return self.__erase_index_list
+    
     @property
     def data_count(self):
         return self.__data_count
@@ -60,10 +70,6 @@ class DataHandler:
     @data_count.setter
     def data_count(self, count):
         self.__data_count = count
-
-    @property
-    def erase_index_list(self):
-        return self.__erase_index_list
 
     def __get_head_dict_key(self, index):
 
@@ -93,7 +99,7 @@ class DataHandler:
 
         return header_list
 
-    def __init_data_dict(self):
+    def __init_x_data_dict(self):
 
         # {
         #   column: { row:data }
@@ -103,26 +109,26 @@ class DataHandler:
         #   CZ: { .... }                            ## Final Diagnosis
         # }
         #
-        data_dict = dict()
+        x_data_dict = dict()
 
         for header in self.header_list:
             header_key = self.head_dict[header]
-            data_dict[header] = dict()
+            x_data_dict[header] = dict()
 
-            for i, data in enumerate(self.rows_data[header_key]):
+            for i, data in enumerate(self.raw_data[header_key]):
                 # parsing for raw data
                 if type(data) is int:
                     data = float(data)
                 elif type(data) is str:
                     data = data.strip()
 
-                data_dict[header][i+POSITION_OF_ROW] = data
+                x_data_dict[header][i+POSITION_OF_ROW] = data
 
-        self.data_count = len(data_dict[ID_COLUMN].values())
+        self.data_count = len(x_data_dict[ID_COLUMN].values())
 
-        return data_dict
+        return x_data_dict
 
-    def __set_data_dict(self):
+    def parsing(self):
 
         # {
         #   column: [ data_1, ... , data_n ]
@@ -136,14 +142,17 @@ class DataHandler:
         def __init_data_list():
             data_list = list()
 
-            for i, v in self.data_dict[header].items():
+            for i, v in self.x_data_dict[header].items():
                 data_list.append(v)
 
             return data_list
 
-        for header in self.data_dict:
-            self.data_dict[header] = __init_data_list()
-            # print(header, len(self.data_dict[header]), type(self.data_dict[header]))
+        for header in self.x_data_dict:
+            self.x_data_dict[header] = __init_data_list()
+            # print(header, len(self.x_data_dict[header]), type(self.x_data_dict[header]))
+
+        self.y_data = self.__set_labels()
+        self.free()
 
     def __init_erase_index_list(self):
 
@@ -154,7 +163,7 @@ class DataHandler:
             _erase_index_dict = {i+POSITION_OF_ROW: 0 for i in range(self.data_count)}
 
             for header_key in header_list:
-                for index, value in self.data_dict[header_key].items():
+                for index, value in self.x_data_dict[header_key].items():
                     value = str(value)
 
                     if condition == 0:
@@ -176,7 +185,7 @@ class DataHandler:
                         erase_index_list.append(index)
 
         def __append_no_data(header_key="F"):
-            for index, v in self.rows_data[self.head_dict[header_key]].items():
+            for index, v in self.raw_data[self.head_dict[header_key]].items():
                 if type(v) is float:
                     if math.isnan(v):
                         erase_index_list.append(index)
@@ -184,16 +193,16 @@ class DataHandler:
                     if v == "N/V":
                         erase_index_list.append(index)
 
-        def __cut_random_data(_erase_index_list):
-            r_num = int(CUT_RATIO.split('/')[1])
-            cut_count = 0
-            header_key = self.head_dict["DC"]
-            for i, data in enumerate(self.rows_data[header_key]):
-                if i not in _erase_index_list:
-                    if data != "사망":
-                        cut_count += 1
-                        if cut_count % r_num == 0:
-                            _erase_index_list.append(i)
+        # def __cut_random_data(_erase_index_list):
+        #     r_num = int(CUT_RATIO.split('/')[1])
+        #     cut_count = 0
+        #     header_key = self.head_dict["DC"]
+        #     for i, data in enumerate(self.raw_data[header_key]):
+        #         if i not in _erase_index_list:
+        #             if data != "사망":
+        #                 cut_count += 1
+        #                 if cut_count % r_num == 0:
+        #                     _erase_index_list.append(i)
 
         erase_index_list = list()
 
@@ -207,9 +216,9 @@ class DataHandler:
         # erase_index_dict, num_match = __condition(header_list=["H", "I", "J", "K"], condition=-1)
         # __append(erase_index_dict, num_match)
 
-        # # 주증상 데이터가 없는 경우
-        # __append_no_data()
-        #
+        # 주증상 데이터가 없는 경우
+        __append_no_data()
+
         # # 혈액관련 데이터가 없는 경우
         # erase_index_dict, num_match = __condition(header_list=["AE", "AF", "AG", "AH", "AI"], condition=0)
         # # erase_index_dict, num_match = __condition(header_list=["AE", "AF", "AG", "AH", "AI", "AM", "AN",
@@ -231,15 +240,15 @@ class DataHandler:
         header_key = self.head_dict["DA"]
 
         if self.__is_reverse:
-            for i, value in enumerate(self.rows_data[header_key]):
-                if i not in self.erase_index_list:
+            for i, value in enumerate(self.raw_data[header_key]):
+                if i + POSITION_OF_ROW not in self.erase_index_list:
                     if value == 1:
                         y_labels.append([0])
                     else:
                         y_labels.append([1])
         else:
-            for i, value in enumerate(self.rows_data[header_key]):
-                if i not in self.erase_index_list:
+            for i, value in enumerate(self.raw_data[header_key]):
+                if i + POSITION_OF_ROW not in self.erase_index_list:
                     if value == 1:
                         y_labels.append([1])
                     else:
@@ -247,8 +256,9 @@ class DataHandler:
 
         return y_labels
 
-    def __free(self):
-        del self.__rows_data
+    def free(self):
+        del self.__raw_data
+        del self.__header_list
         del self.__head_dict
         del self.__erase_index_list
         del self.__data_count

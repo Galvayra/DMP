@@ -1,1 +1,1 @@
-__all__ = ["myOneHotEncoder", "vectorization", "variables"]
+__all__ = ["myOneHotEncoder", "vectorMaker.py", "variables"]

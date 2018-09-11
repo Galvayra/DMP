@@ -5,13 +5,12 @@ from collections import OrderedDict
 import json
 
 
-class VectorMaker():
-    def __init__(self):
-        self.dataHandler = None
+class VectorMaker:
+    # must using DataParser or DataHandler
+    # dataHandler.x = {}
+    def __init__(self, data_parser):
+        self.dataParser = data_parser
         self.vector_list = list()
-
-    def set_data_handler(self, data_handler):
-        self.dataHandler = data_handler
 
     def encoding(self):
         def __init_vector_dict():
@@ -44,8 +43,8 @@ class VectorMaker():
             return x_dict
 
         # copy DataHandler to local variables
-        x_data_dict = self.dataHandler.data_dict
-        y_data = self.dataHandler.y_data
+        x_data_dict = self.dataParser.data_dict
+        y_data = self.dataParser.y_data
 
         # init encoder
         my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)

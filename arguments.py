@@ -4,6 +4,8 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
 def get_arguments():
+    parser.add_argument("-fold", "--fold", help="set a number of k-fold (default is 5)"
+                                                "\nUseAge : python encoding.py -fold 5\n\n")
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
                                                     "\nUseAge : python encoding.py -closed 1\n\n")
     parser.add_argument("-id", "--identify", help="set id for separating training sets (default is None)"
@@ -30,13 +32,24 @@ def get_arguments():
     return _args
 
 
-# NUM_FOLDS = 5
-NUM_FOLDS = 1
 RATIO = 10
 
 IS_CLOSED = False
 
 args = get_arguments()
+
+if not args.fold:
+    NUM_FOLDS = 0
+else:
+    try:
+        NUM_FOLDS = int(args.fold)
+    except ValueError:
+        print("\nInput Error type of fold option!\n")
+        exit(-1)
+    else:
+        if NUM_FOLDS < 1 or NUM_FOLDS > 10:
+            print("\nInput Error a boundary of fold option!\n")
+            exit(-1)
 
 if not args.closed:
     IS_CLOSED = False
