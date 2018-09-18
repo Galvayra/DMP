@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-import math
+import re
 from .variables import *
 
 
@@ -29,7 +29,8 @@ class DataHandler:
         self.__head_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
 
         # a length of data
-        self.__data_count = int()
+        self.__x_data_count = int()
+        self.__y_data_count = int()
 
         # a dictionary of data
         # { header: a dictionary of data }
@@ -64,12 +65,20 @@ class DataHandler:
         return self.__erase_index_list
     
     @property
-    def data_count(self):
-        return self.__data_count
+    def x_data_count(self):
+        return self.__x_data_count
 
-    @data_count.setter
-    def data_count(self, count):
-        self.__data_count = count
+    @x_data_count.setter
+    def x_data_count(self, count):
+        self.__x_data_count = count
+
+    @property
+    def y_data_count(self):
+        return self.__y_data_count
+
+    @y_data_count.setter
+    def y_data_count(self, count):
+        self.__y_data_count = count
 
     def __get_head_dict_key(self, index):
 
@@ -116,17 +125,27 @@ class DataHandler:
             x_data_dict[header] = dict()
 
             for i, data in enumerate(self.raw_data[header_key]):
-                # parsing for raw data
-                if type(data) is int:
-                    data = float(data)
-                elif type(data) is str:
-                    data = data.strip()
 
-                x_data_dict[header][i+POSITION_OF_ROW] = data
+                # all of data convert to string
+                if type(data) is int or type(data) is float:
+                    data = str(data)
 
-        self.data_count = len(x_data_dict[ID_COLUMN].values())
+                data = data.strip()
+
+                x_data_dict[header][i + POSITION_OF_ROW] = data
+
+        self.x_data_count = len(x_data_dict[ID_COLUMN].values())
 
         return x_data_dict
+
+    def __init_data_list(self, header):
+        data_list = list()
+
+        for index, v in self.x_data_dict[header].items():
+            if index not in self.erase_index_list:
+                data_list.append(v)
+
+        return data_list
 
     def parsing(self):
 
@@ -139,19 +158,17 @@ class DataHandler:
         # }
         #
 
-        def __init_data_list():
-            data_list = list()
-
-            for i, v in self.x_data_dict[header].items():
-                data_list.append(v)
-
-            return data_list
-
         for header in self.x_data_dict:
-            self.x_data_dict[header] = __init_data_list()
+            self.x_data_dict[header] = self.__init_data_list(header)
             # print(header, len(self.x_data_dict[header]), type(self.x_data_dict[header]))
 
         self.y_data = self.__set_labels()
+
+        print("# of     all data set =", str(self.x_data_count).rjust(5),
+              "\t# of mortality =", self.y_data_count)
+        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
+              "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
+
         self.free()
 
     def __init_erase_index_list(self):
@@ -160,14 +177,13 @@ class DataHandler:
         def __condition(header_list, condition):
             # header_keys = [self.head_dict[i] for i in header_list]
 
-            _erase_index_dict = {i+POSITION_OF_ROW: 0 for i in range(self.data_count)}
+            _erase_index_dict = {i + POSITION_OF_ROW: 0 for i in range(self.x_data_count)}
 
             for header_key in header_list:
                 for index, value in self.x_data_dict[header_key].items():
-                    value = str(value)
 
                     if condition == 0:
-                        if value == str(condition) or value == str(0.0) or value == "nan":
+                        if value == str(0) or value == str(0.0) or value == "nan":
                             _erase_index_dict[index] += 1
                     else:
                         if value == str(condition):
@@ -176,22 +192,19 @@ class DataHandler:
             return _erase_index_dict, len(header_list)
 
         def __append(_erase_index_dict, _num_match, _individual=False):
-            for index, v in _erase_index_dict.items():
-                if _individual and v >= _num_match:
+            for index, _v in _erase_index_dict.items():
+                if _individual and _v >= _num_match:
                     if index not in erase_index_list:
                         erase_index_list.append(index)
-                elif not _individual and v == _num_match:
+                elif not _individual and _v == _num_match:
                     if index not in erase_index_list:
                         erase_index_list.append(index)
 
-        def __append_no_data(header_key="F"):
-            for index, v in self.raw_data[self.head_dict[header_key]].items():
-                if type(v) is float:
-                    if math.isnan(v):
-                        erase_index_list.append(index)
-                else:
-                    if v == "N/V":
-                        erase_index_list.append(index)
+        def __case_of_exception_in_symptom(header_key="G"):
+            for index, symptom in self.raw_data[self.head_dict[header_key]].items():
+                re_symptom = re.findall(r"[가-힣]+", symptom)
+                if len(re_symptom) >= 1:
+                    erase_index_list.append(index + POSITION_OF_ROW)
 
         # def __cut_random_data(_erase_index_list):
         #     r_num = int(CUT_RATIO.split('/')[1])
@@ -206,32 +219,37 @@ class DataHandler:
 
         erase_index_list = list()
 
-        # erase_index_dict, num_match = __condition(header_list=["H"], condition=0)
-        # __append(erase_index_dict, num_match)
+        target_header_list = list()
 
-        # H : 수축혈압, I : 이완혈압, J : 맥박수, K : 호흡수 == 0 제외
-        # erase_index_dict, num_match = __condition(header_list=["H", "I", "J", "K"], condition=0)
-        # __append(erase_index_dict, num_match)
+        for v in columns_dict["initial"]["scalar"].values():
+            for header in v:
+                target_header_list.append(header)
 
-        # erase_index_dict, num_match = __condition(header_list=["H", "I", "J", "K"], condition=-1)
-        # __append(erase_index_dict, num_match)
+        # column_initial_scalar 중 공백 혹은 -1의 데이터 제거
+        for header in target_header_list:
+            erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
+            __append(erase_index_dict, num_match)
 
-        # 주증상 데이터가 없는 경우
-        __append_no_data()
+            erase_index_dict, num_match = __condition(header_list=[header], condition=float(-1))
+            __append(erase_index_dict, num_match)
 
-        # # 혈액관련 데이터가 없는 경우
-        # erase_index_dict, num_match = __condition(header_list=["AE", "AF", "AG", "AH", "AI"], condition=0)
-        # # erase_index_dict, num_match = __condition(header_list=["AE", "AF", "AG", "AH", "AI", "AM", "AN",
-        # #                                                          "AO", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX",
-        # #                                                          "AY", "BC", "BD", "BE", "BF", "BG", "BH", "BK", "BL"
-        # #                                                          ], condition=0)
-        # __append(erase_index_dict, 1, _individual=True)
-        #
-        # __cut_random_data(erase_index_list)
-        #
+        # 피 검사 데이터가 많이 없는 경우
+        for header in ["AJ", "AZ"]:
+            erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
+            __append(erase_index_dict, num_match)
+
+            erase_index_dict, num_match = __condition(header_list=[header], condition=".")
+            __append(erase_index_dict, num_match)
+
+            erase_index_dict, num_match = __condition(header_list=[header], condition="none")
+            __append(erase_index_dict, num_match)
+
+        # 주증상 데이터에 한글이 있는 경우의 예외처리
+        __case_of_exception_in_symptom()
+
         # print("num of", len(erase_index_list), "data is excepted!\n")
 
-        return sorted(erase_index_list, reverse=True)
+        return sorted(erase_index_list, reverse=False)
 
     # DC : 퇴원형태
     def __set_labels(self):
@@ -246,22 +264,43 @@ class DataHandler:
                         y_labels.append([0])
                     else:
                         y_labels.append([1])
+                        self.y_data_count += 1
+                elif value == 1:
+                    self.y_data_count += 1
         else:
             for i, value in enumerate(self.raw_data[header_key]):
                 if i + POSITION_OF_ROW not in self.erase_index_list:
                     if value == 1:
                         y_labels.append([1])
+                        self.y_data_count += 1
                     else:
                         y_labels.append([0])
+                elif value == 1:
+                    self.y_data_count += 1
 
         return y_labels
+
+    @staticmethod
+    def get_type_of_column(column):
+        for columns in columns_dict.values():
+            for column_type, column_list in columns.items():
+                if type(column_list) is dict:
+                    for column_list_in_scalar in column_list.values():
+                        if column in column_list_in_scalar:
+                            return column_type
+
+                if column in column_list:
+                    return column_type
+
+        return None
 
     def free(self):
         del self.__raw_data
         del self.__header_list
         del self.__head_dict
         del self.__erase_index_list
-        del self.__data_count
+        del self.__x_data_count
+        del self.__y_data_count
     
     @staticmethod
     def counting_mortality(data):
