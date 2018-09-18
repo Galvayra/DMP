@@ -1,4 +1,4 @@
-import DMP.arguments as op
+import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from .variables import DUMP_FILE, DUMP_PATH
 from collections import OrderedDict

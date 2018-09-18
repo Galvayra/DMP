@@ -36,14 +36,14 @@ class DataHandler:
         # { header: a dictionary of data }
         self.x_data_dict = self.__init_x_data_dict()
 
-        # a data of y labels
-        # [ y_1, y_2, ... y_n ]
-        self.y_data = list()
-
         # except for data which is not necessary
         # [ position 1, ... position n ]
         self.__erase_index_list = self.__init_erase_index_list()
         self.__apply_exception()
+
+        # a data of y labels
+        # [ y_1, y_2, ... y_n ]
+        self.y_data = self.__set_labels()
 
     @property
     def is_reverse(self):
@@ -140,6 +140,14 @@ class DataHandler:
         return x_data_dict
 
     def __get_data_list(self, header):
+        # if not use_only_str:
+        #     return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
+        # else:
+        #     column_of_type = self.get_type_of_column(header)
+        #
+        #     if column_of_type == "scalar":
+        #         return [float(self.x_data_dict[header][index]) for index in list(self.x_data_dict[header].keys())]
+        #     else:
         return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
 
     def parsing(self):
@@ -153,12 +161,10 @@ class DataHandler:
         # }
         #
 
+        # self.show_type_of_columns()
+
         for header in list(self.x_data_dict.keys()):
             self.x_data_dict[header] = self.__get_data_list(header)
-
-            # print(header, len(self.x_data_dict[header]), type(self.x_data_dict[header]))
-
-        self.y_data = self.__set_labels()
 
         print("# of     all data set =", str(self.x_data_count).rjust(5),
               "\t# of mortality =", self.y_data_count)
@@ -250,6 +256,7 @@ class DataHandler:
         # print("num of", len(erase_index_list), "data is excepted!\n")
 
         return sorted(erase_index_list, reverse=False)
+        # return list()
 
     # DC : 퇴원형태
     def __set_labels(self):

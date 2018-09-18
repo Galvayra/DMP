@@ -9,21 +9,21 @@ except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 from DMP.modeling.vectorMaker import VectorMaker
-from DMP.dataset.dataParser import DataParser
-from DMP.dataset.variables import LOAD_FILE
-from DMP.utils.arguments import USE_ID
+from DMP.dataset.dataHandler import DataHandler
+from DMP.utils.arg_encoding import *
 
 
 if __name__ == '__main__':
     if USE_ID.startswith("reverse#"):
-        dataParser = DataParser(LOAD_FILE, is_reverse=True)
+        dataHandler = DataHandler(READ_FILE, is_reverse=True)
     else:
-        dataParser = DataParser(LOAD_FILE)
+        dataHandler = DataHandler(READ_FILE)
 
     # parsing data
-    dataParser.parsing()
+    dataHandler.parsing()
 
     # encoding data using dataParser
-    vectorMaker = VectorMaker(dataParser)
+    # vectorMaker = VectorMaker(dataParser)
+
     # vectorMaker.encoding()
     # vectorMaker.dump()
