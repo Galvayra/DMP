@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
+import math
 import re
 from .variables import *
 
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, is_reverse=False):
+    def __init__(self, data_file, is_reverse=False):
         # file name
-        file_name = DATA_PATH + DATA_FILE
+        file_name = DATA_PATH + data_file
         print("Read csv file -", file_name, "\n\n")
-        self.file_name = DATA_FILE
+        self.file_name = data_file
 
         if is_reverse:
             print("make reverse y labels!\n\n")
@@ -43,6 +44,7 @@ class DataHandler:
         # except for data which is not necessary
         # [ position 1, ... position n ]
         self.__erase_index_list = self.__init_erase_index_list()
+        self.__apply_exception()
 
     @property
     def is_reverse(self):
@@ -138,14 +140,8 @@ class DataHandler:
 
         return x_data_dict
 
-    def __init_data_list(self, header):
-        data_list = list()
-
-        for index, v in self.x_data_dict[header].items():
-            if index not in self.erase_index_list:
-                data_list.append(v)
-
-        return data_list
+    def __get_data_list(self, header):
+        return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
 
     def parsing(self):
 
@@ -158,8 +154,9 @@ class DataHandler:
         # }
         #
 
-        for header in self.x_data_dict:
-            self.x_data_dict[header] = self.__init_data_list(header)
+        for header in list(self.x_data_dict.keys()):
+            self.x_data_dict[header] = self.__get_data_list(header)
+
             # print(header, len(self.x_data_dict[header]), type(self.x_data_dict[header]))
 
         self.y_data = self.__set_labels()
@@ -170,6 +167,12 @@ class DataHandler:
               "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
 
         self.free()
+
+    def __apply_exception(self):
+        for header in list(self.x_data_dict.keys()):
+            for index in list(self.x_data_dict[header].keys()):
+                if index in self.erase_index_list:
+                    del self.x_data_dict[header][index]
 
     def __init_erase_index_list(self):
 
@@ -310,3 +313,32 @@ class DataHandler:
                 count += 1
 
         return count
+
+    def show_type_of_columns(self):
+        # show result of columns inspecting
+        for header, data_lines in self.x_data_dict.items():
+
+            type_dict = {"total": 0}
+            for _k, v in data_lines.items():
+
+                key = 0
+                if type(v) is float:
+                    if math.isnan(v):
+                        key = "float_nan"
+                    else:
+                        key = "float"
+                elif type(v) is str:
+                    if v == "nan":
+                        key = "nan"
+                    else:
+                        key = "str"
+                elif type(v) is int:
+                    key = "int"
+
+                if key not in type_dict:
+                    type_dict[key] = 1
+                else:
+                    type_dict[key] += 1
+                type_dict["total"] += 1
+
+            print(header.rjust(2), type_dict)

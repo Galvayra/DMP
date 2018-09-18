@@ -2,9 +2,10 @@
 from collections import OrderedDict
 
 DATA_PATH = "dataset/"
-DATA_FILE = "dataset_all.csv"
+READ_FILE = "dataset_all_hand_parsing.csv"
+LOAD_FILE = "dataset_all_hand_parsing.csv"
 
-POSITION_OF_ROW = 10
+POSITION_OF_ROW = 2
 ID_COLUMN = "C"
 
 default_info_columns = {

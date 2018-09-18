@@ -1,10 +1,10 @@
 from DMP.dataset.dataHandler import DataHandler
-import math
+import re
 
 
 class DataParser(DataHandler):
-    def __init__(self, is_reverse=False):
-        super().__init__(is_reverse)
+    def __init__(self, data_file, is_reverse=False):
+        super().__init__(is_reverse, data_file)
 
     def parsing(self):
 
@@ -17,53 +17,57 @@ class DataParser(DataHandler):
         # }
         #
 
-        for header, data_dict in self.x_data_dict.items():
-            print(header)
+        for header in list(self.x_data_dict.keys()):
+            column_of_type = self.get_type_of_column(header)
+            data_dict = self.__init_data_dict(self.x_data_dict[header])
 
-            self.__inspect_columns(data_dict)
-            # for data, count in self.__get_data_dict(data_dict).items():
-            #     print(data, count[0])
-            print()
-            print()
+            # self.__inspect_columns(data_lines)
+            # print(header, len(data_lines))
 
-        self.free()
+            if column_of_type == "scalar":
+                self.__parsing_scalar(header, data_dict)
 
-    @staticmethod
-    def __inspect_columns(data_dict):
-        # show result of columns inspecting
+            # for data, count in data_dict.items():
+            #     if column_of_type == "scalar":
+            #         print(data, count)
+            #
 
-        type_dict = {"total": 0}
-        for _k, v in data_dict.items():
+            # print()
+            # print()
 
-            key = 0
-            if type(v) is float:
-                if math.isnan(v):
-                    key = "nan"
-                else:
-                    key = "float"
-            elif type(v) is str:
-                key = "str"
-            elif type(v) is int:
-                key = "int"
+        self.show_type_of_columns()
 
-            if key not in type_dict:
-                type_dict[key] = 1
-            else:
-                type_dict[key] += 1
-            type_dict["total"] += 1
-
-        print(type_dict)
+        # super().parsing()
 
     @staticmethod
-    def __get_data_dict(data_dict):
-        new_data_dict = dict()
+    def __init_data_dict(data_lines):
+        data_dict = dict()
 
-        for k, v in data_dict.items():
+        for k, v in data_lines.items():
             # key = str(k) + "@" + str(v)
-            if v not in new_data_dict:
-                new_data_dict[v] = [1, [k]]
+            if v not in data_dict:
+                data_dict[v] = [1, [k]]
             else:
-                new_data_dict[v][0] += 1
-                new_data_dict[v][1].append(k)
+                data_dict[v][0] += 1
+                data_dict[v][1].append(k)
 
-        return new_data_dict
+        return data_dict
+
+    def __parsing_scalar(self, header, data_dict):
+        for data, positions in data_dict.items():
+
+            # Regular Expression for finding float in the data
+            re_data = re.findall(r"[-+]?\d*\.\d+|\d+", data)
+
+            if len(re_data) == 1:
+                for position in positions[1]:
+                    self.x_data_dict[header][position] = float(re_data[0])
+
+            elif len(re_data) == 0:
+                for position in positions[1]:
+                    self.x_data_dict[header][position] = "nan"
+
+            else:
+                print("Exception in the parsing scalar process !!")
+                print(header, re_data, positions)
+                exit(-1)
