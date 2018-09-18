@@ -10,14 +10,15 @@ except ImportError:
 
 from DMP.modeling.vectorMaker import VectorMaker
 from DMP.dataset.dataParser import DataParser
+from DMP.dataset.variables import LOAD_FILE
 from DMP.arguments import USE_ID
 
 
 if __name__ == '__main__':
     if USE_ID.startswith("reverse#"):
-        dataParser = DataParser(is_reverse=True)
+        dataParser = DataParser(LOAD_FILE, is_reverse=True)
     else:
-        dataParser = DataParser()
+        dataParser = DataParser(LOAD_FILE)
 
     # parsing data
     dataParser.parsing()
