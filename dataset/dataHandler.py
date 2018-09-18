@@ -342,3 +342,6 @@ class DataHandler:
                 type_dict["total"] += 1
 
             print(header.rjust(2), type_dict)
+
+    def save(self):
+        pass

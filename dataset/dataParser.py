@@ -4,7 +4,7 @@ import re
 
 class DataParser(DataHandler):
     def __init__(self, data_file, is_reverse=False):
-        super().__init__(is_reverse, data_file)
+        super().__init__(data_file, is_reverse)
 
     def parsing(self):
 
@@ -38,6 +38,9 @@ class DataParser(DataHandler):
         self.show_type_of_columns()
 
         # super().parsing()
+
+    def save(self):
+        print("save csv file after parsing!!")
 
     @staticmethod
     def __init_data_dict(data_lines):
