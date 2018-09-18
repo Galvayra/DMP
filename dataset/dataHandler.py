@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import re
 from .variables import *
+from DMP.utils.arg_parsing import LOAD_FILE
 
 
 # ### refer to reference file ###
@@ -11,13 +12,11 @@ class DataHandler:
         # file name
         file_name = DATA_PATH + data_file
         print("Read csv file -", file_name, "\n\n")
-        self.file_name = data_file
 
         if is_reverse:
             print("make reverse y labels!\n\n")
 
         self.__is_reverse = is_reverse
-        
         # read csv file
         self.__raw_data = pd.read_csv(file_name)
 
@@ -165,8 +164,6 @@ class DataHandler:
               "\t# of mortality =", self.y_data_count)
         print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
               "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
-
-        self.free()
 
     def __apply_exception(self):
         for header in list(self.x_data_dict.keys()):
@@ -344,4 +341,28 @@ class DataHandler:
             print(header.rjust(2), type_dict)
 
     def save(self):
-        pass
+        save_dict = OrderedDict()
+
+        for header, header_key in self.head_dict.items():
+            if header in self.header_list:
+                raw_data_list = self.x_data_dict[header]
+            else:
+                raw_data_list = self.__apply_exception_in_raw_data(self.raw_data[header_key])
+
+            save_dict[header_key] = raw_data_list
+
+        df = pd.DataFrame(save_dict)
+        df.to_csv(DATA_PATH + LOAD_FILE, index=False)
+
+        print("Write csv file -", DATA_PATH + LOAD_FILE, "\n")
+        self.free()
+
+    def __apply_exception_in_raw_data(self, raw_data):
+        raw_data_list = list()
+
+        for index in list(raw_data.keys()):
+            if index + POSITION_OF_ROW not in self.erase_index_list:
+                raw_data_list.append(raw_data[index])
+
+        return raw_data_list
+

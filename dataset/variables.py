@@ -2,8 +2,6 @@
 from collections import OrderedDict
 
 DATA_PATH = "dataset/"
-READ_FILE = "dataset_all_hand_parsing.csv"
-LOAD_FILE = "dataset_all_hand_parsing.csv"
 
 POSITION_OF_ROW = 2
 ID_COLUMN = "C"

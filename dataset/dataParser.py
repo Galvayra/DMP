@@ -21,9 +21,6 @@ class DataParser(DataHandler):
             column_of_type = self.get_type_of_column(header)
             data_dict = self.__init_data_dict(self.x_data_dict[header])
 
-            # self.__inspect_columns(data_lines)
-            # print(header, len(data_lines))
-
             if column_of_type == "scalar":
                 self.__parsing_scalar(header, data_dict)
 
@@ -35,12 +32,12 @@ class DataParser(DataHandler):
             # print()
             # print()
 
-        self.show_type_of_columns()
+        # self.show_type_of_columns()
 
-        # super().parsing()
+        super().parsing()
 
     def save(self):
-        print("save csv file after parsing!!")
+        super().save()
 
     @staticmethod
     def __init_data_dict(data_lines):

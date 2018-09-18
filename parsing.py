@@ -9,7 +9,7 @@ except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 from DMP.dataset.dataParser import DataParser
-from DMP.dataset.variables import READ_FILE
+from DMP.utils.arg_parsing import READ_FILE
 
 
 if __name__ == '__main__':
