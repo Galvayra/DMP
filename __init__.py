@@ -1,3 +1,3 @@
 from . import dataset, learning, modeling
 
-__all__ = ['encoding', 'arguments', 'training', 'predict', 'vector2txt']
+__all__ = ['encoding', 'training', 'predict', 'vector2txt']

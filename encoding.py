@@ -11,7 +11,7 @@ except ImportError:
 from DMP.modeling.vectorMaker import VectorMaker
 from DMP.dataset.dataParser import DataParser
 from DMP.dataset.variables import LOAD_FILE
-from DMP.arguments import USE_ID
+from DMP.utils.arguments import USE_ID
 
 
 if __name__ == '__main__':
