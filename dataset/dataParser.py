@@ -27,8 +27,6 @@ class DataParser(DataHandler):
             elif column_of_type == "class":
                 self.__parsing_class(header, data_dict)
 
-        # self.show_type_of_columns()
-
         super().parsing()
 
     def save(self):

@@ -8,8 +8,8 @@ import json
 class VectorMaker:
     # must using DataParser or DataHandler
     # dataHandler.x = {}
-    def __init__(self, data_parser):
-        self.dataParser = data_parser
+    def __init__(self, data_handler):
+        self.dataHandler = data_handler
         self.vector_list = list()
 
     def encoding(self):
@@ -43,12 +43,19 @@ class VectorMaker:
             return x_dict
 
         # copy DataHandler to local variables
-        x_data_dict = self.dataParser.data_dict
-        y_data = self.dataParser.y_data
+        x_data_dict = self.dataHandler.x_data_dict
+        y_data = self.dataHandler.y_data
 
-        # init encoder
-        my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)
-        # my_encoder.encoding(x_data_dict)
+        # self.dataHandler.show_type_of_columns()
+
+        # for header, vector_list in self.dataHandler.x_data_dict.items():
+        #     print(header)
+        #
+
+
+        # # init encoder
+        # my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)
+        # # my_encoder.encoding(x_data_dict)
 
         # # k-fold validation
         # if op.NUM_FOLDS > 1:

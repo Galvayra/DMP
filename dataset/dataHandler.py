@@ -44,6 +44,7 @@ class DataHandler:
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
         self.y_data = self.__set_labels()
+        self.__do_parsing = 0
 
     @property
     def is_reverse(self):
@@ -80,6 +81,14 @@ class DataHandler:
     @y_data_count.setter
     def y_data_count(self, count):
         self.__y_data_count = count
+
+    @property
+    def do_parsing(self):
+        return self.__do_parsing
+
+    @do_parsing.setter
+    def do_parsing(self, do_parsing):
+        self.__do_parsing = do_parsing
 
     def __get_head_dict_key(self, index):
 
@@ -139,16 +148,24 @@ class DataHandler:
 
         return x_data_dict
 
-    def __get_data_list(self, header):
-        # if not use_only_str:
-        #     return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
-        # else:
-        #     column_of_type = self.get_type_of_column(header)
-        #
-        #     if column_of_type == "scalar":
-        #         return [float(self.x_data_dict[header][index]) for index in list(self.x_data_dict[header].keys())]
-        #     else:
-        return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
+    def __get_data_list(self, header, do_casting=False):
+        if do_casting:
+            return [float(self.x_data_dict[header][index]) for index in list(self.x_data_dict[header].keys())]
+        else:
+            return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
+
+    def __set_data(self, do_casting=False):
+        for header in list(self.x_data_dict.keys()):
+            if do_casting and (self.get_type_of_column(header) == "scalar" or self.get_type_of_column(header) == "id"):
+                self.x_data_dict[header] = self.__get_data_list(header, do_casting=True)
+            else:
+                self.x_data_dict[header] = self.__get_data_list(header)
+
+    def __summary(self):
+        print("# of     all data set =", str(self.x_data_count).rjust(5),
+              "\t# of mortality =", self.y_data_count)
+        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
+              "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
 
     def parsing(self):
 
@@ -161,15 +178,9 @@ class DataHandler:
         # }
         #
 
-        # self.show_type_of_columns()
-
-        for header in list(self.x_data_dict.keys()):
-            self.x_data_dict[header] = self.__get_data_list(header)
-
-        print("# of     all data set =", str(self.x_data_count).rjust(5),
-              "\t# of mortality =", self.y_data_count)
-        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
-              "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
+        self.__set_data()
+        self.__summary()
+        self.do_parsing += 1
 
     def __apply_exception(self):
         for header in list(self.x_data_dict.keys()):
@@ -212,19 +223,7 @@ class DataHandler:
                 if len(re_symptom) >= 1:
                     erase_index_list.append(index + POSITION_OF_ROW)
 
-        # def __cut_random_data(_erase_index_list):
-        #     r_num = int(CUT_RATIO.split('/')[1])
-        #     cut_count = 0
-        #     header_key = self.head_dict["DC"]
-        #     for i, data in enumerate(self.raw_data[header_key]):
-        #         if i not in _erase_index_list:
-        #             if data != "사망":
-        #                 cut_count += 1
-        #                 if cut_count % r_num == 0:
-        #                     _erase_index_list.append(i)
-
         erase_index_list = list()
-
         target_header_list = list()
 
         for v in columns_dict["initial"]["scalar"].values():
@@ -301,7 +300,7 @@ class DataHandler:
 
         return None
 
-    def free(self):
+    def __free(self):
         del self.__raw_data
         del self.__header_list
         del self.__head_dict
@@ -318,43 +317,81 @@ class DataHandler:
 
         return count
 
+    # show type of columns
     def show_type_of_columns(self):
-        # show result of columns inspecting
-        for header, data_lines in self.x_data_dict.items():
+        if not self.do_parsing:
+            for header, data_lines in self.x_data_dict.items():
+                type_dict = {"total": 0}
 
-            type_dict = {"total": 0}
-            for _k, v in data_lines.items():
+                for _, v in data_lines.items():
+                    key = 0
 
-                key = 0
-                if type(v) is float:
-                    if math.isnan(v):
-                        key = "float_nan"
+                    if type(v) is float:
+                        if math.isnan(v):
+                            key = "float_nan"
+                        else:
+                            key = "float"
+                    elif type(v) is str:
+                        if v == "nan":
+                            key = "nan"
+                        else:
+                            key = "str"
+                    elif type(v) is int:
+                        key = "int"
+
+                    if key not in type_dict:
+                        type_dict[key] = 1
                     else:
-                        key = "float"
-                elif type(v) is str:
-                    if v == "nan":
-                        key = "nan"
+                        type_dict[key] += 1
+                    type_dict["total"] += 1
+
+                print(header.rjust(2), type_dict)
+        else:
+            for header, data_lines in self.x_data_dict.items():
+                type_dict = {"total": 0}
+
+                for v in data_lines:
+                    key = 0
+                    if type(v) is float:
+                        if math.isnan(v):
+                            key = "float_nan"
+                        else:
+                            key = "float"
+                    elif type(v) is str:
+                        if v == "nan":
+                            key = "nan"
+                        else:
+                            key = "str"
+                    elif type(v) is int:
+                        key = "int"
+
+                    if key not in type_dict:
+                        type_dict[key] = 1
                     else:
-                        key = "str"
-                elif type(v) is int:
-                    key = "int"
+                        type_dict[key] += 1
+                    type_dict["total"] += 1
 
-                if key not in type_dict:
-                    type_dict[key] = 1
-                else:
-                    type_dict[key] += 1
-                type_dict["total"] += 1
+                print(header.rjust(2), type_dict)
 
-            print(header.rjust(2), type_dict)
+        print("\n\n")
 
     def save(self):
+        def __apply_exception_in_raw_data(raw_data):
+            _raw_data_list = list()
+
+            for index in list(raw_data.keys()):
+                if index + POSITION_OF_ROW not in self.erase_index_list:
+                    _raw_data_list.append(raw_data[index])
+
+            return _raw_data_list
+
         save_dict = OrderedDict()
 
         for header, header_key in self.head_dict.items():
             if header in self.header_list:
                 raw_data_list = self.x_data_dict[header]
             else:
-                raw_data_list = self.__apply_exception_in_raw_data(self.raw_data[header_key])
+                raw_data_list = __apply_exception_in_raw_data(self.raw_data[header_key])
 
             save_dict[header_key] = raw_data_list
 
@@ -362,14 +399,8 @@ class DataHandler:
         df.to_csv(DATA_PATH + LOAD_FILE, index=False)
 
         print("Write csv file -", DATA_PATH + LOAD_FILE, "\n")
-        self.free()
+        self.__free()
 
-    def __apply_exception_in_raw_data(self, raw_data):
-        raw_data_list = list()
-
-        for index in list(raw_data.keys()):
-            if index + POSITION_OF_ROW not in self.erase_index_list:
-                raw_data_list.append(raw_data[index])
-
-        return raw_data_list
-
+    def load(self):
+        self.__set_data(do_casting=True)
+        self.__free()

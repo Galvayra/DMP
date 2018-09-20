@@ -19,11 +19,11 @@ if __name__ == '__main__':
     else:
         dataHandler = DataHandler(READ_FILE)
 
-    # parsing data
-    dataHandler.parsing()
+    # loading data
+    dataHandler.load()
 
-    # encoding data using dataParser
-    # vectorMaker = VectorMaker(dataParser)
+    # encoding data using dataHandler
+    vectorMaker = VectorMaker(dataHandler)
+    vectorMaker.encoding()
 
-    # vectorMaker.encoding()
     # vectorMaker.dump()
