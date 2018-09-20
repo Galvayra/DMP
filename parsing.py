@@ -15,4 +15,4 @@ from DMP.utils.arg_parsing import READ_FILE
 if __name__ == '__main__':
     dataParser = DataParser(READ_FILE)
     dataParser.parsing()
-    dataParser.save()
+    # dataParser.save()
