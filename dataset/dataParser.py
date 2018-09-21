@@ -155,11 +155,37 @@ class DataParser(DataHandler):
     def __parsing_mal_type(self, header, data_dict):
         def __parsing(_w):
 
+            # process "_a_colon_" -> "_a-colon_"
+            def __process_under_bar(__w, colon_or_cell):
+                f = re.findall('_[a-z]_' + colon_or_cell + '_', __w)
+
+                if f:
+                    f = '-'.join(f[0].split('_'))
+                    return re.sub('_[a-z]_' + colon_or_cell + '_', '_' + f[1:], __w)
+                else:
+                    return __w
+
+            # process "symptom1/symptom2/..../symptomN" -> "symptom1_symptom2_...._symptomN"
+            def __process_slash(__w):
+
+                while True:
+                    f = re.findall('[a-z]{2,}/[a-z]{2,}', __w)
+
+                    if f:
+                        __w = re.sub('[a-z]{2,}/[a-z]{2,}', '_'.join(f[0].split('/')), __w)
+                    else:
+                        return __w
+
             if _w == "nan" or len(_w) <= 1:
                 return "nan"
 
             _w = _w.strip().lower()
             _w = _w.replace('.', '. ')
+
+            _w = __process_slash(_w)
+
+            # replace '(A)', '(B)' -> ''
+            _w = re.sub('\([a-z]\)', '', _w)
             _w = _w.replace('(', ' ')
             _w = _w.replace(')', ' ')
             _w = "_".join(_w.split())
@@ -168,22 +194,51 @@ class DataParser(DataHandler):
             _w = _w.replace('_ca_', '_cancer_')
             _w = _w.replace('_adenoca_', '_adeno_carcinoma_')
             _w = _w.replace('_adenocarcinoma_', '_adeno_carcinoma_')
-            _w = _w.replace('_sqcc_', '_squamos_cell_carcinoma_')
+            _w = _w.replace('_agc_', '_advanced_gastric_cancer_')
+            _w = _w.replace('_agca_', '_advanced_gastric_cancer_')
+            _w = _w.replace('_egc_', '_early_gastric_cancer_')
+            _w = _w.replace('_egca_', '_early_gastric_cancer_')
+            _w = _w.replace('_sqcc_', '_squamous_cell_carcinoma_')
             _w = _w.replace('_cll_', '_chronic_lymphocytic_leukemia_')
             _w = _w.replace('_cml_', '_chronic_myelomonocytic_leukemia_')
             _w = _w.replace('_all_', '_acute_lymphocytic_leukemia_')
             _w = _w.replace('_aml_', '_acute_myelomonocytic_leukemia_')
             _w = _w.replace('_cmmol_', '_chronic_myelomonocytic_leukemia_')
+            _w = _w.replace('_dlbcl_', '_diffuse_large_b_cell_lymphoma_')
+            _w = _w.replace('_dlbl_', '_diffuse_large_b_cell_lymphoma_')
+            _w = _w.replace('_hcc_', '_hepatocellular_carcinoma_')
+            _w = _w.replace('_nsclc_', '_non_small_cell_lung_cancer_')
+            _w = _w.replace('_nsclca_', '_non_small_cell_lung_cancer_')
+            _w = _w.replace('_rcc_', '_renal_cell_carcinoma_')
+            _w = _w.replace('_rll_', '_right_lower_lobe_')
+            _w = _w.replace('_gb_', '_gallbladder_')
             _w = _w.replace('_lt_', '_left_')
             _w = _w.replace('_rt_', '_right_')
             _w = _w.replace('_cervic_', '_cervical_')
+            _w = _w.replace('_gist_', '_gastro_intestinal_stromal_tumors_')
             _w = _w.replace('_cholangiocarcinoma_', '_cholangio_carcinoma_')
             _w = _w.replace('_with_', '_')
             _w = _w.replace('_&_', '_')
+            _w = _w.replace('_of_', '_')
+            _w = _w.replace('_or_', '_')
+            _w = _w.replace('_and_', '_')
 
+            _w = __process_under_bar(_w, "colon")
+            _w = __process_under_bar(_w, "cell")
+
+            # erase hangle
             _w = re.sub('[가-힣]+', '', _w)
+
+            # erase complex word    ex) m34tr3k3
             _w = re.sub('(([0-9]+[a-z]+)|([a-z]+[0-9]+))', '#', _w)
-            _w = re.sub('([a-z]*[#]+[a-z]*)', '?', _w)
+            _w = re.sub('([a-z]*[#]+[a-z]*)', '_', _w)
+
+            # erase noise           ex) number, special words
+            _w = re.sub('_[0-9+_/]+_', '_', _w)
+            _w = re.sub('_[\W_]+_', '_', _w)
+            _w = re.sub("['`]s", '', _w)
+
+            # concat token '_'
             _w = re.sub('[_]+', '_', _w)
 
             if _w:
@@ -193,9 +248,4 @@ class DataParser(DataHandler):
 
         for data in sorted(data_dict):
             positions = data_dict[data]
-
-            # print(data)
-
-            print(data.ljust(80), __parsing(data))
-            print()
-            # self.__modify_dict(header, positions[1], __parsing(data))
+            self.__modify_dict(header, positions[1], __parsing(data))
