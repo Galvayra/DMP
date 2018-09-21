@@ -30,6 +30,8 @@ class DataParser(DataHandler):
                 self.__parsing_symptom(header, data_dict)
             elif column_of_type == "mal_type":
                 self.__parsing_mal_type(header, data_dict)
+            elif column_of_type == "word":
+                self.__parsing_word(header, data_dict)
 
         # super().parsing()
 
@@ -249,3 +251,59 @@ class DataParser(DataHandler):
         for data in sorted(data_dict):
             positions = data_dict[data]
             self.__modify_dict(header, positions[1], __parsing(data))
+
+    def __parsing_word(self, header, data_dict):
+        def __parsing(_w):
+            _w = _w.strip().lower()
+            _w = _w.replace('.', '. ')
+            _w = _w.replace('(', ' ')
+            _w = _w.replace(')', ' ')
+            _w = "_".join(_w.split())
+            _w = "_" + _w + "_"
+            _w = _w.replace('_abd._', '_abdominal_')
+            _w = _w.replace('_lt._', '_left_')
+            _w = _w.replace('_rt._', '_right_')
+            _w = _w.replace('_avf_', '_angioplasty_fails_')
+            _w = _w.replace('_ptbd_', '_percutaneous_transhepatic_biliary_drainage_')
+            _w = _w.replace('_bp_', '_blood_pressure_')
+            _w = _w.replace('_cbc_', '_complete_blood_count_')
+            _w = _w.replace('_ct_', '_computed_tomography_')
+            _w = _w.replace('_lft_', '_liver_function_tests_')
+            _w = _w.replace('_wbc_', '_white_blood_cell_')
+            _w = _w.replace('_llq_', '_left_lower_quadrant_')
+            _w = _w.replace('_luq_', '_left_upper_quadrant_')
+            _w = _w.replace('_rlq_', '_right_lower_quadrant_')
+            _w = _w.replace('_ruq_', '_right_upper_quadrant_')
+            _w = _w.replace('_ugi_', '_upper_gastrointestinal_')
+            _w = _w.replace('_hd_cath._', '_hemodialysis_catheter_')
+            _w = _w.replace('_cath._', '_catheter_')
+            _w = _w.replace('_exam._', '_examination_')
+            _w = _w.replace('_t-tube_', '_tracheostomy_tube_')
+            _w = _w.replace('_l-tube_', '_levin_tube_')
+            _w = _w.replace('_peg_tube_', '_percutaneous_endoscopic_gastrostomy_tube_')
+            _w = _w.replace('_op_', '_postoperative_')
+            _w = _w.replace('_op._', '_postoperative_')
+            _w = _w.replace('_lac._', '_laceration_')
+            _w = _w.replace('_-_', '_')
+            _w = _w.replace('n/v', '')
+            _w = _w.replace('_with_', '_')
+            _w = _w.replace('_&_', '_')
+            _w = _w.replace('_+_', '_')
+            _w = _w.replace('_in_', '_')
+            _w = _w.replace(',_', '_')
+            _w = _w.replace('._', '_')
+            _w = _w.replace('-', '_')
+
+            _w = _w[1:-1]
+
+            if _w:
+                return _w
+            else:
+                return "nan"
+
+        print(header)
+        for data in sorted(data_dict):
+            positions = data_dict[data]
+            print(data.ljust(40), positions[0])
+
+            # self.__modify_dict(header, positions[1], __parsing(data))
