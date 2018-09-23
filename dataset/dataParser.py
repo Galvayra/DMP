@@ -133,16 +133,12 @@ class DataParser(DataHandler):
             _w = _w.replace('_op_', '_postoperative_')
             _w = _w.replace('_op._', '_postoperative_')
             _w = _w.replace('_lac._', '_laceration_')
-            _w = _w.replace('_-_', '_')
+            _w = _w.replace('_vesicles_', '_vesicle_')
+            _w = re.sub('_(with|&|\+|in|-)_', '_', _w)
             _w = _w.replace('n/v', '')
-            _w = _w.replace('_with_', '_')
-            _w = _w.replace('_&_', '_')
-            _w = _w.replace('_+_', '_')
-            _w = _w.replace('_in_', '_')
             _w = _w.replace(',_', '_')
             _w = _w.replace('._', '_')
             _w = _w.replace('-', '_')
-
             _w = _w[1:-1]
 
             if _w:
@@ -219,11 +215,7 @@ class DataParser(DataHandler):
             _w = _w.replace('_cervic_', '_cervical_')
             _w = _w.replace('_gist_', '_gastro_intestinal_stromal_tumors_')
             _w = _w.replace('_cholangiocarcinoma_', '_cholangio_carcinoma_')
-            _w = _w.replace('_with_', '_')
-            _w = _w.replace('_&_', '_')
-            _w = _w.replace('_of_', '_')
-            _w = _w.replace('_or_', '_')
-            _w = _w.replace('_and_', '_')
+            _w = re.sub('_(with|&|of|or|and)_', '_', _w)
 
             _w = __process_under_bar(_w, "colon")
             _w = __process_under_bar(_w, "cell")
@@ -254,45 +246,38 @@ class DataParser(DataHandler):
 
     def __parsing_word(self, header, data_dict):
         def __parsing(_w):
+
+            # process "blood_1" -> "blood1"
+            def __process_blood(__w):
+                f = re.findall('blood_[0-9]', __w)
+
+                if f:
+                    __w = re.sub('blood_[0-9]', ''.join(f[0].split('_')), __w)
+
+                f = re.findall('blood1,2', __w)
+
+                # print(f, __w)
+                if f:
+                    f = f[0].split(',')
+                    f = f[0] + '_blood' + f[1] + '_'
+                    return re.sub('blood1,2', f, __w)
+                else:
+                    return __w
+
             _w = _w.strip().lower()
             _w = _w.replace('.', '. ')
-            _w = _w.replace('(', ' ')
-            _w = _w.replace(')', ' ')
             _w = "_".join(_w.split())
             _w = "_" + _w + "_"
-            _w = _w.replace('_abd._', '_abdominal_')
-            _w = _w.replace('_lt._', '_left_')
-            _w = _w.replace('_rt._', '_right_')
-            _w = _w.replace('_avf_', '_angioplasty_fails_')
-            _w = _w.replace('_ptbd_', '_percutaneous_transhepatic_biliary_drainage_')
-            _w = _w.replace('_bp_', '_blood_pressure_')
-            _w = _w.replace('_cbc_', '_complete_blood_count_')
-            _w = _w.replace('_ct_', '_computed_tomography_')
-            _w = _w.replace('_lft_', '_liver_function_tests_')
-            _w = _w.replace('_wbc_', '_white_blood_cell_')
-            _w = _w.replace('_llq_', '_left_lower_quadrant_')
-            _w = _w.replace('_luq_', '_left_upper_quadrant_')
-            _w = _w.replace('_rlq_', '_right_lower_quadrant_')
-            _w = _w.replace('_ruq_', '_right_upper_quadrant_')
-            _w = _w.replace('_ugi_', '_upper_gastrointestinal_')
-            _w = _w.replace('_hd_cath._', '_hemodialysis_catheter_')
-            _w = _w.replace('_cath._', '_catheter_')
-            _w = _w.replace('_exam._', '_examination_')
-            _w = _w.replace('_t-tube_', '_tracheostomy_tube_')
-            _w = _w.replace('_l-tube_', '_levin_tube_')
-            _w = _w.replace('_peg_tube_', '_percutaneous_endoscopic_gastrostomy_tube_')
-            _w = _w.replace('_op_', '_postoperative_')
-            _w = _w.replace('_op._', '_postoperative_')
-            _w = _w.replace('_lac._', '_laceration_')
-            _w = _w.replace('_-_', '_')
-            _w = _w.replace('n/v', '')
-            _w = _w.replace('_with_', '_')
-            _w = _w.replace('_&_', '_')
-            _w = _w.replace('_+_', '_')
-            _w = _w.replace('_in_', '_')
-            _w = _w.replace(',_', '_')
-            _w = _w.replace('._', '_')
-            _w = _w.replace('-', '_')
+
+            _w = __process_blood(_w)
+
+            #
+            _w = re.sub("\([\d\D]{2,}\)", '', _w)
+            _w = re.sub('[&,:]', '', _w)
+            _w = re.sub('[-/>]', '_', _w)
+
+            # concat token '_'
+            _w = re.sub('[_]+', '_', _w)
 
             _w = _w[1:-1]
 
@@ -301,9 +286,58 @@ class DataParser(DataHandler):
             else:
                 return "nan"
 
-        print(header)
         for data in sorted(data_dict):
             positions = data_dict[data]
-            print(data.ljust(40), positions[0])
+            self.__modify_dict(header, positions[1], __parsing(data))
+
+    def __parsing_diagonosis(self, header, data_dict):
+        def __parsing(_w):
+
+            # # process "blood_1" -> "blood1"
+            # def __process_blood(__w):
+            #     f = re.findall('blood_[0-9]', __w)
+            #
+            #     if f:
+            #         __w = re.sub('blood_[0-9]', ''.join(f[0].split('_')), __w)
+            #
+            #     f = re.findall('blood1,2', __w)
+            #
+            #     # print(f, __w)
+            #     if f:
+            #         f = f[0].split(',')
+            #         f = f[0] + '_blood' + f[1] + '_'
+            #         return re.sub('blood1,2', f, __w)
+            #     else:
+            #         return __w
+
+            _w = _w.strip().lower()
+            _w = _w.replace('.', '. ')
+            _w = "_".join(_w.split())
+            _w = "_" + _w + "_"
+
+            # _w = __process_blood(_w)
+            #
+            # #
+            # _w = re.sub("\([\d\D]{2,}\)", '', _w)
+            # _w = re.sub('[&,:]', '', _w)
+            # _w = re.sub('[-/>]', '_', _w)
+            #
+            # # concat token '_'
+            # _w = re.sub('[_]+', '_', _w)
+
+            _w = _w[1:-1]
+
+            if _w:
+                return _w
+            else:
+                return "nan"
+
+        # print(header)
+        for data in sorted(data_dict):
+            positions = data_dict[data]
+            # print(data.ljust(40), positions[0])
+
+            # __parsing(data)
+            print(data.ljust(70), __parsing(data))
 
             # self.__modify_dict(header, positions[1], __parsing(data))
