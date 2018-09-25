@@ -32,6 +32,8 @@ class DataParser(DataHandler):
                 self.__parsing_mal_type(header, data_dict)
             elif column_of_type == "word":
                 self.__parsing_word(header, data_dict)
+            elif column_of_type == "diagnosis":
+                self.__parsing_diagnosis(header, data_dict)
 
         # super().parsing()
 
@@ -134,7 +136,7 @@ class DataParser(DataHandler):
             _w = _w.replace('_op._', '_postoperative_')
             _w = _w.replace('_lac._', '_laceration_')
             _w = _w.replace('_vesicles_', '_vesicle_')
-            _w = re.sub('_(with|&|\+|in|-)_', '_', _w)
+            _w = re.sub('_(with|without|&|\+|in|-)_', '_', _w)
             _w = _w.replace('n/v', '')
             _w = _w.replace(',_', '_')
             _w = _w.replace('._', '_')
@@ -215,7 +217,7 @@ class DataParser(DataHandler):
             _w = _w.replace('_cervic_', '_cervical_')
             _w = _w.replace('_gist_', '_gastro_intestinal_stromal_tumors_')
             _w = _w.replace('_cholangiocarcinoma_', '_cholangio_carcinoma_')
-            _w = re.sub('_(with|&|of|or|and)_', '_', _w)
+            _w = re.sub('_(with|without|&|of|or|and)_', '_', _w)
 
             _w = __process_under_bar(_w, "colon")
             _w = __process_under_bar(_w, "cell")
@@ -281,7 +283,9 @@ class DataParser(DataHandler):
 
             _w = _w[1:-1]
 
-            if _w:
+            if len(_w) <= 1:
+                return "nan"
+            elif _w:
                 return _w
             else:
                 return "nan"
@@ -290,44 +294,78 @@ class DataParser(DataHandler):
             positions = data_dict[data]
             self.__modify_dict(header, positions[1], __parsing(data))
 
-    def __parsing_diagonosis(self, header, data_dict):
+    def __parsing_diagnosis(self, header, data_dict):
         def __parsing(_w):
 
-            # # process "blood_1" -> "blood1"
-            # def __process_blood(__w):
-            #     f = re.findall('blood_[0-9]', __w)
-            #
-            #     if f:
-            #         __w = re.sub('blood_[0-9]', ''.join(f[0].split('_')), __w)
-            #
-            #     f = re.findall('blood1,2', __w)
-            #
-            #     # print(f, __w)
-            #     if f:
-            #         f = f[0].split(',')
-            #         f = f[0] + '_blood' + f[1] + '_'
-            #         return re.sub('blood1,2', f, __w)
-            #     else:
-            #         return __w
+            # process "stage_1" -> "stage1", "type_1" -> "type1"
+            def __process_stage_and_type(__w, keyword):
+                f = re.findall('_' + keyword + '_[0-9]_', __w)
+
+                # print(f, __w)
+                if f:
+                    f = f[0].split('_')
+                    f = '_' + keyword + f[2] + '_'
+                    return re.sub('_' + keyword + '_[0-9]_', f, __w)
+                else:
+                    return __w
+
+            # process "symptom1/symptom2/..../symptomN" -> "symptom1_symptom2_...._symptomN"
+            def __process_slash(__w):
+
+                while True:
+                    f = re.findall('[a-z]{2,}/[a-z]{2,}', __w)
+
+                    if f:
+                        __w = re.sub('[a-z]{2,}/[a-z]{2,}', '_'.join(f[0].split('/')), __w)
+                    else:
+                        return __w
 
             _w = _w.strip().lower()
             _w = _w.replace('.', '. ')
+            _w = _w.replace(',', '_')
             _w = "_".join(_w.split())
             _w = "_" + _w + "_"
 
-            # _w = __process_blood(_w)
-            #
-            # #
-            # _w = re.sub("\([\d\D]{2,}\)", '', _w)
-            # _w = re.sub('[&,:]', '', _w)
-            # _w = re.sub('[-/>]', '_', _w)
-            #
-            # # concat token '_'
-            # _w = re.sub('[_]+', '_', _w)
+            # process '(' and ')'
+            _w = re.sub("\([\d\D]{2,}\)", '', _w)
+            _w = _w.replace('(', '_')
+            _w = _w.replace(')', '_')
+
+            # erase hangle
+            _w = re.sub('[가-힣]+', '', _w)
+
+            _w = _w.replace("_a_fib_", '_a-fib_')
+            _w = _w.replace("_a._fib_", '_a-fib_')
+            _w = _w.replace("_a_colon_", '_a-colon_')
+            _w = _w.replace("_a._colon_", '_a-colon_')
+            _w = _w.replace("_s_colon_", '_s-colon_')
+            _w = _w.replace("_s._colon_", '_s-colon_')
+            _w = _w.replace("_e_coli_", '_e-coli_')
+            _w = _w.replace("_e._coli_", '_e-coli_')
+            _w = _w.replace("_e._varix_", '_varix_')
+            _w = _w.replace("_b_cell_", '_b-cell_')
+            _w = _w.replace("_ca._", '_cancer_')
+            _w = _w.replace("_ca_", '_cancer_')
+            _w = _w.replace('_lt._', '_left_')
+            _w = _w.replace('_rt._', '_right_')
+            _w = _w.replace('_lt_', '_left_')
+            _w = _w.replace('_rt_', '_right_')
+
+            _w = __process_stage_and_type(_w, 'stage')
+            _w = __process_stage_and_type(_w, 'type')
+            _w = __process_slash(_w)
+
+            _w = re.sub('[&.>]', '', _w)
+            _w = re.sub('_(with|without|of|or|and)_', '_', _w)
+
+            # concat token '_'
+            _w = re.sub('[_]+', '_', _w)
 
             _w = _w[1:-1]
 
-            if _w:
+            if len(_w) <= 1:
+                return "nan"
+            elif _w:
                 return _w
             else:
                 return "nan"
@@ -335,9 +373,6 @@ class DataParser(DataHandler):
         # print(header)
         for data in sorted(data_dict):
             positions = data_dict[data]
-            # print(data.ljust(40), positions[0])
+            self.__modify_dict(header, positions[1], __parsing(data))
 
-            # __parsing(data)
-            print(data.ljust(70), __parsing(data))
-
-            # self.__modify_dict(header, positions[1], __parsing(data))
+            # print(data.ljust(70), __parsing(data))
