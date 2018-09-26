@@ -137,7 +137,7 @@ class MyOneHotEncoder:
             for type_of_column, column_of_list in _.items():
                 for column in column_of_list:
                     self.__vector_maker(class_of_column, column, type_of_column)
-                        
+
                         # self.vector_dict[header] = __set_vector(x_data[header])
                     # elif type_of_column == "class":
                     #     self.vector_dict[header] = __set_class_dict(x_data[header])
@@ -164,6 +164,7 @@ class MyOneHotEncoder:
                 __set_vector(index, values)
 
         def __set_class_vector():
+            # print(column, self.vector_dict[column])
             for index, value in enumerate(self.x_data[column]):
                 __set_vector(index, __get_one_hot([value], self.vector_dict[column]))
 

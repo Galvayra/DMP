@@ -46,10 +46,13 @@ if args.target:
     COLUMN_TARGET = args.target
 
     if COLUMN_TARGET == "b":
+        COLUMN_TARGET = "CR"
         READ_FILE = READ_FILE.split(".csv")[0] + "_bacteremia" + ".csv"
     elif COLUMN_TARGET == "s":
+        COLUMN_TARGET = "CU"
         READ_FILE = READ_FILE.split(".csv")[0] + "_sepsis" + ".csv"
     elif COLUMN_TARGET == "p":
+        COLUMN_TARGET = "CS"
         READ_FILE = READ_FILE.split(".csv")[0] + "_pneumonia" + ".csv"
 
 if args.fold:
