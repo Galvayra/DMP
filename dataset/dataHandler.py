@@ -9,7 +9,7 @@ NOT_HAVE_SYMPTOM = 2
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, column_target=False, is_reverse=False, do_parsing=False):
+    def __init__(self, data_file, is_reverse=False, do_parsing=False, column_target=False, eliminate_target=False):
         try:
             self.__file_name = data_file
             print("Read csv file -", DATA_PATH + self.file_name, "\n\n")
@@ -42,6 +42,9 @@ class DataHandler:
         self.x_data_dict = self.__init_x_data_dict()
         self.__do_parsing = do_parsing
         self.__do_set_data = False
+
+        if eliminate_target:
+            print(self.column_target)#, self.x_data_dict[]
 
         if do_parsing:
             # except for data which is not necessary
@@ -289,7 +292,7 @@ class DataHandler:
 
         header_key = self.head_dict["DA"]
 
-        if self.__is_reverse:
+        if self.is_reverse:
             if self.do_parsing:
                 for i, value in enumerate(self.raw_data[header_key]):
                     if i + POSITION_OF_ROW not in self.erase_index_list:

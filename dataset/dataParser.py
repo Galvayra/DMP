@@ -11,7 +11,7 @@ class DataParser(DataHandler):
         else:
             print("The Target is None\n\n")
 
-        super().__init__(data_file, column_target=COLUMN_TARGET, is_reverse=is_reverse, do_parsing=True)
+        super().__init__(data_file, is_reverse=is_reverse, do_parsing=True, column_target=COLUMN_TARGET)
 
     def parsing(self):
 

@@ -15,9 +15,9 @@ from DMP.utils.arg_encoding import *
 
 if __name__ == '__main__':
     if USE_ID.startswith("reverse#"):
-        dataHandler = DataHandler(READ_FILE, is_reverse=True)
+        dataHandler = DataHandler(READ_FILE, is_reverse=True, column_target=COLUMN_TARGET, eliminate_target=True)
     else:
-        dataHandler = DataHandler(READ_FILE)
+        dataHandler = DataHandler(READ_FILE, column_target=COLUMN_TARGET, eliminate_target=True)
 
     # loading data
     dataHandler.load()
