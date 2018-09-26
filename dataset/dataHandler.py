@@ -3,7 +3,9 @@ import pandas as pd
 import math
 import re
 from .variables import *
-from DMP.utils.arg_parsing import LOAD_FILE
+from DMP.utils.arg_parsing import LOAD_FILE, COLUMN_TARGET
+
+NOT_HAVE_SYMPTOM = 2
 
 
 # ### refer to reference file ###
@@ -15,6 +17,26 @@ class DataHandler:
 
         if is_reverse:
             print("make reverse y labels!\n\n")
+
+        if COLUMN_TARGET == "b":
+            self.__target_name = "bacteremia"
+            self.__target = "CR"
+        elif COLUMN_TARGET == "s":
+            self.__target_name = "sepsis"
+            self.__target = "CU"
+        elif COLUMN_TARGET == "p":
+            self.__target_name = "pneumonia"
+            self.__target = "CS"
+        else:
+            self.__target_name = str()
+            self.__target = False
+
+        if self.__target_name:
+            self.__parsing_file_name = LOAD_FILE.split(".csv")[0] + "_" + self.__target_name + ".csv"
+        else:
+            self.__parsing_file_name = LOAD_FILE
+
+        print("The Target is", self.__target_name, "\n\n")
 
         self.__is_reverse = is_reverse
         # read csv file
@@ -39,6 +61,9 @@ class DataHandler:
         # except for data which is not necessary
         # [ position 1, ... position n ]
         self.__erase_index_list = self.__init_erase_index_list()
+
+        # print(self.__erase_index_list, len(self.__erase_index_list))
+        # print(len(self.__erase_index_list))
         self.__apply_exception()
 
         # a data of y labels
@@ -53,6 +78,14 @@ class DataHandler:
     @property
     def raw_data(self):
         return self.__raw_data
+
+    @property
+    def target(self):
+        return self.__target
+
+    @property
+    def parsing_file_name(self):
+        return self.__parsing_file_name
 
     @property
     def header_list(self):
@@ -223,6 +256,12 @@ class DataHandler:
                 if len(re_symptom) >= 1:
                     erase_index_list.append(index + POSITION_OF_ROW)
 
+        def __set_column_target():
+            if self.target:
+                for index, symptom in self.raw_data[self.head_dict[self.target]].items():
+                    if symptom == NOT_HAVE_SYMPTOM:
+                        erase_index_list.append(index + POSITION_OF_ROW)
+
         erase_index_list = list()
         target_header_list = list()
 
@@ -238,24 +277,25 @@ class DataHandler:
             erase_index_dict, num_match = __condition(header_list=[header], condition=float(-1))
             __append(erase_index_dict, num_match)
 
-        # 피 검사 데이터가 많이 없는 경우
-        for header in ["AJ", "AZ"]:
-            erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
-            __append(erase_index_dict, num_match)
-
-            erase_index_dict, num_match = __condition(header_list=[header], condition=".")
-            __append(erase_index_dict, num_match)
-
-            erase_index_dict, num_match = __condition(header_list=[header], condition="none")
-            __append(erase_index_dict, num_match)
+        # # 피 검사 데이터가 많이 없는 경우
+        # for header in ["AJ", "AZ"]:
+        #     erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
+        #     __append(erase_index_dict, num_match)
+        #
+        #     erase_index_dict, num_match = __condition(header_list=[header], condition=".")
+        #     __append(erase_index_dict, num_match)
+        #
+        #     erase_index_dict, num_match = __condition(header_list=[header], condition="none")
+        #     __append(erase_index_dict, num_match)
 
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
 
-        # print("num of", len(erase_index_list), "data is excepted!\n")
+        # set target
+        __set_column_target()
 
-        return sorted(erase_index_list, reverse=False)
         # return list()
+        return sorted(erase_index_list, reverse=False)
 
     # DC : 퇴원형태
     def __set_labels(self):
@@ -302,6 +342,7 @@ class DataHandler:
 
     def __free(self):
         del self.__raw_data
+        del self.__target
         del self.__header_list
         del self.__head_dict
         del self.__erase_index_list
@@ -396,11 +437,12 @@ class DataHandler:
             save_dict[header_key] = raw_data_list
 
         df = pd.DataFrame(save_dict)
-        df.to_csv(DATA_PATH + LOAD_FILE, index=False)
+        df.to_csv(DATA_PATH + self.parsing_file_name, index=False)
 
-        print("Write csv file -", DATA_PATH + LOAD_FILE, "\n")
+        print("Write csv file -", DATA_PATH + self.parsing_file_name, "\n")
         self.__free()
 
     def load(self):
         self.__set_data(do_casting=True)
         self.__free()
+

@@ -35,7 +35,7 @@ class DataParser(DataHandler):
             elif column_of_type == "diagnosis":
                 self.__parsing_diagnosis(header, data_dict)
 
-        # super().parsing()
+        super().parsing()
 
     def save(self):
         super().save()
@@ -236,6 +236,7 @@ class DataParser(DataHandler):
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)
+            _w = _w[1:-1]
 
             if _w:
                 return _w
@@ -258,7 +259,6 @@ class DataParser(DataHandler):
 
                 f = re.findall('blood1,2', __w)
 
-                # print(f, __w)
                 if f:
                     f = f[0].split(',')
                     f = f[0] + '_blood' + f[1] + '_'
@@ -273,14 +273,12 @@ class DataParser(DataHandler):
 
             _w = __process_blood(_w)
 
-            #
             _w = re.sub("\([\d\D]{2,}\)", '', _w)
             _w = re.sub('[&,:]', '', _w)
             _w = re.sub('[-/>]', '_', _w)
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)
-
             _w = _w[1:-1]
 
             if len(_w) <= 1:
@@ -360,7 +358,6 @@ class DataParser(DataHandler):
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)
-
             _w = _w[1:-1]
 
             if len(_w) <= 1:
@@ -370,7 +367,6 @@ class DataParser(DataHandler):
             else:
                 return "nan"
 
-        # print(header)
         for data in sorted(data_dict):
             positions = data_dict[data]
             self.__modify_dict(header, positions[1], __parsing(data))
