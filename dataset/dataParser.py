@@ -141,6 +141,9 @@ class DataParser(DataHandler):
             _w = _w.replace(',_', '_')
             _w = _w.replace('._', '_')
             _w = _w.replace('-', '_')
+
+            # concat token '_'
+            _w = re.sub('[_]+', '_', _w)
             _w = _w[1:-1]
 
             if _w:
@@ -160,8 +163,9 @@ class DataParser(DataHandler):
                 f = re.findall('_[a-z]_' + colon_or_cell + '_', __w)
 
                 if f:
-                    f = '-'.join(f[0].split('_'))
-                    return re.sub('_[a-z]_' + colon_or_cell + '_', '_' + f[1:], __w)
+                    f = f[0].split('_')
+                    f = "_" + f[1] + "-" + f[2] + "_"
+                    return re.sub('_[a-z]_' + colon_or_cell + '_', f, __w)
                 else:
                     return __w
 
@@ -217,8 +221,9 @@ class DataParser(DataHandler):
             _w = _w.replace('_cervic_', '_cervical_')
             _w = _w.replace('_gist_', '_gastro_intestinal_stromal_tumors_')
             _w = _w.replace('_cholangiocarcinoma_', '_cholangio_carcinoma_')
-            _w = re.sub('_(with|without|&|of|or|and)_', '_', _w)
-
+            _w = _w.replace('/nsclc', 'nsclc')
+            _w = _w.replace('/bladder', 'bladder')
+            _w = re.sub('_(with|without|&|of|or|and|from)_', '_', _w)
             _w = __process_under_bar(_w, "colon")
             _w = __process_under_bar(_w, "cell")
 
@@ -275,7 +280,10 @@ class DataParser(DataHandler):
 
             _w = re.sub("\([\d\D]{2,}\)", '', _w)
             _w = re.sub('[&,:]', '', _w)
-            _w = re.sub('[-/>]', '_', _w)
+            _w = _w.replace('->', '_')
+            _w = _w.replace('/', '_')
+            _w = _w.replace('_-_', '_')
+            _w = _w.replace('-.', '')
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)
@@ -353,8 +361,9 @@ class DataParser(DataHandler):
             _w = __process_stage_and_type(_w, 'type')
             _w = __process_slash(_w)
 
-            _w = re.sub('[&.>]', '', _w)
-            _w = re.sub('_(with|without|of|or|and)_', '_', _w)
+            _w = re.sub('[&.>?]', '', _w)
+            _w = re.sub('_(with|without|of|or|from|and)_', '_', _w)
+            _w = _w.replace('-_', '_')
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)

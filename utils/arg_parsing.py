@@ -28,6 +28,7 @@ COLUMN_TARGET_NAME = str()
 READ_FILE = "dataset.csv"
 SAVE_FILE = "dataset_parsing.csv"
 
+
 if args.input:
     READ_FILE = args.input
 
@@ -47,8 +48,8 @@ if args.target:
     else:
         COLUMN_TARGET = False
 
-if args.output:
-    SAVE_FILE = args.output
-
     if COLUMN_TARGET:
         SAVE_FILE = SAVE_FILE.split(".csv")[0] + "_" + COLUMN_TARGET_NAME + ".csv"
+
+if args.output:
+    SAVE_FILE = args.output
