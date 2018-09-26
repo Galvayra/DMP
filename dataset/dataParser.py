@@ -1,11 +1,17 @@
 from DMP.dataset.dataHandler import DataHandler
 import math
 import re
+from DMP.utils.arg_parsing import SAVE_FILE, COLUMN_TARGET, COLUMN_TARGET_NAME
 
 
 class DataParser(DataHandler):
     def __init__(self, data_file, is_reverse=False):
-        super().__init__(data_file, is_reverse, do_parsing=True)
+        if COLUMN_TARGET_NAME:
+            print("The Target is", COLUMN_TARGET_NAME, "\n\n")
+        else:
+            print("The Target is None\n\n")
+
+        super().__init__(data_file, column_target=COLUMN_TARGET, is_reverse=is_reverse, do_parsing=True)
 
     def parsing(self):
 
@@ -38,7 +44,7 @@ class DataParser(DataHandler):
         super().parsing()
 
     def save(self):
-        super().save()
+        super().save(SAVE_FILE)
 
     @staticmethod
     def __init_data_dict(data_lines):

@@ -3,14 +3,13 @@ import pandas as pd
 import math
 import re
 from .variables import *
-from DMP.utils.arg_parsing import SAVE_FILE, COLUMN_TARGET, COLUMN_TARGET_NAME
 
 NOT_HAVE_SYMPTOM = 2
 
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, is_reverse=False, do_parsing=False):
+    def __init__(self, data_file, column_target=False, is_reverse=False, do_parsing=False):
         try:
             file_name = DATA_PATH + data_file
             print("Read csv file -", file_name, "\n\n")
@@ -22,11 +21,7 @@ class DataHandler:
         if is_reverse:
             print("make reverse y labels!\n\n")
         self.__is_reverse = is_reverse
-
-        if COLUMN_TARGET_NAME:
-            print("The Target is", COLUMN_TARGET_NAME, "\n\n")
-        else:
-            print("The Target is None\n\n")
+        self.__column_target = column_target
 
         # header of data
         # [ 'C', 'E', .... 'CZ' ], E=4, CZ=103
@@ -62,6 +57,10 @@ class DataHandler:
     @property
     def is_reverse(self):
         return self.__is_reverse
+
+    @property
+    def column_target(self):
+        return self.__column_target
 
     @property
     def raw_data(self):
@@ -237,8 +236,8 @@ class DataHandler:
                     erase_index_list.append(index + POSITION_OF_ROW)
 
         def __set_column_target():
-            if COLUMN_TARGET:
-                for index, symptom in self.raw_data[self.head_dict[COLUMN_TARGET]].items():
+            if self.column_target:
+                for index, symptom in self.raw_data[self.head_dict[self.column_target]].items():
                     if symptom == NOT_HAVE_SYMPTOM:
                         erase_index_list.append(index + POSITION_OF_ROW)
 
@@ -409,7 +408,7 @@ class DataHandler:
 
         print("\n\n")
 
-    def save(self):
+    def save(self, save_file_name):
         def __apply_exception_in_raw_data(raw_data):
             _raw_data_list = list()
 
@@ -430,9 +429,9 @@ class DataHandler:
             save_dict[header_key] = raw_data_list
 
         df = pd.DataFrame(save_dict)
-        df.to_csv(DATA_PATH + SAVE_FILE, index=False)
+        df.to_csv(DATA_PATH + save_file_name, index=False)
 
-        print("Write csv file -", DATA_PATH + SAVE_FILE, "\n")
+        print("Write csv file -", DATA_PATH + save_file_name, "\n")
         self.__free()
 
     def load(self):

@@ -32,6 +32,7 @@ args = get_arguments()
 RATIO = 10
 NUM_FOLDS = 5
 IS_CLOSED = False
+USE_W2V = False
 
 READ_FILE = "dataset_parsing.csv"
 COLUMN_TARGET = str()
