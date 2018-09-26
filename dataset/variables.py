@@ -5,19 +5,17 @@ DATA_PATH = "dataset/"
 
 POSITION_OF_ROW = 2
 ID_COLUMN = "C"
+RR_COLUMN = "K"
+TEMP_COLUMN = "L"
 
 default_info_columns = {
-    "scalar": {
-        "0": ['E']
-    },
+    "scalar": ['E'],
     "class": ['F'],
     "id": [ID_COLUMN]
 }
 
 initial_info_columns = {
-    "scalar": {
-        "0": ["H", 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
-    },
+    "scalar": ["H", 'I', 'J', RR_COLUMN, TEMP_COLUMN, 'M', 'N', 'O', 'P'],
     "class": ['Q', 'R', 'S', 'T', 'U'],
     "symptom": ['G']
 }
@@ -28,24 +26,18 @@ past_history_columns = {
 }
 
 blood_count_columns = {
-    "scalar": {
-        "0": ['AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO']
-    }
+    "scalar": ['AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO']
 }
 
 blood_chemistry_columns = {
-    "scalar": {
-        "0": ['AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
-              'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP',
-              'BQ', 'BR', 'BS', 'BT']
-    },
+    "scalar": ['AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
+               'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK',
+               'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR', 'BS', 'BT'],
     "class": ['BU', 'BV', 'BW']
 }
 
 abga_columns = {
-    "scalar": {
-        "0": ['BX', 'BY', 'BZ', 'CA', 'CB', 'CC', 'CD']
-    }
+    "scalar": ['BX', 'BY', 'BZ', 'CA', 'CB', 'CC', 'CD']
 }
 
 culture_columns = {

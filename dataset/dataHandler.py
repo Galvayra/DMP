@@ -209,31 +209,26 @@ class DataHandler:
     def __init_erase_index_list(self):
 
         # header keys 조건이 모두 만족 할 때
-        def __condition(header_list, condition):
+        def __condition(header_key, condition):
             # header_keys = [self.head_dict[i] for i in header_list]
 
             _erase_index_dict = {i + POSITION_OF_ROW: 0 for i in range(self.x_data_count)}
 
-            for header_key in header_list:
-                for index, value in self.x_data_dict[header_key].items():
+            for index, value in self.x_data_dict[header_key].items():
 
-                    if condition == 0:
-                        if value == str(0) or value == str(0.0) or value == "nan":
-                            _erase_index_dict[index] += 1
-                    else:
-                        if value == str(condition):
-                            _erase_index_dict[index] += 1
+                if condition == 0:
+                    if value == str(0) or value == str(0.0) or value == "nan":
+                        _erase_index_dict[index] += 1
+                else:
+                    if value == str(condition):
+                        _erase_index_dict[index] += 1
 
-            return _erase_index_dict, len(header_list)
+            return _erase_index_dict
 
-        def __append(_erase_index_dict, _num_match, _individual=False):
+        def __append(_erase_index_dict):
             for index, _v in _erase_index_dict.items():
-                if _individual and _v >= _num_match:
-                    if index not in erase_index_list:
-                        erase_index_list.append(index)
-                elif not _individual and _v == _num_match:
-                    if index not in erase_index_list:
-                        erase_index_list.append(index)
+                if _v == 1 and index not in erase_index_list:
+                    erase_index_list.append(index)
 
         def __case_of_exception_in_symptom(header_key="G"):
             for index, symptom in self.raw_data[self.head_dict[header_key]].items():
@@ -248,23 +243,20 @@ class DataHandler:
                         erase_index_list.append(index + POSITION_OF_ROW)
 
         erase_index_list = list()
-        target_header_list = list()
-
-        for v in columns_dict["initial"]["scalar"].values():
-            for header in v:
-                target_header_list.append(header)
 
         # column_initial_scalar 중 공백 혹은 -1의 데이터 제거
-        for header in target_header_list:
-            erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
-            __append(erase_index_dict, num_match)
+        for header in columns_dict["initial"]["scalar"]:
+            __append(__condition(header_key=header, condition=float(0)))
+            __append(__condition(header_key=header, condition=float(-1)))
 
-            erase_index_dict, num_match = __condition(header_list=[header], condition=float(-1))
-            __append(erase_index_dict, num_match)
+        # erase which RR is 999 and TEMPERATURE is 99.9, 63.2
+        __append(__condition(header_key=RR_COLUMN, condition=float(999)))
+        __append(__condition(header_key=TEMP_COLUMN, condition=float(99.9)))
+        __append(__condition(header_key=TEMP_COLUMN, condition=float(63.2)))
 
         # # 피 검사 데이터가 많이 없는 경우
         # for header in ["AJ", "AZ"]:
-        #     erase_index_dict, num_match = __condition(header_list=[header], condition=float(0))
+        #     erase_index_dict, num_match = __condition(header_list=[header], condition=float(0)
         #     __append(erase_index_dict, num_match)
         #
         #     erase_index_dict, num_match = __condition(header_list=[header], condition=".")
@@ -329,10 +321,10 @@ class DataHandler:
     def get_type_of_column(column):
         for columns in columns_dict.values():
             for column_type, column_list in columns.items():
-                if type(column_list) is dict:
-                    for column_list_in_scalar in column_list.values():
-                        if column in column_list_in_scalar:
-                            return column_type
+                # if type(column_list) is dict:
+                #     for column_list_in_scalar in column_list.values():
+                #         if column in column_list_in_scalar:
+                #             return column_type
 
                 if column in column_list:
                     return column_type
