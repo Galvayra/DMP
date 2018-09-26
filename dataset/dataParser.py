@@ -370,6 +370,7 @@ class DataParser(DataHandler):
             _w = re.sub('[&.>?]', '', _w)
             _w = re.sub('_(with|without|of|or|from|and)_', '_', _w)
             _w = _w.replace('-_', '_')
+            _w = _w.replace(';', '_')
 
             # concat token '_'
             _w = re.sub('[_]+', '_', _w)

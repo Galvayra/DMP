@@ -4,7 +4,7 @@ import math
 import re
 from .variables import *
 
-NOT_HAVE_SYMPTOM = 2
+HAVE_SYMPTOM = 1
 
 
 # ### refer to reference file ###
@@ -43,7 +43,7 @@ class DataHandler:
         self.__do_parsing = do_parsing
         self.__do_set_data = False
 
-        if eliminate_target:
+        if eliminate_target and column_target:
             del self.x_data_dict[self.column_target]
 
             for class_of_column in list(self.columns_dict.keys()):
@@ -200,10 +200,10 @@ class DataHandler:
         self.do_set_data = True
 
     def __summary(self):
-        print("# of     all data set =", str(self.x_data_count).rjust(4),
-              "\t# of mortality =", self.y_data_count)
-        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(4),
-              "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
+        print("# of     all data set -", str(self.x_data_count).rjust(5),
+              "\t# of mortality -", str(self.y_data_count).rjust(5))
+        print("# of parsing data set -", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
+              "\t# of mortality -", str(self.counting_mortality(self.y_data)).rjust(5), "\n\n")
 
     def parsing(self):
 
@@ -258,7 +258,7 @@ class DataHandler:
         def __set_column_target():
             if self.column_target:
                 for index, symptom in self.raw_data[self.head_dict[self.column_target]].items():
-                    if symptom == NOT_HAVE_SYMPTOM:
+                    if not symptom == HAVE_SYMPTOM:
                         erase_index_list.append(index + POSITION_OF_ROW)
 
         erase_index_list = list()
@@ -303,36 +303,36 @@ class DataHandler:
             if self.do_parsing:
                 for i, value in enumerate(self.raw_data[header_key]):
                     if i + POSITION_OF_ROW not in self.erase_index_list:
-                        if value == 1:
-                            y_labels.append([0])
-                        else:
+                        if value == HAVE_SYMPTOM:
                             y_labels.append([1])
                             self.y_data_count += 1
-                    elif value == 1:
+                        else:
+                            y_labels.append([0])
+                    elif not value == HAVE_SYMPTOM:
                         self.y_data_count += 1
             else:
                 for i, value in enumerate(self.raw_data[header_key]):
-                    if value == 1:
-                        y_labels.append([0])
-                    else:
+                    if value == HAVE_SYMPTOM:
                         y_labels.append([1])
+                    else:
+                        y_labels.append([0])
         else:
             if self.do_parsing:
                 for i, value in enumerate(self.raw_data[header_key]):
                     if i + POSITION_OF_ROW not in self.erase_index_list:
-                        if value == 1:
+                        if value == HAVE_SYMPTOM:
                             y_labels.append([1])
                             self.y_data_count += 1
                         else:
                             y_labels.append([0])
-                    elif value == 1:
+                    elif value == HAVE_SYMPTOM:
                         self.y_data_count += 1
             else:
                 for i, value in enumerate(self.raw_data[header_key]):
-                    if value == 1:
-                        y_labels.append([0])
-                    else:
+                    if value == HAVE_SYMPTOM:
                         y_labels.append([1])
+                    else:
+                        y_labels.append([0])
 
         return y_labels
 
@@ -364,7 +364,7 @@ class DataHandler:
     def counting_mortality(data):
         count = 0
         for i in data:
-            if i == [1]:
+            if i == [HAVE_SYMPTOM]:
                 count += 1
 
         return count
