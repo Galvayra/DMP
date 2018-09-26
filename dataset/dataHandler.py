@@ -10,19 +10,23 @@ NOT_HAVE_SYMPTOM = 2
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, is_reverse=False):
-        # file name
-        file_name = DATA_PATH + data_file
-        print("Read csv file -", file_name, "\n\n")
+    def __init__(self, data_file, is_reverse=False, do_parsing=False):
+        try:
+            file_name = DATA_PATH + data_file
+            print("Read csv file -", file_name, "\n\n")
+            self.__raw_data = pd.read_csv(file_name)
+        except FileNotFoundError:
+            print("There is no file !!\n\n")
+            exit(-1)
 
         if is_reverse:
             print("make reverse y labels!\n\n")
-
-        print("The Target is", COLUMN_TARGET_NAME, "\n\n")
-
         self.__is_reverse = is_reverse
-        # read csv file
-        self.__raw_data = pd.read_csv(file_name)
+
+        if COLUMN_TARGET_NAME:
+            print("The Target is", COLUMN_TARGET_NAME, "\n\n")
+        else:
+            print("The Target is None\n\n")
 
         # header of data
         # [ 'C', 'E', .... 'CZ' ], E=4, CZ=103
@@ -39,14 +43,16 @@ class DataHandler:
         # a dictionary of data
         # { header: a dictionary of data }
         self.x_data_dict = self.__init_x_data_dict()
+        self.__do_parsing = do_parsing
 
-        # except for data which is not necessary
-        # [ position 1, ... position n ]
-        self.__erase_index_list = self.__init_erase_index_list()
+        if do_parsing:
+            # except for data which is not necessary
+            # [ position 1, ... position n ]
+            self.__erase_index_list = self.__init_erase_index_list()
 
-        # print(self.__erase_index_list, len(self.__erase_index_list))
-        # print(len(self.__erase_index_list))
-        self.__apply_exception()
+            # print(self.__erase_index_list, len(self.__erase_index_list))
+            # print(len(self.__erase_index_list))
+            self.__apply_exception()
 
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
@@ -92,10 +98,6 @@ class DataHandler:
     @property
     def do_parsing(self):
         return self.__do_parsing
-
-    @do_parsing.setter
-    def do_parsing(self, do_parsing):
-        self.__do_parsing = do_parsing
 
     def __get_head_dict_key(self, index):
 
@@ -187,7 +189,6 @@ class DataHandler:
 
         self.__set_data()
         self.__summary()
-        self.do_parsing += 1
 
     def __apply_exception(self):
         for header in list(self.x_data_dict.keys()):
@@ -278,25 +279,39 @@ class DataHandler:
         header_key = self.head_dict["DA"]
 
         if self.__is_reverse:
-            for i, value in enumerate(self.raw_data[header_key]):
-                if i + POSITION_OF_ROW not in self.erase_index_list:
+            if self.do_parsing:
+                for i, value in enumerate(self.raw_data[header_key]):
+                    if i + POSITION_OF_ROW not in self.erase_index_list:
+                        if value == 1:
+                            y_labels.append([0])
+                        else:
+                            y_labels.append([1])
+                            self.y_data_count += 1
+                    elif value == 1:
+                        self.y_data_count += 1
+            else:
+                for i, value in enumerate(self.raw_data[header_key]):
                     if value == 1:
                         y_labels.append([0])
                     else:
                         y_labels.append([1])
-                        self.y_data_count += 1
-                elif value == 1:
-                    self.y_data_count += 1
         else:
-            for i, value in enumerate(self.raw_data[header_key]):
-                if i + POSITION_OF_ROW not in self.erase_index_list:
-                    if value == 1:
-                        y_labels.append([1])
+            if self.do_parsing:
+                for i, value in enumerate(self.raw_data[header_key]):
+                    if i + POSITION_OF_ROW not in self.erase_index_list:
+                        if value == 1:
+                            y_labels.append([1])
+                            self.y_data_count += 1
+                        else:
+                            y_labels.append([0])
+                    elif value == 1:
                         self.y_data_count += 1
-                    else:
+            else:
+                for i, value in enumerate(self.raw_data[header_key]):
+                    if value == 1:
                         y_labels.append([0])
-                elif value == 1:
-                    self.y_data_count += 1
+                    else:
+                        y_labels.append([1])
 
         return y_labels
 
@@ -315,10 +330,13 @@ class DataHandler:
         return None
 
     def __free(self):
+        if self.do_parsing:
+            del self.__erase_index_list
+
+        del self.__do_parsing
         del self.__raw_data
         del self.__header_list
         del self.__head_dict
-        del self.__erase_index_list
         del self.__x_data_count
         del self.__y_data_count
     

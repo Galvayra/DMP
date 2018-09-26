@@ -5,7 +5,7 @@ import re
 
 class DataParser(DataHandler):
     def __init__(self, data_file, is_reverse=False):
-        super().__init__(data_file, is_reverse)
+        super().__init__(data_file, is_reverse, do_parsing=True)
 
     def parsing(self):
 
