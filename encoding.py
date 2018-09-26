@@ -25,5 +25,4 @@ if __name__ == '__main__':
     # encoding data using dataHandler
     vectorMaker = VectorMaker(dataHandler)
     vectorMaker.encoding()
-
-    # vectorMaker.dump()
+    vectorMaker.dump()

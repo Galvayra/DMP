@@ -11,17 +11,19 @@ NOT_HAVE_SYMPTOM = 2
 class DataHandler:
     def __init__(self, data_file, column_target=False, is_reverse=False, do_parsing=False):
         try:
-            file_name = DATA_PATH + data_file
-            print("Read csv file -", file_name, "\n\n")
-            self.__raw_data = pd.read_csv(file_name)
+            self.__file_name = data_file
+            print("Read csv file -", DATA_PATH + self.file_name, "\n\n")
+            self.__raw_data = pd.read_csv(DATA_PATH + self.file_name)
         except FileNotFoundError:
             print("There is no file !!\n\n")
             exit(-1)
 
         if is_reverse:
             print("make reverse y labels!\n\n")
+
         self.__is_reverse = is_reverse
         self.__column_target = column_target
+        self.__columns_dict = columns_dict
 
         # header of data
         # [ 'C', 'E', .... 'CZ' ], E=4, CZ=103
@@ -55,12 +57,20 @@ class DataHandler:
         self.y_data = self.__set_labels()
 
     @property
+    def file_name(self):
+        return self.__file_name
+
+    @property
     def is_reverse(self):
         return self.__is_reverse
 
     @property
     def column_target(self):
         return self.__column_target
+
+    @property
+    def columns_dict(self):
+        return self.__columns_dict
 
     @property
     def raw_data(self):

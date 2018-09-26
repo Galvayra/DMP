@@ -1,16 +1,28 @@
 import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
-from .variables import DUMP_FILE, DUMP_PATH
 from collections import OrderedDict
+from .variables import DUMP_FILE, DUMP_PATH
 import json
 
 
 class VectorMaker:
     # must using DataParser or DataHandler
-    # dataHandler.x = {}
     def __init__(self, data_handler):
         self.dataHandler = data_handler
-        self.vector_list = list()
+        self.__vector_list = list()
+        self.__file_name = self.dataHandler.file_name.split('.')[0]
+
+    @property
+    def file_name(self):
+        return self.__file_name
+
+    @property
+    def vector_list(self):
+        return self.__vector_list
+
+    @vector_list.setter
+    def vector_list(self, vector_list):
+        self.__vector_list = vector_list
 
     def encoding(self):
         def __init_vector_dict():
@@ -42,20 +54,22 @@ class VectorMaker:
 
             return x_dict
 
-        # copy DataHandler to local variables
-        x_data_dict = self.dataHandler.x_data_dict
-        y_data = self.dataHandler.y_data
+        # # copy DataHandler to local variables
+        # x_data_dict = self.dataHandler.x_data_dict
+        # y_data = self.dataHandler.y_data
 
-        self.dataHandler.show_type_of_columns()
+        # self.dataHandler.show_type_of_columns()
 
         # for header, vector_list in self.dataHandler.x_data_dict.items():
         #     print(header)
         #
 
+        # init encoder and fit it
+        my_encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
+        my_encoder.encoding()
+        my_encoder.fit2(op.NUM_FOLDS)
 
-        # # init encoder
-        # my_encoder = MyOneHotEncoder(w2v=op.USE_W2V)
-        # # my_encoder.encoding(x_data_dict)
+        self.vector_list = my_encoder.vector
 
         # # k-fold validation
         # if op.NUM_FOLDS > 1:
@@ -79,18 +93,17 @@ class VectorMaker:
         # # one fold
         # else:
         #     subset_size = int(len(y_data) / op.RATIO)
-        #
         #     y_train = y_data[subset_size:]
         #     y_test = y_data[:subset_size]
-        #     x_train = my_encoder.fit(__set_x_data_dict(is_manual=True), len(y_train))
-        #     # my_encoder.show_vectors(__set_x_data_dict(is_manual=True), "AD")
+        #     x_train = my_encoder.fit2(__set_x_data_dict(is_manual=True), len(y_train))
+        #     my_encoder.show_vectors(__set_x_data_dict(is_manual=True), "AD")
         #
-        #     x_test = my_encoder.fit(__set_x_data_dict(is_manual=True, is_test=True), len(y_test))
-        #     # my_encoder.show_vectors(__set_x_data_dict(is_manual=True, is_test=True), "AD")
+        #     x_test = my_encoder.fit2(__set_x_data_dict(is_manual=True, is_test=True), len(y_test))
+        #     my_encoder.show_vectors(__set_x_data_dict(is_manual=True, is_test=True), "AD")
         #
         #     self.vector_list.append(__init_vector_dict())
 
-        # del self.dataHandler
+        del self.dataHandler
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):
@@ -121,12 +134,12 @@ class VectorMaker:
             json.dump(self.vector_list, outfile, indent=4)
             print("\nsuccess make dump file! - file name is", file_name)
 
-        if do_show:
-            for i, data in enumerate(self.vector_list):
-                print()
-                print("\nData Set", i+1)
-                print("Train total count -", str(len(self.vector_list[i]["x_train"]["merge"])).rjust(4),
-                      "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_train"])).rjust(4))
-                print("Test  total count -", str(len(self.vector_list[i]["x_test"]["merge"])).rjust(4),
-                      "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_test"])).rjust(4))
-            print()
+        # if do_show:
+        #     for i, data in enumerate(self.vector_list):
+        #         print()
+        #         print("\nData Set", i+1)
+        #         print("Train total count -", str(len(self.vector_list[i]["x_train"]["merge"])).rjust(4),
+        #               "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_train"])).rjust(4))
+        #         print("Test  total count -", str(len(self.vector_list[i]["x_test"]["merge"])).rjust(4),
+        #               "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_test"])).rjust(4))
+        #     print()

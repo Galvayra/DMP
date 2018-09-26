@@ -25,20 +25,20 @@ class DataParser(DataHandler):
         #
 
         for header in list(self.x_data_dict.keys()):
-            column_of_type = self.get_type_of_column(header)
+            type_of_column = self.get_type_of_column(header)
             data_dict = self.__init_data_dict(self.x_data_dict[header])
 
-            if column_of_type == "scalar":
+            if type_of_column == "scalar":
                 self.__parsing_scalar(header, data_dict)
-            elif column_of_type == "class":
+            elif type_of_column == "class":
                 self.__parsing_class(header, data_dict)
-            elif column_of_type == "symptom":
+            elif type_of_column == "symptom":
                 self.__parsing_symptom(header, data_dict)
-            elif column_of_type == "mal_type":
+            elif type_of_column == "mal_type":
                 self.__parsing_mal_type(header, data_dict)
-            elif column_of_type == "word":
+            elif type_of_column == "word":
                 self.__parsing_word(header, data_dict)
-            elif column_of_type == "diagnosis":
+            elif type_of_column == "diagnosis":
                 self.__parsing_diagnosis(header, data_dict)
 
         super().parsing()
