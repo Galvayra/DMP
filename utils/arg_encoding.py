@@ -29,7 +29,7 @@ def get_arguments():
 
 args = get_arguments()
 
-RATIO = 10
+RATIO = 5
 NUM_FOLDS = 5
 IS_CLOSED = False
 USE_W2V = False
