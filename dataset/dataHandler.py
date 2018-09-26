@@ -44,6 +44,7 @@ class DataHandler:
         # { header: a dictionary of data }
         self.x_data_dict = self.__init_x_data_dict()
         self.__do_parsing = do_parsing
+        self.__do_set_data = False
 
         if do_parsing:
             # except for data which is not necessary
@@ -57,7 +58,6 @@ class DataHandler:
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
         self.y_data = self.__set_labels()
-        self.__do_parsing = 0
 
     @property
     def is_reverse(self):
@@ -98,6 +98,14 @@ class DataHandler:
     @property
     def do_parsing(self):
         return self.__do_parsing
+
+    @property
+    def do_set_data(self):
+        return self.__do_set_data
+
+    @do_set_data.setter
+    def do_set_data(self, do_set_data):
+        self.__do_set_data = do_set_data
 
     def __get_head_dict_key(self, index):
 
@@ -170,10 +178,12 @@ class DataHandler:
             else:
                 self.x_data_dict[header] = self.__get_data_list(header)
 
+        self.do_set_data = True
+
     def __summary(self):
-        print("# of     all data set =", str(self.x_data_count).rjust(5),
+        print("# of     all data set =", str(self.x_data_count).rjust(4),
               "\t# of mortality =", self.y_data_count)
-        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
+        print("# of parsing data set =", str(self.x_data_count - len(self.erase_index_list)).rjust(4),
               "\t# of mortality =", self.counting_mortality(self.y_data), "\n\n")
 
     def parsing(self):
@@ -270,7 +280,7 @@ class DataHandler:
         __set_column_target()
 
         # return list()
-        return sorted(erase_index_list, reverse=False)
+        return sorted(list(set(erase_index_list)), reverse=False)
 
     # DC : 퇴원형태
     def __set_labels(self):
@@ -333,7 +343,6 @@ class DataHandler:
         if self.do_parsing:
             del self.__erase_index_list
 
-        del self.__do_parsing
         del self.__raw_data
         del self.__header_list
         del self.__head_dict
@@ -351,7 +360,8 @@ class DataHandler:
 
     # show type of columns
     def show_type_of_columns(self):
-        if not self.do_parsing:
+
+        if not self.do_set_data:
             for header, data_lines in self.x_data_dict.items():
                 type_dict = {"total": 0}
 

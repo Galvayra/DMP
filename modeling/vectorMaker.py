@@ -46,7 +46,7 @@ class VectorMaker:
         x_data_dict = self.dataHandler.x_data_dict
         y_data = self.dataHandler.y_data
 
-        # self.dataHandler.show_type_of_columns()
+        self.dataHandler.show_type_of_columns()
 
         # for header, vector_list in self.dataHandler.x_data_dict.items():
         #     print(header)
