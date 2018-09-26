@@ -91,7 +91,7 @@ class DataParser(DataHandler):
                 data = float(data)
             except ValueError:
                 # data is Null, even if data is existed
-                if data == "." or data == "-":
+                if data == "." or data == "-" or data == "..":
                     self.__modify_dict(header, positions[1], "nan")
                 # parsing error    ex) "+++    5000" -> "+++5000"
                 else:
