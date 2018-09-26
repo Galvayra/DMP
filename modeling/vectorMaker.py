@@ -45,26 +45,6 @@ class VectorMaker:
 
             return vector_dict
 
-        def __set_x_data_dict(is_manual=False, is_test=False):
-            x_dict = dict()
-
-            if is_manual:
-                if is_test:
-                    for _k, _vector_list in x_data_dict.items():
-                        x_dict[_k] = _vector_list[:subset_size]
-                else:
-                    for _k, _vector_list in x_data_dict.items():
-                        x_dict[_k] = _vector_list[subset_size:]
-            else:
-                if is_test:
-                    for _k, _vector_list in x_data_dict.items():
-                        x_dict[_k] = _vector_list[i * subset_size:][:subset_size]
-                else:
-                    for _k, _vector_list in x_data_dict.items():
-                        x_dict[_k] = _vector_list[:i * subset_size] + _vector_list[(i + 1) * subset_size:]
-
-            return x_dict
-
         def __set_x_data(is_manual=False, is_test=False):
             x_data = copy.deepcopy(encoder.vector)
 
