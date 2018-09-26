@@ -22,17 +22,33 @@ def get_arguments():
 
 args = get_arguments()
 
-if not args.input:
-    READ_FILE = "dataset.csv"
-else:
+COLUMN_TARGET = False
+COLUMN_TARGET_NAME = str()
+
+READ_FILE = "dataset.csv"
+SAVE_FILE = "dataset_parsing.csv"
+
+if args.input:
     READ_FILE = args.input
 
-if not args.output:
-    LOAD_FILE = "dataset_parsing.csv"
-else:
-    LOAD_FILE = args.output
-
-if not args.target:
-    COLUMN_TARGET = str()
-else:
+if args.target:
     COLUMN_TARGET = args.target
+    COLUMN_TARGET_NAME = str()
+
+    if COLUMN_TARGET == "b":
+        COLUMN_TARGET_NAME = "bacteremia"
+        COLUMN_TARGET = "CR"
+    elif COLUMN_TARGET == "s":
+        COLUMN_TARGET_NAME = "sepsis"
+        COLUMN_TARGET = "CU"
+    elif COLUMN_TARGET == "p":
+        COLUMN_TARGET_NAME = "pneumonia"
+        COLUMN_TARGET = "CS"
+    else:
+        COLUMN_TARGET = False
+
+if args.output:
+    SAVE_FILE = args.output
+
+    if COLUMN_TARGET:
+        SAVE_FILE = SAVE_FILE.split(".csv")[0] + "_" + COLUMN_TARGET_NAME + ".csv"
