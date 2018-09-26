@@ -1,5 +1,5 @@
 import numpy as np
-import DeepPredict.arguments as op
+import DMP.utils.arg_training as op
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve, auc

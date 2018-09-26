@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import DeepPredict.arguments as op
+import DMP.utils.arg_training as op
 
 
 class MyPlot:
