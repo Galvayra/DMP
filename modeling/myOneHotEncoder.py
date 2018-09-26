@@ -55,11 +55,11 @@ class MyOneHotEncoder:
                 if not math.isnan(v):
                     scalar_list.append(v)
 
-            scalar_dict["min"] = scalar_list[0]
-            scalar_dict["max"] = scalar_list[-1]
+            scalar_dict["min"] = min(scalar_list)
+            scalar_dict["max"] = max(scalar_list)
             scalar_dict["div"] = float(scalar_dict["max"] - scalar_dict["min"])
 
-            # print("\n" + header)
+            # print("\n" + column)
             # # print(scalar_list)
             # print(scalar_dict)
             # print()
