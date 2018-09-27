@@ -2,9 +2,11 @@
 import pandas as pd
 import math
 import re
+import random
 from .variables import *
 
 HAVE_SYMPTOM = 1
+SEED = 444
 
 
 # ### refer to reference file ###
@@ -274,10 +276,10 @@ class DataHandler:
         __append(__condition(header_key=TEMP_COLUMN, condition=float(63.2)))
 
         # 피 검사 데이터가 많이 없는 경우
-        # for header in ["AJ", "AZ"]:
-        #     __append(__condition(header_key=header, condition=float(0)))
-        #     __append(__condition(header_key=header, condition="."))
-        #     __append(__condition(header_key=header, condition="none"))
+        for header in ["AJ", "AZ"]:
+            __append(__condition(header_key=header, condition=float(0)))
+            __append(__condition(header_key=header, condition="."))
+            __append(__condition(header_key=header, condition="none"))
 
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
@@ -441,6 +443,8 @@ class DataHandler:
             else:
                 raw_data_list = __apply_exception_in_raw_data(self.raw_data[header_key])
 
+            random.seed(SEED)
+            random.shuffle(raw_data_list)
             save_dict[header_key] = raw_data_list
 
         df = pd.DataFrame(save_dict)

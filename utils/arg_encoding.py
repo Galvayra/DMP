@@ -39,9 +39,6 @@ COLUMN_TARGET = str()
 USE_ID = str()
 FILE_VECTOR = str()
 
-if args.input:
-    READ_FILE = args.input
-
 if args.target:
     COLUMN_TARGET = args.target
 
@@ -54,6 +51,9 @@ if args.target:
     elif COLUMN_TARGET == "p":
         COLUMN_TARGET = "CS"
         READ_FILE = READ_FILE.split(".csv")[0] + "_pneumonia" + ".csv"
+
+if args.input:
+    READ_FILE = args.input
 
 if args.fold:
     try:

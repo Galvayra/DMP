@@ -68,4 +68,4 @@ columns_dict["abga"] = abga_columns
 columns_dict["culture"] = culture_columns
 columns_dict["influenza"] = influenza_columns
 columns_dict["ct"] = ct_columns
-columns_dict["f_diagnosis"] = final_diagnosis_columns
+# columns_dict["f_diagnosis"] = final_diagnosis_columns
