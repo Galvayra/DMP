@@ -8,11 +8,11 @@ def get_arguments():
                                                     "\n(default is vectors_dataset_parsing_{num_of_fold})"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
-                                                    "\nUseAge : python encoding.py -closed 1\n\n")
+                                                    "\nUseAge : python training.py -closed 1\n\n")
     parser.add_argument("-fold", "--fold", help="set a number of k-fold (default is 5)"
-                                                "\nUseAge : python encoding.py -fold 5\n\n")
+                                                "\nUseAge : python training.py -fold 5\n\n")
     parser.add_argument("-id", "--identify", help="set id for separating training sets (default is None)"
-                                                  "\nUseAge : python encoding.py -id string\n\n")
+                                                  "\nUseAge : python training.py -id string\n\n")
     parser.add_argument("-svm", "--svm", help="training use support vector machine (default is 0)"
                                               "\nUseAge : python training.py -svm 1 -w2v 1\n\n")
     # parser.add_argument("-w2v", "--word2v", help="using word2vec (default is 0)"

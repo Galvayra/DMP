@@ -7,10 +7,10 @@ def get_arguments():
     parser.add_argument("-input", "--input", help="set a name of input csv file"
                                                   "\ndefault is 'dataset_parsing'.csv"
                                                   "\nthe File will be loaded in dataset dictionary"
-                                                  "\nUseAge : python parsing.py -input 'Name'\n\n")
+                                                  "\nUseAge : python encoding.py -input 'Name'\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
                                                     "\ndefault is 'None'.csv "
-                                                    "\nUseAge : python parsing.py -target 'Symptom'\n\n")
+                                                    "\nUseAge : python encoding.py -target 'Symptom'\n\n")
     parser.add_argument("-fold", "--fold", help="set a number of k-fold (default is 5)"
                                                 "\nUseAge : python encoding.py -fold 5\n\n")
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
@@ -20,8 +20,8 @@ def get_arguments():
     # parser.add_argument("-w2v", "--word2v", help="using word2vec (default is 0)"
     #                                              "\nUseAge : python training.py -w2v 1 (True)"
     #                                              "\n         python training.py -w2v 0 (False)\n\n")
-    parser.add_argument("-train", "--train", help="set vector file name to train or predict (default is Null)"
-                                                  "\nUseAge : python training.py -train 'file_name'\n\n")
+    parser.add_argument("-output", "--output", help="set vector file name to train or predict (default is Null)"
+                                                    "\nUseAge : python encoding.py -output 'file_name'\n\n")
     _args = parser.parse_args()
 
     return _args
