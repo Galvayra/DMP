@@ -2,7 +2,6 @@
 SVM_KERNEL = "linear"
 NUM_HIDDEN_DIMENSION = 0
 RATIO_HIDDEN = 2
-LEARNING_RATE = 0.01
 
 TENSOR_PATH = "modeling/save/"
 

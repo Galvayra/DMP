@@ -85,7 +85,7 @@ if args.identify:
     USE_ID = args.identify + "#"
 
 if args.output:
-    FILE_VECTOR = args.output
+    FILE_VECTOR = args.output + "_" + str(NUM_FOLDS)
 
 # if not args.word2v:
 #     USE_W2V = False

@@ -273,16 +273,11 @@ class DataHandler:
         __append(__condition(header_key=TEMP_COLUMN, condition=float(99.9)))
         __append(__condition(header_key=TEMP_COLUMN, condition=float(63.2)))
 
-        # # 피 검사 데이터가 많이 없는 경우
+        # 피 검사 데이터가 많이 없는 경우
         # for header in ["AJ", "AZ"]:
-        #     erase_index_dict, num_match = __condition(header_list=[header], condition=float(0)
-        #     __append(erase_index_dict, num_match)
-        #
-        #     erase_index_dict, num_match = __condition(header_list=[header], condition=".")
-        #     __append(erase_index_dict, num_match)
-        #
-        #     erase_index_dict, num_match = __condition(header_list=[header], condition="none")
-        #     __append(erase_index_dict, num_match)
+        #     __append(__condition(header_key=header, condition=float(0)))
+        #     __append(__condition(header_key=header, condition="."))
+        #     __append(__condition(header_key=header, condition="none"))
 
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
