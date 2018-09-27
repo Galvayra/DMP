@@ -84,6 +84,9 @@ if args.closed:
 if args.identify:
     USE_ID = args.identify + "#"
 
+if args.output:
+    FILE_VECTOR = args.output
+
 # if not args.word2v:
 #     USE_W2V = False
 # else:
@@ -96,6 +99,3 @@ if args.identify:
 #         if USE_W2V != 1 and USE_W2V != 0:
 #             print("\nInput Error word2v option!\n")
 #             exit(-1)
-
-if args.train:
-    FILE_VECTOR = args.train
