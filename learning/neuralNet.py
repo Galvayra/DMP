@@ -168,8 +168,8 @@ class MyNeuralNetwork(MyPlot):
             # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=tf_y))
             cost_summ = tf.summary.scalar("cost", cost)
 
-        # train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
-        train_op = tf.train.GradientDescentOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
+        train_op = tf.train.AdamOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
+        # train_op = tf.train.GradientDescentOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
 
         # cut off
         predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT)

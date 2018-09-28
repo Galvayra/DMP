@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-import gensim.models.keyedvectors as word2vec
+# import gensim.models.keyedvectors as word2vec
 from .variables import *
 import math
 
@@ -111,9 +111,12 @@ class MyOneHotEncoder:
                 self.vector_dict[column] = __set_scalar_dict(self.x_data[column])
             elif type_of_column == "class":
                 self.vector_dict[column] = __set_class_dict(self.x_data[column])
-            else:
+            elif type_of_column == "symptom" or type_of_column == "mal_type" or \
+                    type_of_column == "word" or type_of_column == "diagnosis":
                 self.vector_dict[column] = __set_one_hot_dict(self.x_data[column])
 
+        exit(-1)
+        
     def __init_vector(self):
         # _x_vector_dict = OrderedDict()
         self.vector[KEY_NAME_OF_MERGE_VECTOR] = list()

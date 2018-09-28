@@ -23,4 +23,4 @@ class MyPlot:
     def show_plot(self):
         if op.DO_SHOW:
             self.my_plot.legend(loc="lower right")
-            plt.show()
+            # plt.show()
