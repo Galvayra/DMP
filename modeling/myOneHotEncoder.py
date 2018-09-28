@@ -115,8 +115,6 @@ class MyOneHotEncoder:
                     type_of_column == "word" or type_of_column == "diagnosis":
                 self.vector_dict[column] = __set_one_hot_dict(self.x_data[column])
 
-        exit(-1)
-        
     def __init_vector(self):
         # _x_vector_dict = OrderedDict()
         self.vector[KEY_NAME_OF_MERGE_VECTOR] = list()
