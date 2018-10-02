@@ -5,13 +5,13 @@ from DMP.utils.arg_parsing import SAVE_FILE, COLUMN_TARGET, COLUMN_TARGET_NAME
 
 
 class DataParser(DataHandler):
-    def __init__(self, data_file, is_reverse=False):
+    def __init__(self, data_file):
         if COLUMN_TARGET_NAME:
             print("The Target is", COLUMN_TARGET_NAME, "\n\n")
         else:
             print("The Target is None\n\n")
 
-        super().__init__(data_file, is_reverse=is_reverse, do_parsing=True, column_target=COLUMN_TARGET)
+        super().__init__(data_file, do_parsing=True, column_target=COLUMN_TARGET)
 
     def parsing(self):
 

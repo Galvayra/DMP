@@ -11,7 +11,7 @@ SEED = 444
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, is_reverse=False, do_parsing=False, column_target=False, eliminate_target=False):
+    def __init__(self, data_file, do_parsing=False, column_target=False, eliminate_target=False):
         try:
             self.__file_name = data_file
             print("Read csv file -", DATA_PATH + self.file_name, "\n\n")
@@ -20,10 +20,6 @@ class DataHandler:
             print("There is no file !!\n\n")
             exit(-1)
 
-        if is_reverse:
-            print("make reverse y labels!\n\n")
-
-        self.__is_reverse = is_reverse
         self.__column_target = column_target
         self.__columns_dict = columns_dict
 
@@ -75,10 +71,6 @@ class DataHandler:
     @property
     def file_name(self):
         return self.__file_name
-
-    @property
-    def is_reverse(self):
-        return self.__is_reverse
 
     @property
     def column_target(self):
@@ -312,40 +304,22 @@ class DataHandler:
 
         header_key = self.head_dict["DA"]
 
-        if self.is_reverse:
-            if self.do_parsing:
-                for i, value in enumerate(self.raw_data[header_key]):
-                    if i + POSITION_OF_ROW not in self.erase_index_list:
-                        if value == HAVE_SYMPTOM:
-                            y_labels.append([1])
-                            self.y_data_count += 1
-                        else:
-                            y_labels.append([0])
-                    elif not value == HAVE_SYMPTOM:
-                        self.y_data_count += 1
-            else:
-                for i, value in enumerate(self.raw_data[header_key]):
+        if self.do_parsing:
+            for i, value in enumerate(self.raw_data[header_key]):
+                if i + POSITION_OF_ROW not in self.erase_index_list:
                     if value == HAVE_SYMPTOM:
                         y_labels.append([1])
+                        self.y_data_count += 1
                     else:
                         y_labels.append([0])
+                elif value == HAVE_SYMPTOM:
+                    self.y_data_count += 1
         else:
-            if self.do_parsing:
-                for i, value in enumerate(self.raw_data[header_key]):
-                    if i + POSITION_OF_ROW not in self.erase_index_list:
-                        if value == HAVE_SYMPTOM:
-                            y_labels.append([1])
-                            self.y_data_count += 1
-                        else:
-                            y_labels.append([0])
-                    elif value == HAVE_SYMPTOM:
-                        self.y_data_count += 1
-            else:
-                for i, value in enumerate(self.raw_data[header_key]):
-                    if value == HAVE_SYMPTOM:
-                        y_labels.append([1])
-                    else:
-                        y_labels.append([0])
+            for i, value in enumerate(self.raw_data[header_key]):
+                if value == HAVE_SYMPTOM:
+                    y_labels.append([1])
+                else:
+                    y_labels.append([0])
 
         return y_labels
 
