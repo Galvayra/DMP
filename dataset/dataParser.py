@@ -24,7 +24,8 @@ class DataParser(DataHandler):
         # }
         #
 
-        for header in list(self.x_data_dict.keys()):
+        # for header in list(self.x_data_dict.keys()):
+        for header in self.header_list:
             type_of_column = self.get_type_of_column(header)
             data_dict = self.__init_data_dict(self.x_data_dict[header])
 

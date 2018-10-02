@@ -46,7 +46,7 @@ class VectorMaker:
             return vector_dict
 
         def __set_x_data(is_manual=False, is_test=False):
-            x_data = copy.deepcopy(encoder.vector)
+            x_data = copy.deepcopy(encoder.vector_matrix)
 
             if is_manual:
                 if is_test:

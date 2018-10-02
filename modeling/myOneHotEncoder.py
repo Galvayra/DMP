@@ -11,8 +11,10 @@ MIN_SCALING = 0.1
 # initial information & Past history 만을 이용하여 학습
 class MyOneHotEncoder:
     def __init__(self, data_handler, w2v=False):
-        self.vector = OrderedDict()
+        self.vector_matrix = OrderedDict()
+        self.__vector = OrderedDict()
         self.__vector_dict = dict()
+
         self.dataHandler = data_handler
         self.__x_data = self.dataHandler.x_data_dict
         self.__len_data = len(self.dataHandler.y_data)
@@ -25,6 +27,10 @@ class MyOneHotEncoder:
         # else:
         #     print("\nNot using Word2vec")
         # print("\n\n")
+
+    @property
+    def vector(self):
+        return self.__vector
 
     @property
     def vector_dict(self):
@@ -56,8 +62,7 @@ class MyOneHotEncoder:
                     scalar_list.append(v)
 
             scalar_dict["min"] = min(scalar_list)
-            scalar_dict["max"] = max(scalar_list)
-            scalar_dict["div"] = float(scalar_dict["max"] - scalar_dict["min"])
+            scalar_dict["dif"] = float(max(scalar_list) - scalar_dict["min"])
 
             # print("\n" + column)
             # # print(scalar_list)
@@ -117,17 +122,17 @@ class MyOneHotEncoder:
 
     def __init_vector(self):
         # _x_vector_dict = OrderedDict()
-        self.vector[KEY_NAME_OF_MERGE_VECTOR] = list()
+        self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR] = list()
 
         for _ in range(self.len_data):
-            self.vector[KEY_NAME_OF_MERGE_VECTOR].append(list())
+            self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR].append(list())
 
         # set X(number of rows) using rows_data
         for class_of_column in self.dataHandler.columns_dict:
-            self.vector[class_of_column] = list()
+            self.vector_matrix[class_of_column] = list()
 
             for _ in range(self.len_data):
-                self.vector[class_of_column].append(list())
+                self.vector_matrix[class_of_column].append(list())
 
     def fit(self):
         self.__init_vector()
@@ -139,8 +144,8 @@ class MyOneHotEncoder:
 
     def __vector_maker(self, class_of_column, column, type_of_column):
         def __set_scalar_vector():
-            minimum = self.vector_dict[column]["max"]
-            division = self.vector_dict[column]["div"]
+            differ = self.vector_dict[column]["dif"]
+            minimum = self.vector_dict[column]["min"]
 
             for index, value in enumerate(self.x_data[column]):
 
@@ -152,7 +157,7 @@ class MyOneHotEncoder:
                 # The value is NaN
                 if not math.isnan(value):
                     values[0] = 1.0
-                    values[1] = (value - minimum + MIN_SCALING) / (division + MIN_SCALING)
+                    values[1] = (value - minimum) / differ
 
                 __set_vector(index, values)
 
@@ -178,8 +183,8 @@ class MyOneHotEncoder:
 
         def __set_vector(index, vector):
             for v in vector:
-                self.vector[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
-                self.vector[class_of_column][index].append(v)
+                self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
+                self.vector_matrix[class_of_column][index].append(v)
 
         if type_of_column == "id":
             return

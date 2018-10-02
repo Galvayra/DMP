@@ -27,9 +27,9 @@ class DataHandler:
         self.__column_target = column_target
         self.__columns_dict = columns_dict
 
-        # header of data
-        # [ 'C', 'E', .... 'CZ' ], E=4, CZ=103
-        self.__header_list = self.__set_header_list(start=4, end=103)
+        # header of data using column_dict in variables.py
+        # [ 'C', 'E', .... 'CZ' ]
+        self.header_list = self.__set_header_list()
 
         # a dictionary of header
         # { header: name of column }
@@ -41,11 +41,12 @@ class DataHandler:
 
         # a dictionary of data
         # { header: a dictionary of data }
-        self.x_data_dict = self.__init_x_data_dict()
+        self.x_data_dict = self.__set_data_dict()
         self.__do_parsing = do_parsing
         self.__do_set_data = False
 
-        if eliminate_target and column_target:
+        # eliminate target column
+        if eliminate_target and column_target and column_target in self.header_list:
             del self.x_data_dict[self.column_target]
 
             for class_of_column in list(self.columns_dict.keys()):
@@ -53,7 +54,7 @@ class DataHandler:
                     if self.column_target in self.columns_dict[class_of_column][type_of_column]:
                         self.columns_dict[class_of_column][type_of_column].remove(self.column_target)
 
-            # print(self.column_target)#, self.x_data_dict[]
+            print(self.column_target)#, self.x_data_dict[]
 
         if do_parsing:
             # except for data which is not necessary
@@ -67,6 +68,9 @@ class DataHandler:
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
         self.y_data = self.__set_labels()
+
+        # print(self.header_list)
+        # print(self.x_data_dict.keys())
 
     @property
     def file_name(self):
@@ -87,10 +91,6 @@ class DataHandler:
     @property
     def raw_data(self):
         return self.__raw_data
-
-    @property
-    def header_list(self):
-        return self.__header_list
 
     @property
     def head_dict(self):
@@ -149,23 +149,27 @@ class DataHandler:
 
         return key
 
-    def __set_header_list(self, start, end):
-        # C is a identify number of patients
-        header_list = [ID_COLUMN]
-        header_list += [self.__get_head_dict_key(where) for where in range(start, end + 1)]
+    # initialize header list using columns_dict in variables.py
+    def __set_header_list(self):
+        header_list = list()
+
+        for _ in self.columns_dict.values():
+            for __ in _.values():
+                for column in __:
+                    header_list.append(column)
 
         return header_list
 
-    def __init_x_data_dict(self):
-
+    def __set_data_dict(self):
         # {
-        #   column: { row:data }
+        #   column: { row: data }
         #   C: { 2: C_1, 3: C_2, ... n: C_n }       ## ID
         #   E: { .... }                             ## Age
         #   ...
         #   CZ: { .... }                            ## Final Diagnosis
         # }
         #
+
         x_data_dict = dict()
 
         for header in self.header_list:
@@ -186,18 +190,33 @@ class DataHandler:
 
         return x_data_dict
 
-    def __get_data_list(self, header, do_casting=False):
-        if do_casting:
-            return [float(self.x_data_dict[header][index]) for index in list(self.x_data_dict[header].keys())]
-        else:
-            return [self.x_data_dict[header][index] for index in list(self.x_data_dict[header].keys())]
+    def __reset_data_dict(self, do_casting=False):
+        # {
+        #   column: [ data_1, ... , data_n ]
+        #   C: [ C_1, C_2, ... , C_n ]          ## ID
+        #   E: [ .... ]                         ## Age
+        #   ...
+        #   CZ: [ .... ]                        ## Final Diagnosis
+        # }
 
-    def __set_data(self, do_casting=False):
-        for header in list(self.x_data_dict.keys()):
-            if do_casting and (self.get_type_of_column(header) == "scalar" or self.get_type_of_column(header) == "id"):
-                self.x_data_dict[header] = self.__get_data_list(header, do_casting=True)
+        def __dict2list(_do_casting=False):
+            #
+            # {
+            #   column: { row: data }   --->   column: [ data_1, ..., data_n ]
+            # }
+            #
+
+            if _do_casting:
+                return [float(self.x_data_dict[header][index]) for index in self.x_data_dict[header]]
             else:
-                self.x_data_dict[header] = self.__get_data_list(header)
+                return [self.x_data_dict[header][index] for index in self.x_data_dict[header]]
+
+        # for header in list(self.x_data_dict.keys()):
+        for header in self.header_list:
+            if do_casting and (self.get_type_of_column(header) == "scalar" or self.get_type_of_column(header) == "id"):
+                self.x_data_dict[header] = __dict2list(do_casting)
+            else:
+                self.x_data_dict[header] = __dict2list()
 
         self.do_set_data = True
 
@@ -209,20 +228,13 @@ class DataHandler:
 
     def parsing(self):
 
-        # {
-        #   column: [ data_1, ... , data_n ]
-        #   C: [ C_1, C_2, ... , C_n ]          ## ID
-        #   E: [ .... ]                         ## Age
-        #   ...
-        #   CZ: [ .... ]                        ## Final Diagnosis
-        # }
-        #
-
-        self.__set_data()
+        # set data
+        self.__reset_data_dict()
         self.__summary()
 
     def __apply_exception(self):
-        for header in list(self.x_data_dict.keys()):
+        # for header in list(self.x_data_dict.keys()):
+        for header in self.header_list:
             for index in list(self.x_data_dict[header].keys()):
                 if index in self.erase_index_list:
                     del self.x_data_dict[header][index]
@@ -231,20 +243,21 @@ class DataHandler:
 
         # header keys 조건이 모두 만족 할 때
         def __condition(header_key, condition):
-            # header_keys = [self.head_dict[i] for i in header_list]
-
             _erase_index_dict = {i + POSITION_OF_ROW: 0 for i in range(self.x_data_count)}
 
-            for index, value in self.x_data_dict[header_key].items():
+            try:
+                for index, value in self.x_data_dict[header_key].items():
 
-                if condition == 0:
-                    if value == str(0) or value == str(0.0) or value == "nan":
-                        _erase_index_dict[index] += 1
-                else:
-                    if value == str(condition):
-                        _erase_index_dict[index] += 1
-
-            return _erase_index_dict
+                    if condition == 0:
+                        if value == str(0) or value == str(0.0) or value == "nan":
+                            _erase_index_dict[index] += 1
+                    else:
+                        if value == str(condition):
+                            _erase_index_dict[index] += 1
+            except KeyError:
+                return dict()
+            else:
+                return _erase_index_dict
 
         def __append(_erase_index_dict):
             for index, _v in _erase_index_dict.items():
@@ -265,10 +278,13 @@ class DataHandler:
 
         erase_index_list = list()
 
-        # column_initial_scalar 중 공백 혹은 -1의 데이터 제거
-        for header in columns_dict["initial"]["scalar"]:
-            __append(__condition(header_key=header, condition=float(0)))
-            __append(__condition(header_key=header, condition=float(-1)))
+        try:
+            # column_initial_scalar 중 공백 혹은 -1의 데이터 제거
+            for header in columns_dict["initial"]["scalar"]:
+                __append(__condition(header_key=header, condition=float(0)))
+                __append(__condition(header_key=header, condition=float(-1)))
+        except KeyError:
+            pass
 
         # erase which RR is 999 and TEMPERATURE is 99.9, 63.2
         __append(__condition(header_key=RR_COLUMN, condition=float(999)))
@@ -333,15 +349,9 @@ class DataHandler:
 
         return y_labels
 
-    @staticmethod
-    def get_type_of_column(column):
-        for columns in columns_dict.values():
+    def get_type_of_column(self, column):
+        for columns in self.columns_dict.values():
             for column_type, column_list in columns.items():
-                # if type(column_list) is dict:
-                #     for column_list_in_scalar in column_list.values():
-                #         if column in column_list_in_scalar:
-                #             return column_type
-
                 if column in column_list:
                     return column_type
 
@@ -352,7 +362,6 @@ class DataHandler:
             del self.__erase_index_list
 
         del self.__raw_data
-        del self.__header_list
         del self.__head_dict
         del self.__x_data_count
         del self.__y_data_count
@@ -426,7 +435,8 @@ class DataHandler:
         print("\n\n")
 
     def save(self, save_file_name):
-        def __apply_exception_in_raw_data(raw_data):
+        # copy raw data to raw data list except for erase index
+        def __get_copied_raw_data(raw_data):
             _raw_data_list = list()
 
             for index in list(raw_data.keys()):
@@ -441,7 +451,7 @@ class DataHandler:
             if header in self.header_list:
                 raw_data_list = self.x_data_dict[header]
             else:
-                raw_data_list = __apply_exception_in_raw_data(self.raw_data[header_key])
+                raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
 
             random.seed(SEED)
             random.shuffle(raw_data_list)
@@ -454,5 +464,5 @@ class DataHandler:
         self.__free()
 
     def load(self):
-        self.__set_data(do_casting=True)
+        self.__reset_data_dict(do_casting=True)
         self.__free()

@@ -10,14 +10,16 @@ TEMP_COLUMN = "L"
 
 default_info_columns = {
     "scalar": ['E'],
-    "class": ['F'],
+    # "class": ['F'],
     "id": [ID_COLUMN]
 }
 
 initial_info_columns = {
-    "scalar": ["H", 'I', 'J', RR_COLUMN, TEMP_COLUMN, 'M', 'N', 'O', 'P'],
-    "class": ['Q', 'R', 'S', 'T', 'U'],
-    "symptom": ['G']
+    # "scalar": ["H", 'I', 'J', RR_COLUMN, TEMP_COLUMN, 'M', 'N', 'O', 'P'],
+    # "class": ['Q', 'R', 'S', 'T', 'U'],
+    "scalar": ["H"]
+    # "class": ['Q']
+    # "symptom": ['G']
 }
 
 past_history_columns = {
@@ -61,11 +63,11 @@ final_diagnosis_columns = {
 columns_dict = OrderedDict()
 columns_dict["default"] = default_info_columns
 columns_dict["initial"] = initial_info_columns
-columns_dict["history"] = past_history_columns
-columns_dict["b_count"] = blood_count_columns
-columns_dict["b_chemistry"] = blood_chemistry_columns
-columns_dict["abga"] = abga_columns
-columns_dict["culture"] = culture_columns
-columns_dict["influenza"] = influenza_columns
-columns_dict["ct"] = ct_columns
+# columns_dict["history"] = past_history_columns
+# columns_dict["b_count"] = blood_count_columns
+# columns_dict["b_chemistry"] = blood_chemistry_columns
+# columns_dict["abga"] = abga_columns
+# columns_dict["culture"] = culture_columns
+# columns_dict["influenza"] = influenza_columns
+# columns_dict["ct"] = ct_columns
 # columns_dict["f_diagnosis"] = final_diagnosis_columns
