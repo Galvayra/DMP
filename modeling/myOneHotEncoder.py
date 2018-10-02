@@ -5,7 +5,7 @@ from .variables import *
 import math
 
 DIMENSION_W2V = 300
-MIN_SCALING = 0.1
+MIN_SCALING = 0.01
 
 
 # initial information & Past history 만을 이용하여 학습
@@ -134,6 +134,13 @@ class MyOneHotEncoder:
             for _ in range(self.len_data):
                 self.vector_matrix[class_of_column].append(list())
 
+        # initialize vector
+        for column in self.x_data.keys():
+            self.vector[column] = list()
+
+            for _ in range(self.len_data):
+                self.vector[column].append(list())
+
     def fit(self):
         self.__init_vector()
 
@@ -154,10 +161,11 @@ class MyOneHotEncoder:
                 # if exist is 1 == The value is existed
                 values = [0.0, 0.0]
 
-                # The value is NaN
                 if not math.isnan(value):
                     values[0] = 1.0
-                    values[1] = (value - minimum) / differ
+
+                    # scaling value prevent ZeroDivError using MIN SCALING
+                    values[1] = (value - minimum + MIN_SCALING) / (differ + MIN_SCALING)
 
                 __set_vector(index, values)
 
@@ -185,6 +193,7 @@ class MyOneHotEncoder:
             for v in vector:
                 self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
                 self.vector_matrix[class_of_column][index].append(v)
+                self.vector[column][index].append(v)
 
         if type_of_column == "id":
             return
@@ -195,8 +204,9 @@ class MyOneHotEncoder:
         else:
             __set_one_hot_vector()
 
-    def show_vectors(self, x_data_dict, *columns):
-        for k in columns:
-            for data, data_vector in zip(x_data_dict[k], self.vector[k]):
-                print(str(data))
-                print(data_vector)
+    def show_vectors(self, *columns):
+        for i, column in enumerate(columns):
+            print("column " + str(i) + " -", column)
+            for data, data_vector in zip(self.x_data[column], self.vector[column]):
+                print(str(data).ljust(50), data_vector)
+            print("\n")
