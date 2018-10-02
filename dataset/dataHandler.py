@@ -27,9 +27,9 @@ class DataHandler:
         # [ 'C', 'E', .... 'CZ' ]
         self.header_list = self.__set_header_list()
 
-        # a dictionary of header
+        # a dictionary of header in raw data (csv file)
         # { header: name of column }
-        self.__head_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
+        self.__raw_header_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
 
         # a length of data
         self.__x_data_count = int()
@@ -83,8 +83,8 @@ class DataHandler:
         return self.__raw_data
 
     @property
-    def head_dict(self):
-        return self.__head_dict
+    def raw_header_dict(self):
+        return self.__raw_header_dict
 
     @property
     def erase_index_list(self):
@@ -150,6 +150,9 @@ class DataHandler:
 
         return header_list
 
+    def __get_raw_data(self, header):
+        return self.raw_data[self.raw_header_dict[header]]
+
     def __set_data_dict(self):
         # {
         #   column: { row: data }
@@ -163,10 +166,9 @@ class DataHandler:
         x_data_dict = dict()
 
         for header in self.header_list:
-            header_key = self.head_dict[header]
             x_data_dict[header] = dict()
 
-            for i, data in enumerate(self.raw_data[header_key]):
+            for i, data in enumerate(self.__get_raw_data(header)):
 
                 # all of data convert to string
                 if type(data) is int or type(data) is float:
@@ -201,7 +203,6 @@ class DataHandler:
             else:
                 return [self.x_data_dict[header][index] for index in self.x_data_dict[header]]
 
-        # for header in list(self.x_data_dict.keys()):
         for header in self.header_list:
             if do_casting and (self.get_type_of_column(header) == "scalar" or self.get_type_of_column(header) == "id"):
                 self.x_data_dict[header] = __dict2list(do_casting)
@@ -223,7 +224,6 @@ class DataHandler:
         self.__summary()
 
     def __apply_exception(self):
-        # for header in list(self.x_data_dict.keys()):
         for header in self.header_list:
             for index in list(self.x_data_dict[header].keys()):
                 if index in self.erase_index_list:
@@ -255,14 +255,14 @@ class DataHandler:
                     erase_index_list.append(index)
 
         def __case_of_exception_in_symptom(header_key="G"):
-            for index, symptom in self.raw_data[self.head_dict[header_key]].items():
+            for index, symptom in self.__get_raw_data(header_key).items():
                 re_symptom = re.findall(r"[가-힣]+", symptom)
                 if len(re_symptom) >= 1:
                     erase_index_list.append(index + POSITION_OF_ROW)
 
         def __set_column_target():
             if self.column_target:
-                for index, symptom in self.raw_data[self.head_dict[self.column_target]].items():
+                for index, symptom in self.__get_raw_data(self.column_target).items():
                     if not symptom == HAVE_SYMPTOM:
                         erase_index_list.append(index + POSITION_OF_ROW)
 
@@ -296,14 +296,13 @@ class DataHandler:
         # return list()
         return sorted(list(set(erase_index_list)), reverse=False)
 
-    # DC : 퇴원형태
+    # DA is a column for y labels
     def __set_labels(self):
         y_labels = list()
-
-        header_key = self.head_dict["DA"]
+        header = "DA"
 
         if self.do_parsing:
-            for i, value in enumerate(self.raw_data[header_key]):
+            for i, value in enumerate(self.__get_raw_data(header)):
                 if i + POSITION_OF_ROW not in self.erase_index_list:
                     if value == HAVE_SYMPTOM:
                         y_labels.append([1])
@@ -313,7 +312,7 @@ class DataHandler:
                 elif value == HAVE_SYMPTOM:
                     self.y_data_count += 1
         else:
-            for i, value in enumerate(self.raw_data[header_key]):
+            for i, value in enumerate(self.__get_raw_data(header)):
                 if value == HAVE_SYMPTOM:
                     y_labels.append([1])
                 else:
@@ -334,7 +333,7 @@ class DataHandler:
             del self.__erase_index_list
 
         del self.__raw_data
-        del self.__head_dict
+        del self.__raw_header_dict
         del self.__x_data_count
         del self.__y_data_count
     
@@ -419,7 +418,7 @@ class DataHandler:
 
         save_dict = OrderedDict()
 
-        for header, header_key in self.head_dict.items():
+        for header, header_key in self.raw_header_dict.items():
             if header in self.header_list:
                 raw_data_list = self.x_data_dict[header]
             else:
@@ -433,7 +432,6 @@ class DataHandler:
         df.to_csv(DATA_PATH + save_file_name, index=False)
 
         print("Write csv file -", DATA_PATH + save_file_name, "\n")
-        self.__free()
 
     def load(self):
         self.__reset_data_dict(do_casting=True)

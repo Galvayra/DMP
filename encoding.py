@@ -10,16 +10,12 @@ except ImportError:
 
 from DMP.modeling.vectorMaker import VectorMaker
 from DMP.dataset.dataHandler import DataHandler
-from DMP.utils.arg_encoding import *
+from DMP.utils.arg_encoding import READ_FILE, COLUMN_TARGET
 
 
 if __name__ == '__main__':
-    if USE_ID.startswith("reverse#"):
-        dataHandler = DataHandler(READ_FILE, is_reverse=True, column_target=COLUMN_TARGET, eliminate_target=True)
-    else:
-        dataHandler = DataHandler(READ_FILE, column_target=COLUMN_TARGET, eliminate_target=True)
-
     # loading data
+    dataHandler = DataHandler(READ_FILE, column_target=COLUMN_TARGET, eliminate_target=True)
     dataHandler.load()
 
     # encoding data using dataHandler

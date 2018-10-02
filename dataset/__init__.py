@@ -1,1 +1,1 @@
-__all__ = ['dataHandler', 'variables']
+__all__ = ['dataHandler', 'dataParser', 'variables']
