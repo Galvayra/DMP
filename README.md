@@ -26,11 +26,11 @@ step 2) Encoding Dataset to make vector (vectorization)
 
 *) intergrate Step 1&2, use a shell script
 
-*-1) do parsing then encoding
-Useage) ./build.sh --parsing 1 --all 1
+	*-1) do parsing then encoding
+	Useage) ./build.sh --parsing 1 --all 1
 
-*-2) do encoding k-fold of just specific symptoms 
-Useage) ./build.sh --fold 1
+	*-2) do encoding k-fold of just specific symptoms 
+	Useage) ./build.sh --fold 1
 
-*-3) If you want to make vector apply specific columns, annotate the lines in dataset/variables.py
-Useage) ./build.sh --id ID
+	*-3) If you want to make vector apply specific columns, annotate the lines in dataset/variables.py
+	Useage) ./build.sh --id ID
