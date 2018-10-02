@@ -41,7 +41,7 @@ class DataHandler:
         self.__do_parsing = do_parsing
         self.__do_set_data = False
 
-        # eliminate target column
+        # eliminate target column in column dict
         if eliminate_target and column_target and column_target in self.header_list:
             del self.x_data_dict[self.column_target]
 
@@ -49,8 +49,6 @@ class DataHandler:
                 for type_of_column in list(self.columns_dict[class_of_column].keys()):
                     if self.column_target in self.columns_dict[class_of_column][type_of_column]:
                         self.columns_dict[class_of_column][type_of_column].remove(self.column_target)
-
-            print(self.column_target)#, self.x_data_dict[]
 
         if do_parsing:
             # except for data which is not necessary
