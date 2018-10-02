@@ -1,8 +1,9 @@
 #/bin/bash
 
 parsing=0
-except=0
+id=""
 all=0
+fold=5
 
 . utils/parse_options.sh || echo "Can't find parse_options.sh" | exit 1
 
@@ -38,10 +39,10 @@ echo "============ Encoding ============"
 echo
 
 if [ $all -eq 1 ]; then
-	if [ $except -eq 0 ]; then
-		python encoding.py -fold 1 -output all
+	if [ $id == "" ]; then
+		python encoding.py -fold $fold -output all
 	else
-		python encoding.py -fold 1 -output all_+$except
+		python encoding.py -fold $fold -output all_$id
 	fi
 fi
 
@@ -49,28 +50,27 @@ echo
 echo "---------------------------------"
 echo
 
-if [ $except -eq 0 ]; then
-	python encoding.py -target s -fold 1 -input sepsis.csv -output sepsis
+if [ $id == "" ]; then
+	python encoding.py -target s -fold $fold -input sepsis.csv -output sepsis
 else
-	python encoding.py -target s -fold 1 -input sepsis.csv -output sepsis_+$except
+	python encoding.py -target s -fold $fold -input sepsis.csv -output sepsis_$id
 fi
 echo
 echo "---------------------------------"
 echo
 
-if [ $except -eq 0 ]; then
-	python encoding.py -target b -fold 1 -input bacteremia.csv -output bacteremia
+if [ $id == "" ]; then
+	python encoding.py -target b -fold $fold -input bacteremia.csv -output bacteremia
 else
-	python encoding.py -target b -fold 1 -input bacteremia.csv -output bacteremia_+$except
+	python encoding.py -target b -fold $fold -input bacteremia.csv -output bacteremia_$id
 fi
 echo
 echo "---------------------------------"
 echo
 
-if [ $except -eq 0 ]; then
-	python encoding.py -target p -fold 1 -input pneumonia.csv -output pneumonia
+if [ $id == "" ]; then
+	python encoding.py -target p -fold $fold -input pneumonia.csv -output pneumonia
 else
-	python encoding.py -target p -fold 1 -input pneumonia.csv -output pneumonia_+$except
+	python encoding.py -target p -fold $fold -input pneumonia.csv -output pneumonia_$id
 fi
-
 
