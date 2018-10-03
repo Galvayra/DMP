@@ -53,7 +53,7 @@ class MyTrain(MyNeuralNetwork):
 
             print(np.shape(x_train_np), np.shape(y_train_np))
             print(np.shape(x_test_np), np.shape(y_test_np))
-
+    
         start_time = time.time()
         self.init_plot()
 
