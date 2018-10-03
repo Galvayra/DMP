@@ -39,7 +39,7 @@ echo "============ Encoding ============"
 echo
 
 if [ $all -eq 1 ]; then
-	if [ $id == "" ]; then
+	if [ -n $id ]; then
 		python encoding.py -fold $fold -output all
 	else
 		python encoding.py -fold $fold -output all_$id
@@ -50,7 +50,7 @@ echo
 echo "---------------------------------"
 echo
 
-if [ $id == "" ]; then
+if [ -n $id ]; then
 	python encoding.py -target s -fold $fold -input sepsis.csv -output sepsis
 else
 	python encoding.py -target s -fold $fold -input sepsis.csv -output sepsis_$id
@@ -59,7 +59,7 @@ echo
 echo "---------------------------------"
 echo
 
-if [ $id == "" ]; then
+if [ -n $id ]; then
 	python encoding.py -target b -fold $fold -input bacteremia.csv -output bacteremia
 else
 	python encoding.py -target b -fold $fold -input bacteremia.csv -output bacteremia_$id
@@ -68,7 +68,7 @@ echo
 echo "---------------------------------"
 echo
 
-if [ $id == "" ]; then
+if [ -n $id ]; then
 	python encoding.py -target p -fold $fold -input pneumonia.csv -output pneumonia
 else
 	python encoding.py -target p -fold $fold -input pneumonia.csv -output pneumonia_$id
