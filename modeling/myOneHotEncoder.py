@@ -5,7 +5,7 @@ from .variables import *
 import math
 
 DIMENSION_W2V = 300
-MIN_SCALING = 0.01
+MIN_SCALING = 0.1
 
 
 # initial information & Past history 만을 이용하여 학습
@@ -154,20 +154,29 @@ class MyOneHotEncoder:
             differ = self.vector_dict[column]["dif"]
             minimum = self.vector_dict[column]["min"]
 
-            for index, value in enumerate(self.x_data[column]):
+            # The scalar vector size is 1
+            if not differ:
+                for index, value in enumerate(self.x_data[column]):
+                    values = [0.0, 0.0]
 
-                # scalar vector ex) [exist value]
-                # if exist is 0 == The value is NaN
-                # if exist is 1 == The value is existed
-                values = [0.0, 0.0]
+                    if not math.isnan(value):
+                        values[0] = 1.0
+                        values[1] = 1.0
 
-                if not math.isnan(value):
-                    values[0] = 1.0
+                    __set_vector(index, values)
+            else:
+                for index, value in enumerate(self.x_data[column]):
 
-                    # scaling value prevent ZeroDivError using MIN SCALING
-                    values[1] = (value - minimum + MIN_SCALING) / (differ + MIN_SCALING)
+                    # scalar vector ex) [exist value]
+                    # if exist is 0 == The value is NaN
+                    # if exist is 1 == The value is existed
+                    values = [0.0, 0.0]
 
-                __set_vector(index, values)
+                    if not math.isnan(value):
+                        values[0] = 1.0
+                        values[1] = (value - minimum) / differ
+
+                    __set_vector(index, values)
 
         def __set_class_vector():
             # print(column, self.vector_dict[column])
