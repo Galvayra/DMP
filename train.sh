@@ -29,8 +29,8 @@ echo
 echo "All"
 echo
 
-#python training.py -dir all_h_2_e_10000_l_0000001 -epoch 10000 -hidden 2 -learn 0.0000001 -show 1 -vector modeling/vectors/all_1 > result/all_1
+python training.py -dir all_h_2_e_5000_l_000001 -epoch 5000 -hidden 2 -learn 0.000001 -show 1 -vector modeling/vectors/all_1 > result/all_1
 
-#python training.py -dir all_except_h_2_e_10000_l_0000001 -epoch 10000 -hidden 2 -learn 0.0000001 -show 1 -vector modeling/vectors/all_except_1 > result/all_except_1
+python training.py -dir all_except_h_2_e_5000_l_000001 -epoch 5000 -hidden 2 -learn 0.000001 -show 1 -vector modeling/vectors/all_except_1 > result/all_except_1
 
 
