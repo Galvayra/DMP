@@ -149,6 +149,7 @@ class MyNeuralNetwork(MyPlot):
 
     def feed_forward_nn(self, k_fold, x_train, y_train, x_test, y_test):
         save_dir = self.__init_save_dir(k_fold)
+        log_dir = self.__init_log_file_name(k_fold)
         num_input_node = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_input_node], name=NAME_X)
@@ -180,7 +181,7 @@ class MyNeuralNetwork(MyPlot):
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
-            writer = tf.summary.FileWriter(self.__init_log_file_name(k_fold))
+            writer = tf.summary.FileWriter(log_dir)
             writer.add_graph(sess.graph)  # Show the graph
 
             sess.run(tf.global_variables_initializer())
@@ -205,28 +206,41 @@ class MyNeuralNetwork(MyPlot):
         _precision = precision_score(y_test, p)
         _recall = recall_score(y_test, p)
         _f1 = f1_score(y_test, p)
-        _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
-        _logistic_fpr *= 100
-        _logistic_tpr *= 100
-        _auc = auc(_logistic_fpr, _logistic_tpr) / 100
 
-        if _precision == 0 or _recall == 0:
-            print("\n\n------------\nIt's not working")
-            print('k-fold : %d, Precision : %.1f, Recall : %.1f' % (k_fold + 1, (_precision * 100), (_recall * 100)))
-            print("\n------------")
+        try:
+            _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
+        except ValueError:
+            print("\n\ncost is NaN !!")
+            print("erase  log directory -", log_dir)
+            print("erase save directory -", save_dir)
+            shutil.rmtree(save_dir)
+            shutil.rmtree(log_dir)
+            os.rmdir(save_dir)
+            os.rmdir(log_dir)
+            exit(-1)
+        else:
+            _logistic_fpr *= 100
+            _logistic_tpr *= 100
+            _auc = auc(_logistic_fpr, _logistic_tpr) / 100
 
-        self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": acc, "AUC": _auc})
+            if _precision == 0 or _recall == 0:
+                print("\n\n------------\nIt's not working")
+                print('k-fold : %d, Precision : %.1f, Recall : %.1f' %
+                      (k_fold + 1, (_precision * 100), (_recall * 100)))
+                print("\n------------")
 
-        if op.DO_SHOW:
-            print('\n\n')
-            print(k_fold + 1, "fold")
-            print('Precision : %.1f' % (_precision * 100))
-            print('Recall    : %.1f' % (_recall * 100))
-            print('F1-Score  : %.1f' % (_f1 * 100))
-            print('Accuracy  : %.1f' % (acc * 100))
-            print('AUC       : %.1f' % _auc)
-            self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
-                              label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
+            self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": acc, "AUC": _auc})
+
+            if op.DO_SHOW:
+                print('\n\n')
+                print(k_fold + 1, "fold")
+                print('Precision : %.1f' % (_precision * 100))
+                print('Recall    : %.1f' % (_recall * 100))
+                print('F1-Score  : %.1f' % (_f1 * 100))
+                print('Accuracy  : %.1f' % (acc * 100))
+                print('AUC       : %.1f' % _auc)
+                self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
+                                  label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
 
     def load_feed_forward_nn(self, k_fold, x_test, y_test):
         tensor_load = self.__load_tensor(k_fold)
