@@ -239,8 +239,8 @@ class MyNeuralNetwork(MyPlot):
                 print('F1-Score  : %.1f' % (_f1 * 100))
                 print('Accuracy  : %.1f' % (acc * 100))
                 print('AUC       : %.1f' % _auc)
-                self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
-                                  label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
+                # self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
+                #                   label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
 
     def load_feed_forward_nn(self, k_fold, x_test, y_test):
         tensor_load = self.__load_tensor(k_fold)
