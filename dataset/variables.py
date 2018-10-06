@@ -54,8 +54,8 @@ ct_columns = {
 }
 
 final_diagnosis_columns = {
-    "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
-    # "diagnosis": ['CZ']
+    "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY'],
+    "diagnosis": ['CZ']
 }
 
 columns_dict = OrderedDict()

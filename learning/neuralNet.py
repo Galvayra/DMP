@@ -39,7 +39,7 @@ class MyNeuralNetwork(MyPlot):
             print('F1-Score  : %.1f' % (self.score["F1"][-1] * 100))
             print('Accuracy  : %.1f' % (self.score["Acc"][-1] * 100))
             print('AUC       : %.1f' % self.score["AUC"][-1])
-            self.my_plot.plot(fpr, tpr, alpha=0.3, label='ROC %d (AUC = %0.1f)' % (k_fold+1, self.score["AUC"][-1]))
+            # self.my_plot.plot(fpr, tpr, alpha=0.3, label='ROC %d (AUC = %0.1f)' % (k_fold+1, self.score["AUC"][-1]))
 
     def show_total_score(self, _method):
         print("\n\n============ " + _method + " ============\n")
@@ -64,6 +64,9 @@ class MyNeuralNetwork(MyPlot):
         if op.USE_W2V:
             log_name += "_w2v"
 
+        if os.path.isdir(log_name):
+            shutil.rmtree(log_name)
+
         return log_name
 
     @staticmethod
@@ -76,10 +79,12 @@ class MyNeuralNetwork(MyPlot):
         _epoch_ = "_ep_" + str(op.EPOCH) + "_"
 
         _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
+
         if not os.path.isdir(_save_dir):
             os.mkdir(_save_dir)
 
         _save_dir += _hidden_ + _epoch_ + str(k_fold + 1) + "/"
+
         if os.path.isdir(_save_dir):
             shutil.rmtree(_save_dir)
         os.mkdir(_save_dir)
@@ -154,7 +159,7 @@ class MyNeuralNetwork(MyPlot):
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_input_node], name=NAME_X)
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
-        self.keep_prob = tf.placeholder(tf.float32)
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
         # make hidden layers
         hypothesis = self.__init_multi_layer(num_input_node=num_input_node)
@@ -247,16 +252,18 @@ class MyNeuralNetwork(MyPlot):
 
         sess = tf.Session()
         saver = tf.train.import_meta_graph(tensor_load + 'model-' + str(op.EPOCH) + '.meta')
-        saver.restore(sess, tf.train.latest_checkpoint(tensor_load))
+        saver.restore(sess, tensor_load + 'model-' + str(op.EPOCH))
 
         print("\n\n\nRead Neural Network -", tensor_load, "\n")
+
         graph = tf.get_default_graph()
         tf_x = graph.get_tensor_by_name(NAME_X + ":0")
         tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
         hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
         predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
+        keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
 
-        h, p = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test})
+        h, p = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
         logistic_fpr, logistic_tpr, _ = roc_curve(y_test, h)
         logistic_fpr *= 100

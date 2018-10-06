@@ -124,11 +124,37 @@ class MyPredict(MyNeuralNetwork):
         self.vector_list = vector_list
 
     def predict(self):
+        def __show_shape():
+            def __count_mortality(_y_data_):
+                _count = 0
+                for _i in _y_data_:
+                    if _i == [1]:
+                        _count += 1
+
+                return _count
+
+            x_test_np = np.array([np.array(j) for j in x_test])
+            y_test_np = np.array([np.array(j) for j in y_test])
+
+            print("\n\n\n\n=====================================\n")
+            print("dims - ", len(x_test[0]))
+            print("test     count -", len(y_test), "\t mortality count -", __count_mortality(y_test), "\n")
+
+            print(np.shape(x_test_np), np.shape(y_test_np))
+
         self.init_plot()
 
         for k_fold in range(op.NUM_FOLDS):
-            x_test = self.vector_list[k_fold]["x_test"]["merge"]
-            y_test = self.vector_list[k_fold]["y_test"]
+
+            if op.IS_CLOSED:
+                x_test = self.vector_list[k_fold]["x_train"]["merge"]
+                y_test = self.vector_list[k_fold]["y_train"]
+            else:
+                x_test = self.vector_list[k_fold]["x_test"]["merge"]
+                y_test = self.vector_list[k_fold]["y_test"]
+
+            if op.DO_SHOW:
+                __show_shape()
 
             self.load_feed_forward_nn(k_fold, x_test, y_test)
 
