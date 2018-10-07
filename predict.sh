@@ -29,8 +29,8 @@ echo
 echo "All"
 echo
 
-python predict.py -dir all_h_2_e_50000_l_000001 -epoch 5000 -hidden 2 -learn 0.000001 -show 1 -vector modeling/vectors/all_1 > result/all_closed_1
+python predict.py -dir all_h_2_e_5000_l_000005 -epoch 5000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/all_1 -closed 1 > result/all_closed_1
 
-python predict.py -dir all_except_h_2_e_5000_l_000001 -epoch 5000 -hidden 2 -learn 0.000001 -show 1 -vector modeling/vectors/all_except_1 > result/all_except_closed_1
+python predict.py -dir all_except_h_2_e_5000_l_000005 -epoch 5000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/all_except_1 -closed 1 > result/all_except_closed_1
 
 
