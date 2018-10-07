@@ -61,8 +61,9 @@ class MyOneHotEncoder:
                 if not math.isnan(v):
                     scalar_list.append(v)
 
+            scalar_dict["max"] = max(scalar_list)
             scalar_dict["min"] = min(scalar_list)
-            scalar_dict["dif"] = float(max(scalar_list) - scalar_dict["min"])
+            scalar_dict["dif"] = float(scalar_dict["max"] - scalar_dict["min"])
 
             # print("\n" + column)
             # # print(scalar_list)
@@ -215,7 +216,10 @@ class MyOneHotEncoder:
 
     def show_vectors(self, *columns):
         for i, column in enumerate(columns):
-            print("column " + str(i) + " -", column)
-            for data, data_vector in zip(self.x_data[column], self.vector[column]):
-                print(str(data).ljust(50), data_vector)
-            print("\n")
+            if column in self.vector_dict:
+                print("column " + str(i + 1) + " -", column, "\n")
+                print(self.vector_dict[column], "\n")
+                for data, data_vector in zip(self.x_data[column], self.vector[column]):
+                    print(str(data))
+                    print(data_vector)
+                print("\n=============================================================\n\n")

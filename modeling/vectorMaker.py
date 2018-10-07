@@ -70,7 +70,13 @@ class VectorMaker:
         encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
         encoder.encoding()
         encoder.fit()
-        # encoder.show_vectors(*["T", "AE", "AK", "AN"])
+        # encoder.show_vectors(*self.dataHandler.header_list)
+
+        # for key, vectors in encoder.vector_matrix.items():
+        #     for i, v in enumerate(vectors):
+        #         print(key, i)
+        #         print(v)
+        #     print("\n===============================\n")
 
         # k-fold validation
         if op.NUM_FOLDS > 1:
