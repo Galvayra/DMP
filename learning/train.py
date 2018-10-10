@@ -74,10 +74,10 @@ class MyTrain(MyNeuralNetwork):
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time))
         print("\n\n")
 
-        # if op.DO_SVM:
-        #     self.show_total_score("Support Vector Machine")
-        # else:
-        #     self.show_total_score("Feed Forward NN")
+        if op.DO_SVM:
+            self.show_total_score("Support Vector Machine")
+        else:
+            self.show_total_score("Feed Forward NN")
 
         self.show_plot()
 

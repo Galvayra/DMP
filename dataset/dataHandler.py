@@ -56,6 +56,9 @@ class DataHandler:
             # [ position 1, ... position n ]
             self.__erase_index_list = self.__init_erase_index_list()
 
+            if self.column_target:
+                self.__append_target_in_erase_index_list()
+
             # print(self.__erase_index_list, len(self.__erase_index_list))
             # print(len(self.__erase_index_list))
             self.__apply_exception()
@@ -90,7 +93,11 @@ class DataHandler:
     @property
     def erase_index_list(self):
         return self.__erase_index_list
-    
+
+    @erase_index_list.setter
+    def erase_index_list(self, erase_index_list):
+        self.__erase_index_list = erase_index_list
+
     @property
     def x_data_count(self):
         return self.__x_data_count
@@ -261,12 +268,6 @@ class DataHandler:
                 if len(re_symptom) >= 1:
                     erase_index_list.append(index + POSITION_OF_ROW)
 
-        def __set_column_target():
-            if self.column_target:
-                for index, symptom in self.__get_raw_data(self.column_target).items():
-                    if not symptom == HAVE_SYMPTOM:
-                        erase_index_list.append(index + POSITION_OF_ROW)
-
         erase_index_list = list()
 
         try:
@@ -291,11 +292,16 @@ class DataHandler:
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
 
-        # set target
-        __set_column_target()
-
         # return list()
         return sorted(list(set(erase_index_list)), reverse=False)
+
+    # focus on target column
+    def __append_target_in_erase_index_list(self):
+        for index, symptom in self.__get_raw_data(self.column_target).items():
+            if not symptom == HAVE_SYMPTOM:
+                self.erase_index_list.append(index + POSITION_OF_ROW)
+
+        self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
 
     # DA is a column for y labels
     def __set_labels(self):

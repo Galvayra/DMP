@@ -61,9 +61,10 @@ class MyOneHotEncoder:
                 if not math.isnan(v):
                     scalar_list.append(v)
 
-            scalar_dict["max"] = max(scalar_list)
-            scalar_dict["min"] = min(scalar_list)
-            scalar_dict["dif"] = float(scalar_dict["max"] - scalar_dict["min"])
+            if scalar_list:
+                scalar_dict["max"] = max(scalar_list)
+                scalar_dict["min"] = min(scalar_list)
+                scalar_dict["dif"] = float(scalar_dict["max"] - scalar_dict["min"])
 
             # print("\n" + column)
             # # print(scalar_list)
@@ -152,32 +153,35 @@ class MyOneHotEncoder:
 
     def __vector_maker(self, class_of_column, column, type_of_column):
         def __set_scalar_vector():
-            differ = self.vector_dict[column]["dif"]
-            minimum = self.vector_dict[column]["min"]
+            # If dict of scalar vector, make vector using dict
+            # But, If not have it, do not make vector (we consider that the column will be noise)
+            if self.vector_dict[column]:
+                differ = self.vector_dict[column]["dif"]
+                minimum = self.vector_dict[column]["min"]
 
-            # The scalar vector size is 1
-            if not differ:
-                for index, value in enumerate(self.x_data[column]):
-                    values = [0.0, 0.0]
+                # The differ is 0 == The scalar vector size is 1
+                if not differ:
+                    for index, value in enumerate(self.x_data[column]):
+                        values = [0.0, 0.0]
 
-                    if not math.isnan(value):
-                        values[0] = 1.0
-                        values[1] = 1.0
+                        if not math.isnan(value):
+                            values[0] = 1.0
+                            values[1] = 1.0
 
-                    __set_vector(index, values)
-            else:
-                for index, value in enumerate(self.x_data[column]):
+                        __set_vector(index, values)
+                else:
+                    for index, value in enumerate(self.x_data[column]):
 
-                    # scalar vector ex) [exist value]
-                    # if exist is 0 == The value is NaN
-                    # if exist is 1 == The value is existed
-                    values = [0.0, 0.0]
+                        # scalar vector ex) [exist value]
+                        # if exist is 0 == The value is NaN
+                        # if exist is 1 == The value is existed
+                        values = [0.0, 0.0]
 
-                    if not math.isnan(value):
-                        values[0] = 1.0
-                        values[1] = (value - minimum) / differ
+                        if not math.isnan(value):
+                            values[0] = 1.0
+                            values[1] = (value - minimum) / differ
 
-                    __set_vector(index, values)
+                        __set_vector(index, values)
 
         def __set_class_vector():
             # print(column, self.vector_dict[column])
