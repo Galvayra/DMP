@@ -7,11 +7,12 @@ from .variables import *
 
 HAVE_SYMPTOM = 1
 SEED = 444
+PROPOSITION = 10
 
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, do_parsing=False, column_target=False, eliminate_target=False):
+    def __init__(self, data_file, do_parsing=False, do_sampling=False, column_target=False, eliminate_target=False):
         try:
             self.__file_name = data_file
             print("Read csv file -", DATA_PATH + self.file_name, "\n\n")
@@ -45,13 +46,16 @@ class DataHandler:
         # a dictionary of data
         # { header: a dictionary of data }
         self.x_data_dict = self.__set_data_dict()
+
+        # a data of y labels
+        # [ y_1, y_2, ... y_n ]
+        self.y_data = self.__set_labels()
+
         self.__do_parsing = do_parsing
         self.__do_set_data = False
+        self.__do_sampling = do_sampling
 
-        # # eliminate target column in column dict
-        # if eliminate_target and column_target and column_target in self.header_list:
-
-        if do_parsing:
+        if self.do_parsing:
             # except for data which is not necessary
             # [ position 1, ... position n ]
             self.__erase_index_list = self.__init_erase_index_list()
@@ -62,10 +66,6 @@ class DataHandler:
             # print(self.__erase_index_list, len(self.__erase_index_list))
             # print(len(self.__erase_index_list))
             self.__apply_exception()
-
-        # a data of y labels
-        # [ y_1, y_2, ... y_n ]
-        self.y_data = self.__set_labels()
 
         # print(self.header_list)
         # print(self.x_data_dict.keys())
@@ -121,6 +121,10 @@ class DataHandler:
     @property
     def do_set_data(self):
         return self.__do_set_data
+
+    @property
+    def do_sampling(self):
+        return self.__do_sampling
 
     @do_set_data.setter
     def do_set_data(self, do_set_data):
@@ -219,23 +223,25 @@ class DataHandler:
 
         self.do_set_data = True
 
-    def __summary(self):
+    def __summary(self, down_sampling_count=0):
         print("# of     all data set -", str(self.x_data_count).rjust(5),
               "\t# of mortality -", str(self.y_data_count).rjust(5))
-        print("# of parsing data set -", str(self.x_data_count - len(self.erase_index_list)).rjust(5),
+        print("# of parsing data set -", str(len(self.y_data) - down_sampling_count).rjust(5),
               "\t# of mortality -", str(self.counting_mortality(self.y_data)).rjust(5), "\n\n")
 
     def parsing(self):
 
         # set data
         self.__reset_data_dict()
-        self.__summary()
 
     def __apply_exception(self):
         for header in self.header_list:
             for index in list(self.x_data_dict[header].keys()):
                 if index in self.erase_index_list:
                     del self.x_data_dict[header][index]
+
+        for index in sorted(self.erase_index_list, reverse=True):
+            del self.y_data[index - POSITION_OF_ROW]
 
     def __init_erase_index_list(self):
 
@@ -303,27 +309,31 @@ class DataHandler:
 
         self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
 
+    # focus on target column
+    def __down_sampling(self):
+        down_sample_count = (self.y_data_count - len(self.erase_index_list)) * PROPOSITION
+        print(len(self.erase_index_list))
+
+        if down_sample_count < self.x_data_count:
+            print(down_sample_count)
+        # print(self.x_data_count, self.y_data_count)
+        # for index, symptom in self.__get_raw_data(self.column_target).items():
+        #     if not symptom == HAVE_SYMPTOM:
+        #         self.erase_index_list.append(index + POSITION_OF_ROW)
+        #
+        # self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
+
     # DA is a column for y labels
     def __set_labels(self):
         y_labels = list()
         header = "DA"
 
-        if self.do_parsing:
-            for i, value in enumerate(self.__get_raw_data(header)):
-                if i + POSITION_OF_ROW not in self.erase_index_list:
-                    if value == HAVE_SYMPTOM:
-                        y_labels.append([1])
-                        self.y_data_count += 1
-                    else:
-                        y_labels.append([0])
-                elif value == HAVE_SYMPTOM:
-                    self.y_data_count += 1
-        else:
-            for i, value in enumerate(self.__get_raw_data(header)):
-                if value == HAVE_SYMPTOM:
-                    y_labels.append([1])
-                else:
-                    y_labels.append([0])
+        for i, value in enumerate(self.__get_raw_data(header)):
+            if value == HAVE_SYMPTOM:
+                y_labels.append([1])
+                self.y_data_count += 1
+            else:
+                y_labels.append([0])
 
         return y_labels
 
@@ -417,23 +427,53 @@ class DataHandler:
         def __get_copied_raw_data(raw_data):
             _raw_data_list = list()
 
-            for index in list(raw_data.keys()):
-                if index + POSITION_OF_ROW not in self.erase_index_list:
-                    _raw_data_list.append(raw_data[index])
+            for _index in list(raw_data.keys()):
+                if _index + POSITION_OF_ROW not in self.erase_index_list:
+                    _raw_data_list.append(raw_data[_index])
 
             return _raw_data_list
 
+        def __init_down_sampling_list():
+            _down_sampling_list = list()
+
+            for _index, y in enumerate(self.y_data):
+                if y == [0]:
+                    _down_sampling_list.append(_index)
+
+            return sorted(random.sample(_down_sampling_list, down_sampling_count), reverse=True)
+
         save_dict = OrderedDict()
+        down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * PROPOSITION)
 
-        for header, header_key in self.raw_header_dict.items():
-            if header in self.header_list:
-                raw_data_list = self.x_data_dict[header]
-            else:
-                raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
+        if self.do_sampling and down_sampling_count > 0:
+            down_sampling_list = __init_down_sampling_list()
 
-            random.seed(SEED)
-            random.shuffle(raw_data_list)
-            save_dict[header_key] = raw_data_list
+            for header, header_key in self.raw_header_dict.items():
+                if header in self.header_list:
+                    raw_data_list = self.x_data_dict[header]
+                else:
+                    raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
+
+                for index in down_sampling_list:
+                    del raw_data_list[index]
+
+                random.seed(SEED)
+                random.shuffle(raw_data_list)
+                save_dict[header_key] = raw_data_list
+
+            self.__summary(down_sampling_count)
+        else:
+            for header, header_key in self.raw_header_dict.items():
+                if header in self.header_list:
+                    raw_data_list = self.x_data_dict[header]
+                else:
+                    raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
+
+                random.seed(SEED)
+                random.shuffle(raw_data_list)
+                save_dict[header_key] = raw_data_list
+
+            self.__summary()
 
         df = pd.DataFrame(save_dict)
         df.to_csv(DATA_PATH + save_file_name, index=False)
