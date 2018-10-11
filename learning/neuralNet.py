@@ -215,13 +215,13 @@ class MyNeuralNetwork(MyPlot):
         try:
             _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
         except ValueError:
-            print("\n\ncost is NaN !!")
-            print("erase  log directory -", log_dir)
-            print("erase save directory -", save_dir)
-            shutil.rmtree(save_dir)
-            shutil.rmtree(log_dir)
-            os.rmdir(save_dir)
-            os.rmdir(log_dir)
+            print("\n\nWhere fold -", k_fold, " cost is NaN !!")
+            # print("erase  log directory -", log_dir)
+            # print("erase save directory -", save_dir)
+            # shutil.rmtree(save_dir)
+            # shutil.rmtree(log_dir)
+            # os.rmdir(save_dir)
+            # os.rmdir(log_dir)
             exit(-1)
         else:
             _logistic_fpr *= 100
