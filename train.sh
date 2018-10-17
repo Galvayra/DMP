@@ -55,43 +55,47 @@
 #
 #python training.py -dir seoul_sampling2_except_all_h_4_e_5000_l_00001 -epoch 5000 -hidden 4 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_except_all_5 > result/seoul_sampling2_except_all_4
 
-echo
-echo "seoul sampling final diagnosis only class"
-echo
+#echo
+#echo "seoul sampling final diagnosis only class"
+#echo
+#
+#python training.py -dir seoul_sampling2_h_1_e_5000_l_00001 -epoch 5000 -hidden 1 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_1
+#
+#python training.py -dir seoul_sampling2_all_h_1_e_5000_l_00001 -epoch 5000 -hidden 1 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_1
+#
+#python training.py -dir seoul_sampling2_h_2_e_5000_l_00001 -epoch 5000 -hidden 2 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_2
+#
+#python training.py -dir seoul_sampling2_all_h_2_e_5000_l_00001 -epoch 5000 -hidden 2 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_2
+#
+#python training.py -dir seoul_sampling2_h_3_e_5000_l_00001 -epoch 5000 -hidden 3 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_3
+#
+#python training.py -dir seoul_sampling2_all_h_3_e_5000_l_00001 -epoch 5000 -hidden 3 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_3
+#
+#python training.py -dir seoul_sampling2_h_4_e_5000_l_00001 -epoch 5000 -hidden 4 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_4
+#
+#python training.py -dir seoul_sampling2_all_h_4_e_5000_l_00001 -epoch 5000 -hidden 4 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_4
+#
+#
+#echo
+#echo "seoul sampling all of final diagnosis"
+#echo
+#
+#python training.py -dir seoul_sampling2_diagnosis_h_1_e_6000_l_000005 -epoch 6000 -hidden 1 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_1
+#
+#python training.py -dir seoul_sampling2_diagnosis_all_h_1_e_6000_l_000005 -epoch 6000 -hidden 1 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_1
+#
+#python training.py -dir seoul_sampling2_diagnosis_h_2_e_6000_l_000005 -epoch 6000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_2
+#
+#python training.py -dir seoul_sampling2_diagnosis_all_h_2_e_6000_l_000005 -epoch 6000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_2
+#
+#python training.py -dir seoul_sampling2_diagnosis_h_3_e_6000_l_000005 -epoch 6000 -hidden 3 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_3
+#
+#python training.py -dir seoul_sampling2_diagnosis_all_h_3_e_6000_l_000005 -epoch 6000 -hidden 3 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_3
+#
+#python training.py -dir seoul_sampling2_diagnosis_h_4_e_6000_l_000005 -epoch 6000 -hidden 4 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_4
+#
+#python training.py -dir seoul_sampling2_diagnosis_all_h_4_e_6000_l_000005 -epoch 6000 -hidden 4 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_4
 
-python training.py -dir seoul_sampling2_h_1_e_5000_l_00001 -epoch 5000 -hidden 1 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_1
 
-python training.py -dir seoul_sampling2_all_h_1_e_5000_l_00001 -epoch 5000 -hidden 1 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_1
-
-python training.py -dir seoul_sampling2_h_2_e_5000_l_00001 -epoch 5000 -hidden 2 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_2
-
-python training.py -dir seoul_sampling2_all_h_2_e_5000_l_00001 -epoch 5000 -hidden 2 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_2
-
-python training.py -dir seoul_sampling2_h_3_e_5000_l_00001 -epoch 5000 -hidden 3 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_3
-
-python training.py -dir seoul_sampling2_all_h_3_e_5000_l_00001 -epoch 5000 -hidden 3 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_3
-
-python training.py -dir seoul_sampling2_h_4_e_5000_l_00001 -epoch 5000 -hidden 4 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_5 > result/seoul_sampling2_4
-
-python training.py -dir seoul_sampling2_all_h_4_e_5000_l_00001 -epoch 5000 -hidden 4 -learn 0.00001 -show 1 -vector modeling/vectors/seoul_sampling2_all_5 > result/seoul_sampling2_all_4
-
-
-echo
-echo "seoul sampling all of final diagnosis"
-echo
-
-python training.py -dir seoul_sampling2_diagnosis_h_1_e_6000_l_000005 -epoch 6000 -hidden 1 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_1
-
-python training.py -dir seoul_sampling2_diagnosis_all_h_1_e_6000_l_000005 -epoch 6000 -hidden 1 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_1
-
-python training.py -dir seoul_sampling2_diagnosis_h_2_e_6000_l_000005 -epoch 6000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_2
-
-python training.py -dir seoul_sampling2_diagnosis_all_h_2_e_6000_l_000005 -epoch 6000 -hidden 2 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_2
-
-python training.py -dir seoul_sampling2_diagnosis_h_3_e_6000_l_000005 -epoch 6000 -hidden 3 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_3
-
-python training.py -dir seoul_sampling2_diagnosis_all_h_3_e_6000_l_000005 -epoch 6000 -hidden 3 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_3
-
-python training.py -dir seoul_sampling2_diagnosis_h_4_e_6000_l_000005 -epoch 6000 -hidden 4 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_5 > result/seoul_sampling2_diagnosis_4
-
-python training.py -dir seoul_sampling2_diagnosis_all_h_4_e_6000_l_000005 -epoch 6000 -hidden 4 -learn 0.000005 -show 1 -vector modeling/vectors/seoul_sampling2_diagnosis_all_5 > result/seoul_sampling2_diagnosis_all_4
+python training.py -vector modeling/vectors/all_diagnosis_5 -epoch 20000 -learn 0.00001 -hidden 2 -show 1 -dir all_diagnosis
+python training.py -vector modeling/vectors/all_except_5 -epoch 20000 -learn 0.00001 -hidden 2 -show 1 -dir all_except
