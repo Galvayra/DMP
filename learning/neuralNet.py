@@ -6,6 +6,7 @@ from .variables import *
 from .plot import MyPlot
 import os
 import shutil
+import math
 
 
 class MyNeuralNetwork(MyPlot):
@@ -110,7 +111,7 @@ class MyNeuralNetwork(MyPlot):
 
         return tensor_load
 
-    def __init_multi_layer(self, num_input_node):
+    def __init_multi_layer(self, num_input_node, input_layer):
         if NUM_HIDDEN_DIMENSION:
             num_hidden_node = NUM_HIDDEN_DIMENSION
         else:
@@ -118,7 +119,7 @@ class MyNeuralNetwork(MyPlot):
 
         tf_weight = list()
         tf_bias = list()
-        tf_layer = [self.tf_x]
+        tf_layer = [input_layer]
         if op.DO_SHOW:
             print("\n\n--- Layer Information ---")
             print(tf_layer[0].shape)
@@ -155,14 +156,14 @@ class MyNeuralNetwork(MyPlot):
     def feed_forward_nn(self, k_fold, x_train, y_train, x_test, y_test):
         save_dir = self.__init_save_dir(k_fold)
         log_dir = self.__init_log_file_name(k_fold)
-        num_input_node = len(x_train[0])
+        num_of_dimension = len(x_train[0])
 
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_input_node], name=NAME_X)
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
         # make hidden layers
-        hypothesis = self.__init_multi_layer(num_input_node=num_input_node)
+        hypothesis = self.__init_multi_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
 
         if op.DO_SHOW:
             print(hypothesis.shape)
@@ -277,3 +278,135 @@ class MyNeuralNetwork(MyPlot):
 
         self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": _accuracy, "AUC": _auc})
         self.show_score(k_fold, fpr=logistic_fpr, tpr=logistic_tpr)
+
+    def cnn(self, k_fold, x_train, y_train, x_test, y_test):
+        save_dir = self.__init_save_dir(k_fold)
+        log_dir = self.__init_log_file_name(k_fold)
+        num_of_dimension = len(x_train[0])
+
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
+
+        num_of_image = int(math.sqrt(num_of_dimension))
+        size_of_filter = 3
+        num_of_filter = 10
+
+        tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
+
+        print("\n\ntf_x -", self.tf_x.shape)
+
+        W1 = tf.Variable(tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter], stddev=0.01))
+        L1 = tf.nn.conv2d(tf_x_img, W1, strides=[1, 1, 1, 1], padding="SAME")
+        L1 = tf.nn.relu(L1)
+        L1 = tf.nn.max_pool(L1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+        L1 = tf.nn.dropout(L1, keep_prob=self.keep_prob)
+        num_of_image = math.ceil(num_of_image / 2)
+
+        print("\n\n\ntf_x_img -", tf_x_img.shape)
+        print("W1 -", W1.shape)
+        print("L1 -", L1.shape)
+        print("\n\n\n\n")
+
+        W2 = tf.Variable(tf.random_normal([size_of_filter, size_of_filter, num_of_filter, num_of_filter], stddev=0.01))
+        L2 = tf.nn.conv2d(L1, W2, strides=[1, 1, 1, 1], padding="SAME")
+        L2 = tf.nn.relu(L2)
+        L2 = tf.nn.max_pool(L2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+        L2 = tf.nn.dropout(L2, keep_prob=self.keep_prob)
+        num_of_image = math.ceil(num_of_image / 2)
+
+        print("W2 -", W2.shape)
+        print("L2 -", L2.shape)
+        print("image size -", num_of_image)
+        print("\n\n\n\n")
+
+        num_of_dimension = num_of_image*num_of_image*num_of_filter
+        input_layer = tf.reshape(L2, [-1, num_of_dimension])
+        print("Reshape self.tf_x -", input_layer.shape)
+        print("\n\n\n\n")
+
+        # concat CNN to Feed Forward NN
+        hypothesis = self.__init_multi_layer(num_input_node=num_of_dimension, input_layer=input_layer)
+
+        if op.DO_SHOW:
+            print(hypothesis.shape)
+            print("\n")
+        hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
+
+        with tf.name_scope("cost"):
+            cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
+            # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=tf_y))
+            cost_summ = tf.summary.scalar("cost", cost)
+
+        train_op = tf.train.AdamOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
+        # train_op = tf.train.GradientDescentOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
+
+        # cut off
+        predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT)
+        _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+        accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+            merged_summary = tf.summary.merge_all()
+            writer = tf.summary.FileWriter(log_dir)
+            writer.add_graph(sess.graph)  # Show the graph
+
+            sess.run(tf.global_variables_initializer())
+            sess.run(tf.local_variables_initializer())
+
+            # if self.is_closed:
+            for step in range(op.EPOCH + 1):
+                summary, cost_val, _ = sess.run([merged_summary, cost, train_op],
+                                                feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: 0.7})
+                writer.add_summary(summary, global_step=step)
+
+                if op.DO_SHOW and step % (op.EPOCH / 10) == 0:
+                    print(str(step).rjust(5), cost_val)
+
+            h, p, acc = sess.run([hypothesis, predict, _accuracy],
+                                 feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1})
+
+            saver.save(sess, save_dir + "model", global_step=op.EPOCH)
+
+        tf.reset_default_graph()
+
+        _precision = precision_score(y_test, p)
+        _recall = recall_score(y_test, p)
+        _f1 = f1_score(y_test, p)
+
+        try:
+            _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
+        except ValueError:
+            print("\n\nWhere fold -", k_fold, " cost is NaN !!")
+            # print("erase  log directory -", log_dir)
+            # print("erase save directory -", save_dir)
+            # shutil.rmtree(save_dir)
+            # shutil.rmtree(log_dir)
+            # os.rmdir(save_dir)
+            # os.rmdir(log_dir)
+            exit(-1)
+        else:
+            _logistic_fpr *= 100
+            _logistic_tpr *= 100
+            _auc = auc(_logistic_fpr, _logistic_tpr) / 100
+
+            if _precision == 0 or _recall == 0:
+                print("\n\n------------\nIt's not working")
+                print('k-fold : %d, Precision : %.1f, Recall : %.1f' %
+                      (k_fold + 1, (_precision * 100), (_recall * 100)))
+                print("\n------------")
+
+            self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": acc, "AUC": _auc})
+
+            if op.DO_SHOW:
+                print('\n\n')
+                print(k_fold + 1, "fold")
+                print('Precision : %.1f' % (_precision * 100))
+                print('Recall    : %.1f' % (_recall * 100))
+                print('F1-Score  : %.1f' % (_f1 * 100))
+                print('Accuracy  : %.1f' % (acc * 100))
+                print('AUC       : %.1f' % _auc)
+                # self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
+                #                   label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))

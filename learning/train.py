@@ -6,6 +6,7 @@ from sklearn.metrics import roc_curve, auc
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 import time
+import math
 
 
 class MyTrain(MyNeuralNetwork):
@@ -66,20 +67,35 @@ class MyTrain(MyNeuralNetwork):
             if op.DO_SHOW:
                 __show_shape()
 
-            if op.DO_SVM:
+            if op.MODEL_TYPE == "svm":
                 self.__train_svm(k_fold, x_train, y_train, x_test, y_test)
-            else:
+            elif op.MODEL_TYPE == "ffnn":
                 self.feed_forward_nn(k_fold, x_train, y_train, x_test, y_test)
+            elif op.MODEL_TYPE == "cnn":
+                self.expand4square_matrix(*[x_train, x_test])
+                self.cnn(k_fold, x_train, y_train, x_test, y_test)
 
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time))
         print("\n\n")
 
-        if op.DO_SVM:
+        if op.MODEL_TYPE == "svm":
             self.show_total_score("Support Vector Machine")
-        else:
+        elif op.MODEL_TYPE == "ffnn":
             self.show_total_score("Feed Forward NN")
 
         self.show_plot()
+
+    @staticmethod
+    def expand4square_matrix(*data_set_list):
+        # origin data set = [ [ v_1, v_2, ... , v_d ],                 .... , [ ... ] ]
+        # expand data set = [ [ v_1, v_2, ... , v_d , 0.0, ..., 0.0 ], .... , [ ... ] ]
+        for data_set in data_set_list:
+            size_of_1d = len(data_set[0])
+            size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)
+
+            for data in data_set:
+                for _ in range(size_of_1d, size_of_2d):
+                    data.append(0.0)
 
     def vector2txt(self, _file_name):
         def __vector2txt():

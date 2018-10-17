@@ -11,8 +11,8 @@ def get_arguments():
                                                     "\nUseAge : python training.py -closed 1\n\n")
     parser.add_argument("-id", "--identify", help="set id for separating training sets (default is None)"
                                                   "\nUseAge : python training.py -id string\n\n")
-    parser.add_argument("-svm", "--svm", help="training use support vector machine (default is 0)"
-                                              "\nUseAge : python training.py -svm 1 -w2v 1\n\n")
+    parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
+                                                  "\nUseAge : python training.py -model (svm|ffnn|cnn)\n\n")
     # parser.add_argument("-w2v", "--word2v", help="using word2vec (default is 0)"
     #                                              "\nUseAge : python training.py -w2v 1 (True)"
     #                                              "\n         python training.py -w2v 0 (False)\n\n")
@@ -55,7 +55,7 @@ except ValueError:
 
 IS_CLOSED = False
 USE_W2V = False
-DO_SVM = False
+MODEL_TYPE = "svm"
 
 
 # Parameter options #
@@ -91,16 +91,11 @@ if args.closed:
 if args.identify:
     USE_ID = args.identify + "#"
 
-if args.svm:
-    try:
-        DO_SVM = int(args.svm)
-    except ValueError:
-        print("\nInput Error type of test option!\n")
+if args.model:
+    MODEL_TYPE = args.model
+    if MODEL_TYPE != "ffnn" and MODEL_TYPE != "svm" and MODEL_TYPE != "cnn":
+        print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
         exit(-1)
-    else:
-        if DO_SVM != 1 and DO_SVM != 0:
-            print("\nInput Error test option!\n")
-            exit(-1)
 
 if args.identify:
     USE_ID = args.identify + "#"
