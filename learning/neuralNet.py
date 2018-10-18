@@ -111,7 +111,7 @@ class MyNeuralNetwork(MyPlot):
 
         return tensor_load
 
-    def __init_multi_layer(self, num_input_node, input_layer):
+    def __init_feed_forward_layer(self, num_input_node, input_layer):
         if NUM_HIDDEN_DIMENSION:
             num_hidden_node = NUM_HIDDEN_DIMENSION
         else:
@@ -120,9 +120,6 @@ class MyNeuralNetwork(MyPlot):
         tf_weight = list()
         tf_bias = list()
         tf_layer = [input_layer]
-        if op.DO_SHOW:
-            print("\n\n--- Layer Information ---")
-            print(tf_layer[0].shape)
 
         # # make hidden layers
         for i in range(op.NUM_HIDDEN_LAYER):
@@ -130,14 +127,12 @@ class MyNeuralNetwork(MyPlot):
             num_hidden_node = int(num_input_node / RATIO_HIDDEN)
 
             # append weight
-            tf_weight.append(tf.get_variable("h_weight_" + str(i + 1), dtype=tf.float32,
+            tf_weight.append(tf.get_variable(name="h_weight_" + str(i + 1), dtype=tf.float32,
                                              shape=[num_input_node, num_hidden_node],
                                              initializer=tf.contrib.layers.xavier_initializer()))
             # append bias
             tf_bias.append(tf.Variable(tf.random_normal([num_hidden_node]), name="h_bias_" + str(i + 1)))
             layer = tf.add(tf.matmul(tf_layer[i], tf_weight[i]), tf_bias[i])
-            if op.DO_SHOW:
-                print(layer.shape)
 
             # append hidden layer
             hidden_layer = tf.nn.relu(layer)
@@ -149,6 +144,11 @@ class MyNeuralNetwork(MyPlot):
         tf_weight.append(tf.get_variable("o_weight", dtype=tf.float32, shape=[num_hidden_node, 1],
                                          initializer=tf.contrib.layers.xavier_initializer()))
         tf_bias.append(tf.Variable(tf.random_normal([1]), name="o_bias"))
+
+        if op.DO_SHOW:
+            print("\n\n--- Feed Forward Layer Information ---")
+            for i, layer in enumerate(tf_layer):
+                print("Layer", i + 1, "-", layer.shape)
 
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
@@ -163,9 +163,51 @@ class MyNeuralNetwork(MyPlot):
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
         # initialize neural network
-        hypothesis = self.__init_multi_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
-        h, p, acc = self.sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.compute_score(k_fold, y_test, h, p, acc)
+        hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
+        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
+        self.__compute_score(k_fold, y_test, h, p, acc)
+
+    def __init_convolution_layer(self, num_of_dimension):
+        num_of_image = int(math.sqrt(num_of_dimension))
+        num_of_filter = [16, 32]
+        size_of_filter = 3
+
+        tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
+
+        filter_1 = tf.Variable(
+            tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
+            name="cnn_filter_1")
+        layer_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="SAME", name="cnn_layer_1")
+        layer_1 = tf.nn.relu(layer_1)
+        layer_1 = tf.nn.max_pool(layer_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME",
+                                 name="cnn_pooling_1")
+        layer_1 = tf.nn.dropout(layer_1, keep_prob=self.keep_prob, name="cnn_dropout_1")
+        num_of_image = math.ceil(num_of_image / 2)
+
+        filter_2 = tf.Variable(
+            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
+            name="cnn_filter_2")
+        layer_2 = tf.nn.conv2d(layer_1, filter_2, strides=[1, 1, 1, 1], padding="SAME", name="cnn_layer_2")
+        layer_2 = tf.nn.relu(layer_2)
+        layer_2 = tf.nn.max_pool(layer_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME",
+                                 name="cnn_pooling_2")
+        layer_2 = tf.nn.dropout(layer_2, keep_prob=self.keep_prob, name="cnn_dropout_2")
+        num_of_image = math.ceil(num_of_image / 2)
+
+        num_of_dimension = num_of_image * num_of_image * num_of_filter[-1]
+        convolution_layer = tf.reshape(layer_2, [-1, num_of_dimension], name="cnn_span_layer")
+
+        if op.DO_SHOW:
+            print("\n\n--- Convolution Layer Information ---")
+            print("tf_x     -", self.tf_x.shape)
+            print("tf_x_img -", tf_x_img.shape)
+
+            print("\n\nfilter_1 -", filter_1.shape)
+            print(" layer_1 -", layer_1.shape)
+            print("\n\nfilter_2 -", filter_2.shape)
+            print(" layer_2 -", layer_2.shape)
+
+        return convolution_layer, num_of_dimension
 
     def convolution_nn(self, k_fold, x_train, y_train, x_test, y_test):
         log_dir = self.__init_log_file_name(k_fold)
@@ -176,51 +218,15 @@ class MyNeuralNetwork(MyPlot):
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
-        num_of_image = int(math.sqrt(num_of_dimension))
-        size_of_filter = 3
-        num_of_filter = 10
-
-        tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
-
-        print("\n\ntf_x -", self.tf_x.shape)
-
-        W1 = tf.Variable(tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter], stddev=0.01))
-        L1 = tf.nn.conv2d(tf_x_img, W1, strides=[1, 1, 1, 1], padding="SAME")
-        L1 = tf.nn.relu(L1)
-        L1 = tf.nn.max_pool(L1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
-        L1 = tf.nn.dropout(L1, keep_prob=self.keep_prob)
-        num_of_image = math.ceil(num_of_image / 2)
-
-        print("\n\n\ntf_x_img -", tf_x_img.shape)
-        print("W1 -", W1.shape)
-        print("L1 -", L1.shape)
-        print("\n\n\n\n")
-
-        W2 = tf.Variable(tf.random_normal([size_of_filter, size_of_filter, num_of_filter, num_of_filter], stddev=0.01))
-        L2 = tf.nn.conv2d(L1, W2, strides=[1, 1, 1, 1], padding="SAME")
-        L2 = tf.nn.relu(L2)
-        L2 = tf.nn.max_pool(L2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
-        L2 = tf.nn.dropout(L2, keep_prob=self.keep_prob)
-        num_of_image = math.ceil(num_of_image / 2)
-
-        print("W2 -", W2.shape)
-        print("L2 -", L2.shape)
-        print("image size -", num_of_image)
-        print("\n\n\n\n")
-
-        num_of_dimension = num_of_image*num_of_image*num_of_filter
-        input_layer = tf.reshape(L2, [-1, num_of_dimension])
-        print("Reshape self.tf_x -", input_layer.shape)
-        print("\n\n\n\n")
-
         # concat CNN to Feed Forward NN
-        hypothesis = self.__init_multi_layer(num_input_node=num_of_dimension, input_layer=input_layer)
-        h, p, acc = self.sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.compute_score(k_fold, y_test, h, p, acc)
+        convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
+        hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
+        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
+        self.__compute_score(k_fold, y_test, h, p, acc)
 
-    def sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
+    def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
         if op.DO_SHOW:
-            print(hypothesis.shape)
+            print("Layer O -", hypothesis.shape)
             print("\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
 
@@ -265,7 +271,7 @@ class MyNeuralNetwork(MyPlot):
 
         return h, p, acc
 
-    def compute_score(self, k_fold, y_test, h, p, acc):
+    def __compute_score(self, k_fold, y_test, h, p, acc):
         _precision = precision_score(y_test, p)
         _recall = recall_score(y_test, p)
         _f1 = f1_score(y_test, p)

@@ -17,3 +17,7 @@ clean-result:
 
 clean-vector:
 	rm -r modeling/vectors/vectors_*
+
+clean-test:
+	rm -r logs/test
+	rm -r modeling/save/test
