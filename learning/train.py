@@ -73,7 +73,7 @@ class MyTrain(MyNeuralNetwork):
                 self.feed_forward_nn(k_fold, x_train, y_train, x_test, y_test)
             elif op.MODEL_TYPE == "cnn":
                 self.expand4square_matrix(*[x_train, x_test])
-                self.cnn(k_fold, x_train, y_train, x_test, y_test)
+                self.convolution_nn(k_fold, x_train, y_train, x_test, y_test)
 
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time))
         print("\n\n")
