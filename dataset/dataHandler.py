@@ -45,7 +45,8 @@ class DataHandler:
 
         # a dictionary of data
         # { header: a dictionary of data }
-        self.x_data_dict = self.__set_data_dict()
+        self.x_data_dict = dict()
+        self.__set_data_dict()
 
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
@@ -175,10 +176,8 @@ class DataHandler:
         # }
         #
 
-        x_data_dict = dict()
-
         for header in self.header_list:
-            x_data_dict[header] = dict()
+            self.x_data_dict[header] = dict()
 
             for i, data in enumerate(self.__get_raw_data(header)):
 
@@ -188,11 +187,11 @@ class DataHandler:
 
                 data = data.strip()
 
-                x_data_dict[header][i + POSITION_OF_ROW] = data
+                self.x_data_dict[header][i + POSITION_OF_ROW] = data
 
-        self.x_data_count = len(x_data_dict[ID_COLUMN].values())
+        self.x_data_count = len(self.x_data_dict[ID_COLUMN].values())
 
-        return x_data_dict
+        return self.x_data_dict
 
     def __reset_data_dict(self, do_casting=False):
         # {
