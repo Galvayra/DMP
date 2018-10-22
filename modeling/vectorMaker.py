@@ -6,8 +6,6 @@ import json
 import copy
 import random
 
-RANDRANGE = 10
-
 
 class VectorMaker:
     # must using DataParser or DataHandler
@@ -15,12 +13,20 @@ class VectorMaker:
         self.dataHandler = data_handler
         self.__y_data = self.dataHandler.y_data
         self.__len_data = len(self.dataHandler.y_data)
-        self.__vector_list = list()
-        self.__index = {
-            "train": list(),
-            "test": list(),
-            "valid": list()
+
+        # { x_train: [ vector 1, ... vector n ], ... x_test, x_valid , ... , y_valid }
+        self.__vector_matrix = OrderedDict()
+        self.__vector_matrix = {
+            "x_train": dict(),
+            "y_train": list(),
+            "x_valid": dict(),
+            "y_valid": list(),
+            "x_test": dict(),
+            "y_test": list()
         }
+
+        # { 0: "train", 1: "test" , ..., n: "valid" }
+        self.__index_dict = self.__init_index_dict()
         self.__file_name = self.dataHandler.file_name.split('.')[0]
 
     @property
@@ -36,113 +42,76 @@ class VectorMaker:
         return self.__len_data
 
     @property
-    def index(self):
-        return self.__index
+    def index_dict(self):
+        return self.__index_dict
 
     @property
-    def vector_list(self):
-        return self.__vector_list
+    def vector_matrix(self):
+        return self.__vector_matrix
 
-    @vector_list.setter
-    def vector_list(self, vector_list):
-        self.__vector_list = vector_list
+    # train:test:valid  --> 5 : 2.5 : 2.5
+    # if ratio == 0.8   --> 8 :   1 :   1
+    def __init_index_dict(self):
+        index_dict = dict()
+        data_dict = {
+            "train": list(),
+            "test": list(),
+            "valid": list()
+        }
+
+        def __is_choice(ratio=0.5):
+            if random.randrange(10) < (ratio * 10):
+                return True
+            else:
+                return False
+
+        for index in range(self.len_data):
+            if __is_choice(op.RATIO):
+                index_dict[index] = "train"
+                data_dict["train"].append(index)
+            elif __is_choice():
+                index_dict[index] = "test"
+                data_dict["test"].append(index)
+            else:
+                index_dict[index] = "valid"
+                data_dict["valid"].append(index)
+        #
+        # for k in data_dict:
+        #     print(k.rjust(8), "count -", len(data_dict[k]))
+
+        return index_dict
 
     def encoding(self):
-        def __init_vector_dict():
-            vector_dict = OrderedDict()
-            vector_dict["x_train"] = x_train
-            vector_dict["y_train"] = y_train
-            vector_dict["x_test"] = x_test
-            vector_dict["y_test"] = y_test
-
-            return vector_dict
-
-        def __set_x_data(is_manual=False, is_test=False):
-            x_data = copy.deepcopy(encoder.vector_matrix)
-
-            if is_manual:
-                if is_test:
-                    for class_of_column in list(x_data.keys()):
-                        x_data[class_of_column] = x_data[class_of_column][:subset_size]
-                else:
-                    for class_of_column in list(x_data.keys()):
-                        x_data[class_of_column] = x_data[class_of_column][subset_size:]
-            else:
-                if is_test:
-                    for class_of_column in list(x_data.keys()):
-                        x_data[class_of_column] = x_data[class_of_column][i * subset_size:][:subset_size]
-                else:
-                    for class_of_column in list(x_data.keys()):
-                        x_data[class_of_column] = x_data[class_of_column][:i * subset_size] + \
-                                                  x_data[class_of_column][(i + 1) * subset_size:]
-
-            return x_data
-
         # init encoder and fit it
-        # encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
-        # encoder.encoding()
-        # encoder.fit()
+        encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
+        encoder.encoding()
+        encoder.fit()
         # encoder.show_vectors(*self.dataHandler.header_list)
 
-        self.__set_index()
-
-        # for key, vectors in encoder.vector_matrix.items():
-        #     for i, v in enumerate(vectors):
-        #         print(key, i)
-        #         print(v)
-        #     print("\n===============================\n")
-
-        # # k-fold validation
-        # if op.NUM_FOLDS > 1:
-        #     subset_size = int(self.len_data / op.NUM_FOLDS) + 1
-        #
-        #     for i in range(op.NUM_FOLDS):
-        #         y_train = self.y_data[:i * subset_size] + self.y_data[(i + 1) * subset_size:]
-        #         y_test = self.y_data[i * subset_size:][:subset_size]
-        #         x_train = __set_x_data()
-        #         x_test = __set_x_data(is_test=True)
-        #         self.vector_list.append(__init_vector_dict())
-        #
-        # # one fold
-        # else:
-        #     subset_size = int(self.len_data / op.RATIO)
-        #     y_train = self.y_data[subset_size:]
-        #     y_test = self.y_data[:subset_size]
-        #
-        #     x_train = __set_x_data(is_manual=True)
-        #     x_test = __set_x_data(is_manual=True, is_test=True)
-        #     self.vector_list.append(__init_vector_dict())
+        self.__set_vector_matrix(encoder.vector_matrix)
 
         del self.dataHandler
 
-    def __set_index(self):
-        cut_train_ratio = op.RATIO
-        cut_test_ratio = cut_train_ratio + ((RANDRANGE - cut_train_ratio) / 2.0)
+    def __set_vector_matrix(self, vector_matrix):
+        def __copy(x_target, y_target, y_data):
+            for _class_of_column in x_target:
+                x_target[_class_of_column].append(vector_matrix[_class_of_column][index])
 
-        for i in range(self.len_data):
-            rand = random.randrange(RANDRANGE)
+            y_target.append(y_data)
 
-            if rand < op.RATIO:
-                self.index["train"].append(i)
-            else:
-                if cut_test_ratio.is_integer():
-                    if rand < cut_test_ratio:
-                        self.index["test"].append(i)
-                    else:
-                        self.index["valid"].append(i)
-                else:
-                    pass
+        self.vector_matrix["x_train"] = {class_of_column: list() for class_of_column in vector_matrix}
+        self.vector_matrix["x_valid"] = {class_of_column: list() for class_of_column in vector_matrix}
+        self.vector_matrix["x_test"] = {class_of_column: list() for class_of_column in vector_matrix}
 
-                # print(cut_test_ratio, )
-                # is_test = random.choice([True, False])
-                #
-                # if is_test:
-                #     self.index["test"].append(i)
-                # else:
-                #     self.index["valid"].append(i)
+        for index in range(self.len_data):
+            which = self.index_dict[index]
 
-        for k in self.index:
-            print(k, len(self.index[k]))
+            if which is "train":
+                __copy(self.vector_matrix["x_train"], self.vector_matrix["y_train"], self.y_data[index])
+            elif which is "valid":
+                __copy(self.vector_matrix["x_valid"], self.vector_matrix["y_valid"], self.y_data[index])
+            elif which is "test":
+                __copy(self.vector_matrix["x_test"], self.vector_matrix["y_test"], self.y_data[index])
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):
@@ -170,15 +139,13 @@ class VectorMaker:
             file_name = DUMP_PATH + DUMP_FILE + append_name + self.file_name + "_" + str(op.RATIO)
 
         with open(file_name, 'w') as outfile:
-            json.dump(self.vector_list, outfile, indent=4)
-            print("\nsuccess make dump file! - file name is", file_name)
+            json.dump(self.vector_matrix, outfile, indent=4)
+            print("success make dump file! - file name is", file_name)
 
         if do_show:
-            for i, data in enumerate(self.vector_list):
-                print()
-                print("\nData Set", i+1)
-                print("Train total count -", str(len(self.vector_list[i]["x_train"]["merge"])).rjust(4),
-                      "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_train"])).rjust(4))
-                print("Test  total count -", str(len(self.vector_list[i]["x_test"]["merge"])).rjust(4),
-                      "\tmortality count -", str(__counting_mortality(self.vector_list[i]["y_test"])).rjust(4))
-            print()
+            print("\n\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
+            print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
+            print("Test  total count -", str(len(self.vector_matrix["x_test"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_test"])).rjust(4), "\n\n")

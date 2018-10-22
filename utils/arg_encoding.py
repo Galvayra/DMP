@@ -11,9 +11,9 @@ def get_arguments():
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
                                                     "\ndefault is 'None'.csv "
                                                     "\nUseAge : python encoding.py -target 'Symptom'\n\n")
-    parser.add_argument("-ratio", "--ratio", help="set a ratio of training set (default is 8)"
+    parser.add_argument("-ratio", "--ratio", help="set a ratio of training set in data set(default is 0.8)"
                                                   "\ntrain:test:validate = N:(10-N)/2:(10-N)/2"
-                                                  "\nUseAge : python encoding.py -ratio 6 (6:2:2)\n\n")
+                                                  "\nUseAge : python encoding.py -ratio 0.5 (2:1:1)\n\n")
     parser.add_argument("-fold", "--fold", help="set a number of k-fold (default is 5)"
                                                 "\nUseAge : python encoding.py -fold 5\n\n")
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
@@ -32,7 +32,7 @@ def get_arguments():
 
 args = get_arguments()
 
-RATIO = 8
+RATIO = 0.8
 NUM_FOLDS = 5
 IS_CLOSED = False
 USE_W2V = False
@@ -71,12 +71,12 @@ if args.fold:
 
 if args.ratio:
     try:
-        RATIO = int(args.ratio)
+        RATIO = float(args.ratio)
     except ValueError:
         print("\nInput Error type of ratio option!\n")
         exit(-1)
     else:
-        if RATIO < 1 or RATIO > 10:
+        if RATIO < 0 or RATIO > 1:
             print("\nInput Error a boundary of ratio option!\n")
             exit(-1)
 
