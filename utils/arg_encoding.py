@@ -20,9 +20,6 @@ def get_arguments():
                                                     "\nUseAge : python encoding.py -closed 1\n\n")
     parser.add_argument("-id", "--identify", help="set id for separating training sets (default is None)"
                                                   "\nUseAge : python encoding.py -id string\n\n")
-    # parser.add_argument("-w2v", "--word2v", help="using word2vec (default is 0)"
-    #                                              "\nUseAge : python training.py -w2v 1 (True)"
-    #                                              "\n         python training.py -w2v 0 (False)\n\n")
     parser.add_argument("-output", "--output", help="set vector file name to train or predict (default is Null)"
                                                     "\nUseAge : python encoding.py -output 'file_name'\n\n")
     _args = parser.parse_args()
@@ -35,11 +32,9 @@ args = get_arguments()
 RATIO = 0.8
 NUM_FOLDS = 5
 IS_CLOSED = False
-USE_W2V = False
 
 READ_FILE = "dataset_parsing.csv"
 COLUMN_TARGET = str()
-USE_ID = str()
 FILE_VECTOR = str()
 
 if args.target:
@@ -99,17 +94,4 @@ if args.identify:
     USE_ID = args.identify + "#"
 
 if args.output:
-    FILE_VECTOR = args.output + "_" + str(RATIO)
-
-# if not args.word2v:
-#     USE_W2V = False
-# else:
-#     try:
-#         USE_W2V = int(args.word2v)
-#     except ValueError:
-#         print("\nInput Error type of word2v option!\n")
-#         exit(-1)
-#     else:
-#         if USE_W2V != 1 and USE_W2V != 0:
-#             print("\nInput Error word2v option!\n")
-#             exit(-1)
+    FILE_VECTOR = args.output

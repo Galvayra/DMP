@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-# import gensim.models.keyedvectors as word2vec
 from .variables import *
 import math
 
@@ -10,7 +9,7 @@ SCALAR_DEFAULT_WEIGHT = 0.1
 
 # initial information & Past history 만을 이용하여 학습
 class MyOneHotEncoder:
-    def __init__(self, data_handler, w2v=False):
+    def __init__(self, data_handler):
         self.vector_matrix = OrderedDict()
         self.__vector = OrderedDict()
         self.__vector_dict = dict()
@@ -18,15 +17,6 @@ class MyOneHotEncoder:
         self.dataHandler = data_handler
         self.__x_data = self.dataHandler.x_data_dict
         self.__len_data = len(self.dataHandler.y_data)
-        # self.__vector_dict = dict()
-        # self.__w2v = w2v
-        # if self.w2v:
-        #     self.model = word2vec.KeyedVectors.load_word2vec_format(DUMP_PATH + LOAD_WORD2VEC, binary=True)
-        #     print("\nUsing word2vec")
-        #     print("\nRead w2v file -", DUMP_PATH + LOAD_WORD2VEC)
-        # else:
-        #     print("\nNot using Word2vec")
-        # print("\n\n")
 
     @property
     def vector(self):
@@ -43,11 +33,6 @@ class MyOneHotEncoder:
     @property
     def len_data(self):
         return self.__len_data
-
-    #
-    # @property
-    # def w2v(self):
-    #     return self.__w2v
 
     def encoding(self):
 

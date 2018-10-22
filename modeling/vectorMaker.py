@@ -3,7 +3,6 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH
 import json
-import copy
 import random
 
 
@@ -75,15 +74,12 @@ class VectorMaker:
             else:
                 index_dict[index] = "valid"
                 data_dict["valid"].append(index)
-        #
-        # for k in data_dict:
-        #     print(k.rjust(8), "count -", len(data_dict[k]))
 
         return index_dict
 
     def encoding(self):
         # init encoder and fit it
-        encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
+        encoder = MyOneHotEncoder(self.dataHandler)
         encoder.encoding()
         encoder.fit()
         # encoder.show_vectors(*self.dataHandler.header_list)
@@ -125,18 +121,7 @@ class VectorMaker:
         if op.FILE_VECTOR:
             file_name = DUMP_PATH + op.FILE_VECTOR
         else:
-            if op.USE_W2V:
-                append_name = "_w2v_"
-            else:
-                append_name = "_"
-
-            if op.USE_ID:
-                append_name += op.USE_ID
-
-            if op.IS_CLOSED:
-                append_name += "closed_"
-
-            file_name = DUMP_PATH + DUMP_FILE + append_name + self.file_name + "_" + str(op.RATIO)
+            file_name = DUMP_PATH + DUMP_FILE
 
         with open(file_name, 'w') as outfile:
             json.dump(self.vector_matrix, outfile, indent=4)
