@@ -4,6 +4,9 @@ from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH
 import json
 import copy
+import random
+
+RANDRANGE = 10
 
 
 class VectorMaker:
@@ -19,7 +22,6 @@ class VectorMaker:
             "valid": list()
         }
         self.__file_name = self.dataHandler.file_name.split('.')[0]
-
 
     @property
     def file_name(self):
@@ -44,7 +46,6 @@ class VectorMaker:
     @vector_list.setter
     def vector_list(self, vector_list):
         self.__vector_list = vector_list
-
 
     def encoding(self):
         def __init_vector_dict():
@@ -78,10 +79,12 @@ class VectorMaker:
             return x_data
 
         # init encoder and fit it
-        encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
-        encoder.encoding()
-        encoder.fit()
+        # encoder = MyOneHotEncoder(self.dataHandler, w2v=op.USE_W2V)
+        # encoder.encoding()
+        # encoder.fit()
         # encoder.show_vectors(*self.dataHandler.header_list)
+
+        self.__set_index()
 
         # for key, vectors in encoder.vector_matrix.items():
         #     for i, v in enumerate(vectors):
@@ -111,7 +114,36 @@ class VectorMaker:
         #     self.vector_list.append(__init_vector_dict())
 
         del self.dataHandler
-        
+
+    def __set_index(self):
+        cut_train_ratio = op.RATIO
+        cut_test_ratio = cut_train_ratio + ((RANDRANGE - cut_train_ratio) / 2.0)
+
+        for i in range(self.len_data):
+            rand = random.randrange(RANDRANGE)
+
+            if rand < op.RATIO:
+                self.index["train"].append(i)
+            else:
+                if cut_test_ratio.is_integer():
+                    if rand < cut_test_ratio:
+                        self.index["test"].append(i)
+                    else:
+                        self.index["valid"].append(i)
+                else:
+                    pass
+
+                # print(cut_test_ratio, )
+                # is_test = random.choice([True, False])
+                #
+                # if is_test:
+                #     self.index["test"].append(i)
+                # else:
+                #     self.index["valid"].append(i)
+
+        for k in self.index:
+            print(k, len(self.index[k]))
+
     def dump(self, do_show=True):
         def __counting_mortality(_data):
             count = 0
