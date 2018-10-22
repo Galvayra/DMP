@@ -457,8 +457,8 @@ class DataHandler:
                 for index in down_sampling_list:
                     del raw_data_list[index]
 
-                random.seed(SEED)
-                random.shuffle(raw_data_list)
+                # random.seed(SEED)
+                # random.shuffle(raw_data_list)
                 save_dict[header_key] = raw_data_list
 
             self.__summary(down_sampling_count)
@@ -469,8 +469,8 @@ class DataHandler:
                 else:
                     raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
 
-                random.seed(SEED)
-                random.shuffle(raw_data_list)
+                # random.seed(SEED)
+                # random.shuffle(raw_data_list)
                 save_dict[header_key] = raw_data_list
 
             self.__summary()

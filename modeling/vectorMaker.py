@@ -13,7 +13,13 @@ class VectorMaker:
         self.__y_data = self.dataHandler.y_data
         self.__len_data = len(self.dataHandler.y_data)
         self.__vector_list = list()
+        self.__index = {
+            "train": list(),
+            "test": list(),
+            "valid": list()
+        }
         self.__file_name = self.dataHandler.file_name.split('.')[0]
+
 
     @property
     def file_name(self):
@@ -28,12 +34,17 @@ class VectorMaker:
         return self.__len_data
 
     @property
+    def index(self):
+        return self.__index
+
+    @property
     def vector_list(self):
         return self.__vector_list
 
     @vector_list.setter
     def vector_list(self, vector_list):
         self.__vector_list = vector_list
+
 
     def encoding(self):
         def __init_vector_dict():
@@ -78,29 +89,29 @@ class VectorMaker:
         #         print(v)
         #     print("\n===============================\n")
 
-        # k-fold validation
-        if op.NUM_FOLDS > 1:
-            subset_size = int(self.len_data / op.NUM_FOLDS) + 1
-
-            for i in range(op.NUM_FOLDS):
-                y_train = self.y_data[:i * subset_size] + self.y_data[(i + 1) * subset_size:]
-                y_test = self.y_data[i * subset_size:][:subset_size]
-                x_train = __set_x_data()
-                x_test = __set_x_data(is_test=True)
-                self.vector_list.append(__init_vector_dict())
-
-        # one fold
-        else:
-            subset_size = int(self.len_data / op.RATIO)
-            y_train = self.y_data[subset_size:]
-            y_test = self.y_data[:subset_size]
-
-            x_train = __set_x_data(is_manual=True)
-            x_test = __set_x_data(is_manual=True, is_test=True)
-            self.vector_list.append(__init_vector_dict())
+        # # k-fold validation
+        # if op.NUM_FOLDS > 1:
+        #     subset_size = int(self.len_data / op.NUM_FOLDS) + 1
+        #
+        #     for i in range(op.NUM_FOLDS):
+        #         y_train = self.y_data[:i * subset_size] + self.y_data[(i + 1) * subset_size:]
+        #         y_test = self.y_data[i * subset_size:][:subset_size]
+        #         x_train = __set_x_data()
+        #         x_test = __set_x_data(is_test=True)
+        #         self.vector_list.append(__init_vector_dict())
+        #
+        # # one fold
+        # else:
+        #     subset_size = int(self.len_data / op.RATIO)
+        #     y_train = self.y_data[subset_size:]
+        #     y_test = self.y_data[:subset_size]
+        #
+        #     x_train = __set_x_data(is_manual=True)
+        #     x_test = __set_x_data(is_manual=True, is_test=True)
+        #     self.vector_list.append(__init_vector_dict())
 
         del self.dataHandler
-
+        
     def dump(self, do_show=True):
         def __counting_mortality(_data):
             count = 0
@@ -124,7 +135,7 @@ class VectorMaker:
             if op.IS_CLOSED:
                 append_name += "closed_"
 
-            file_name = DUMP_PATH + DUMP_FILE + append_name + self.file_name + "_" + str(op.NUM_FOLDS)
+            file_name = DUMP_PATH + DUMP_FILE + append_name + self.file_name + "_" + str(op.RATIO)
 
         with open(file_name, 'w') as outfile:
             json.dump(self.vector_list, outfile, indent=4)
