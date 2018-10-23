@@ -31,28 +31,26 @@ class MyNeuralNetwork(MyPlot):
         for k, v in kwargs.items():
             self.__score[k].append(v)
 
-    def show_score(self, k_fold, fpr, tpr):
+    def show_score(self, fpr, tpr):
         if op.DO_SHOW:
-            print('\n\n')
-            print(k_fold + 1, "fold")
             print('Precision : %.1f' % (self.score["P"][-1] * 100))
             print('Recall    : %.1f' % (self.score["R"][-1] * 100))
             print('F1-Score  : %.1f' % (self.score["F1"][-1] * 100))
             print('Accuracy  : %.1f' % (self.score["Acc"][-1] * 100))
             print('AUC       : %.1f' % self.score["AUC"][-1])
-            # self.my_plot.plot(fpr, tpr, alpha=0.3, label='ROC %d (AUC = %0.1f)' % (k_fold+1, self.score["AUC"][-1]))
+            # self.my_plot.plot(fpr, tpr, alpha=0.3, label='AUC = %0.1f' % self.score["AUC"][-1])
 
-    def show_total_score(self, _method):
-        print("\n\n============ " + _method + " ============\n")
-        print("Total precision - %.1f" % ((sum(self.score["P"]) / op.NUM_FOLDS) * 100))
-        print("Total recall    - %.1f" % ((sum(self.score["R"]) / op.NUM_FOLDS) * 100))
-        print("Total F1-Score  - %.1f" % ((sum(self.score["F1"]) / op.NUM_FOLDS) * 100))
-        print("Total accuracy  - %.1f" % ((sum(self.score["Acc"]) / op.NUM_FOLDS) * 100))
-        print("Total auc       - %.1f" % (sum(self.score["AUC"]) / op.NUM_FOLDS))
-        print("\n\n======================================\n")
+    # def show_total_score(self, _method):
+    #     print("\n\n============ " + _method + " ============\n")
+    #     print("Total precision - %.1f" % ((sum(self.score["P"]) / op.NUM_FOLDS) * 100))
+    #     print("Total recall    - %.1f" % ((sum(self.score["R"]) / op.NUM_FOLDS) * 100))
+    #     print("Total F1-Score  - %.1f" % ((sum(self.score["F1"]) / op.NUM_FOLDS) * 100))
+    #     print("Total accuracy  - %.1f" % ((sum(self.score["Acc"]) / op.NUM_FOLDS) * 100))
+    #     print("Total auc       - %.1f" % (sum(self.score["AUC"]) / op.NUM_FOLDS))
+    #     print("\n\n======================================\n")
 
     @staticmethod
-    def __init_log_file_name(k_fold):
+    def __init_log_file_name():
         log_name = "./logs/" + op.SAVE_DIR_NAME + op.USE_ID + "log_"
 
         if op.NUM_HIDDEN_LAYER < 10:
@@ -60,7 +58,7 @@ class MyNeuralNetwork(MyPlot):
         else:
             log_name += "h_" + str(op.NUM_HIDDEN_LAYER)
 
-        log_name += "_ep_" + str(op.EPOCH) + "_k_" + str(k_fold + 1)
+        log_name += "_ep_" + str(op.EPOCH)
 
         if op.USE_W2V:
             log_name += "_w2v"
@@ -71,7 +69,7 @@ class MyNeuralNetwork(MyPlot):
         return log_name
 
     @staticmethod
-    def __init_save_dir(k_fold):
+    def __init_save_dir():
         if op.NUM_HIDDEN_LAYER < 10:
             _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER)
         else:
@@ -84,7 +82,7 @@ class MyNeuralNetwork(MyPlot):
         if not os.path.isdir(_save_dir):
             os.mkdir(_save_dir)
 
-        _save_dir += _hidden_ + _epoch_ + str(k_fold + 1) + "/"
+        _save_dir += _hidden_ + _epoch_ + "/"
 
         if os.path.isdir(_save_dir):
             shutil.rmtree(_save_dir)
@@ -93,7 +91,7 @@ class MyNeuralNetwork(MyPlot):
         return _save_dir
 
     @staticmethod
-    def __load_tensor(k_fold):
+    def __load_tensor():
         if op.NUM_HIDDEN_LAYER < 10:
             _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER)
         else:
@@ -107,7 +105,7 @@ class MyNeuralNetwork(MyPlot):
         else:
             tensor_load = _save_dir
 
-        tensor_load += _hidden_ + _epoch_ + str(k_fold + 1) + "/"
+        tensor_load += _hidden_ + _epoch_ + "/"
 
         return tensor_load
 
@@ -153,9 +151,9 @@ class MyNeuralNetwork(MyPlot):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def feed_forward_nn(self, k_fold, x_train, y_train, x_test, y_test):
-        save_dir = self.__init_save_dir(k_fold)
-        log_dir = self.__init_log_file_name(k_fold)
+    def feed_forward_nn(self, x_train, y_train, x_test, y_test):
+        save_dir = self.__init_save_dir()
+        log_dir = self.__init_log_file_name()
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -165,7 +163,7 @@ class MyNeuralNetwork(MyPlot):
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
         h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.__compute_score(k_fold, y_test, h, p, acc)
+        self.__compute_score(y_test, h, p, acc)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -209,9 +207,9 @@ class MyNeuralNetwork(MyPlot):
 
         return convolution_layer, num_of_dimension
 
-    def convolution_nn(self, k_fold, x_train, y_train, x_test, y_test):
-        log_dir = self.__init_log_file_name(k_fold)
-        save_dir = self.__init_save_dir(k_fold)
+    def convolution_nn(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+        log_dir = self.__init_log_file_name()
+        save_dir = self.__init_save_dir()
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -221,8 +219,8 @@ class MyNeuralNetwork(MyPlot):
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
-        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.__compute_score(k_fold, y_test, h, p, acc)
+        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
+        self.__compute_score(y_valid, h, p, acc)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
         if op.DO_SHOW:
@@ -271,7 +269,7 @@ class MyNeuralNetwork(MyPlot):
 
         return h, p, acc
 
-    def __compute_score(self, k_fold, y_test, h, p, acc):
+    def __compute_score(self, y_test, h, p, acc):
         _precision = precision_score(y_test, p)
         _recall = recall_score(y_test, p)
         _f1 = f1_score(y_test, p)
@@ -279,7 +277,7 @@ class MyNeuralNetwork(MyPlot):
         try:
             _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
         except ValueError:
-            print("\n\nWhere fold -", k_fold, " cost is NaN !!")
+            print("\n\ncost is NaN !!")
             # print("erase  log directory -", log_dir)
             # print("erase save directory -", save_dir)
             # shutil.rmtree(save_dir)
@@ -294,15 +292,13 @@ class MyNeuralNetwork(MyPlot):
 
             if _precision == 0 or _recall == 0:
                 print("\n\n------------\nIt's not working")
-                print('k-fold : %d, Precision : %.1f, Recall : %.1f' %
-                      (k_fold + 1, (_precision * 100), (_recall * 100)))
+                print("Precision : %.1f, Recall : %.1f" % ((_precision * 100), (_recall * 100)))
                 print("\n------------")
 
             self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": acc, "AUC": _auc})
 
             if op.DO_SHOW:
                 print('\n\n')
-                print(k_fold + 1, "fold")
                 print('Precision : %.1f' % (_precision * 100))
                 print('Recall    : %.1f' % (_recall * 100))
                 print('F1-Score  : %.1f' % (_f1 * 100))
@@ -311,8 +307,8 @@ class MyNeuralNetwork(MyPlot):
                 # self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
                 #                   label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
 
-    def load_feed_forward_nn(self, k_fold, x_test, y_test):
-        tensor_load = self.__load_tensor(k_fold)
+    def load_feed_forward_nn(self, x_test, y_test):
+        tensor_load = self.__load_tensor()
 
         sess = tf.Session()
         saver = tf.train.import_meta_graph(tensor_load + 'model-' + str(op.EPOCH) + '.meta')
@@ -340,4 +336,4 @@ class MyNeuralNetwork(MyPlot):
         _auc = auc(logistic_fpr, logistic_tpr) / 100
 
         self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": _accuracy, "AUC": _auc})
-        self.show_score(k_fold, fpr=logistic_fpr, tpr=logistic_tpr)
+        self.show_score(fpr=logistic_fpr, tpr=logistic_tpr)

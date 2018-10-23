@@ -13,9 +13,6 @@ def get_arguments():
                                                   "\nUseAge : python training.py -id string\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python training.py -model (svm|ffnn|cnn)\n\n")
-    # parser.add_argument("-w2v", "--word2v", help="using word2vec (default is 0)"
-    #                                              "\nUseAge : python training.py -w2v 1 (True)"
-    #                                              "\n         python training.py -w2v 0 (False)\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python training.py -epoch 20000\n\n")
@@ -46,12 +43,12 @@ else:
     READ_VECTOR = vector_path + vector_name
 
 
-# Training options #
-try:
-    NUM_FOLDS = int(READ_VECTOR[-1])
-except ValueError:
-    print(READ_VECTOR, "file name have not a number of fold!")
-    exit(-1)
+# # Training options #
+# try:
+#     NUM_FOLDS = int(READ_VECTOR[-1])
+# except ValueError:
+#     print(READ_VECTOR, "file name have not a number of fold!")
+#     exit(-1)
 
 IS_CLOSED = False
 USE_W2V = False
@@ -159,7 +156,8 @@ def show_options():
     else:
         print("Not using word2vec\n")
 
-    print("# of fold -", NUM_FOLDS)
-    print("# of hidden layers -", NUM_HIDDEN_LAYER)
-    print("Learning Rate -", LEARNING_RATE)
-    print("# of EPOCH -", EPOCH)
+    if MODEL_TYPE != "svm":
+        # print("# of fold -", NUM_FOLDS)
+        print("# of hidden layers -", NUM_HIDDEN_LAYER)
+        print("Learning Rate -", LEARNING_RATE)
+        print("# of EPOCH -", EPOCH)

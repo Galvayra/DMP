@@ -10,3 +10,5 @@ NAME_PREDICT = "predict"
 NAME_X = "tf_x"
 NAME_Y = "tf_y"
 NAME_PROB = "keep_prob"
+
+GRAY_SCALE = 255
