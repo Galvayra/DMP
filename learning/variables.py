@@ -14,7 +14,7 @@ NAME_PROB = "keep_prob"
 GRAY_SCALE = 255
 
 # key of target
-KEY_VALID = "valid"
+KEY_VALID = "validation"
 KEY_MORTALITY = "mortality"
 KEY_IMMORTALITY = "immortality"
 

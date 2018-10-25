@@ -82,7 +82,8 @@ class MyPlot:
             print('AUC       : %.1f' % self.score_dict[target][KEY_AUC])
 
             if fpr is not False and tpr is not False:
-                self.my_plot.plot(fpr, tpr, alpha=0.3, label='AUC = %0.1f' % self.score_dict[target][KEY_AUC])
+                self.my_plot.plot(fpr, tpr, alpha=0.3,
+                                  label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
 
     def init_plot(self):
         if op.DO_SHOW:

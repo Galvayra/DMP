@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-import json
 from os import path
 
 try:
@@ -8,8 +7,8 @@ try:
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DMP.learning.train import MyTrain
-from DMP.utils.arg_training import READ_VECTOR, show_options
+from DMP.learning.learn import DataClassifier
+from DMP.learning.dataHandler import DataHandler
 
 
 if __name__ == '__main__':
@@ -30,21 +29,25 @@ if __name__ == '__main__':
     #
     #     file_name = DUMP_FILE + "_" + append_name + csv_name + "_" + str(op.NUM_FOLDS)
     #     print(file_name)
-    try:
-        with open(READ_VECTOR, 'r') as file:
-            vector_list = json.load(file)
-    except FileNotFoundError:
-        print("\nPlease execute encoding script !")
-        print("FileNotFoundError] READ_VECTOR is", "'" + READ_VECTOR + "'", "\n\n")
-    else:
-        print("\nRead vectors -", READ_VECTOR)
-        show_options()
+    #
+    # try:
+    #     with open(READ_VECTOR, 'r') as file:
+    #         vector_list = json.load(file)
+    # except FileNotFoundError:
+    #     print("\nPlease execute encoding script !")
+    #     print("FileNotFoundError] READ_VECTOR is", "'" + READ_VECTOR + "'", "\n\n")
+    # else:
+    #     print("\nRead vectors -", READ_VECTOR)
+    #     show_options()
+    #
+    #     # for vector_dict in vector_list:
+    #     #     for k in vector_dict:
+    #     #         if type(vector_dict[k]) is dict:
+    #     #             for j in vector_dict[k]:
+    #     #                 print(j)
+    #
+    #     train = MyTrain(vector_list)
+    #     train.training()
 
-        # for vector_dict in vector_list:
-        #     for k in vector_dict:
-        #         if type(vector_dict[k]) is dict:
-        #             for j in vector_dict[k]:
-        #                 print(j)
-
-        train = MyTrain(vector_list)
-        train.training()
+    classifier = DataClassifier(DataHandler())
+    classifier.training()
