@@ -80,7 +80,7 @@ class DataHandler:
 
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
 
-    def vector2txt(self, _file_name):
+    def vector2txt(self):
         def __write_vector(_w_file):
             for dimension, v in enumerate(x):
                 if v != 0:
@@ -88,9 +88,9 @@ class DataHandler:
             _w_file.write("\n")
 
         token = " "
-        train_file_name = "train_" + _file_name
-        valid_file_name = "test_" + _file_name
-        test_file_name = "test_" + _file_name
+        train_file_name = "train_" + READ_VECTOR.split('/')[-1]
+        valid_file_name = "test_" + READ_VECTOR.split('/')[-1]
+        test_file_name = "test_" + READ_VECTOR.split('/')[-1]
 
         for file_name, data in zip(
                 (train_file_name, valid_file_name, test_file_name),

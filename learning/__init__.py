@@ -1,1 +1,1 @@
-__all__ = ['learn.py', 'variables', 'neuralNet', 'plot']
+__all__ = ['dataClassifier', 'variables', 'neuralNet', 'plot']

@@ -7,7 +7,7 @@ try:
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DMP.learning.learn import DataClassifier
+from DMP.learning.dataClassifier import DataClassifier
 from DMP.learning.dataHandler import DataHandler
 
 
