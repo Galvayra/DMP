@@ -1,7 +1,5 @@
 import tensorflow as tf
 import DMP.utils.arg_training as op
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.metrics import roc_curve, auc
 from .variables import *
 from .plot import MyPlot
 import os
@@ -118,14 +116,14 @@ class MyNeuralNetwork(MyPlot):
         tf_bias.append(tf.Variable(tf.random_normal([1]), name="o_bias"))
 
         if op.DO_SHOW:
-            print("\n\n--- Feed Forward Layer Information ---")
+            print("\n\n======== Feed Forward Layer ========")
             for i, layer in enumerate(tf_layer):
                 print("Layer", i + 1, "-", layer.shape)
 
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def feed_forward_nn(self, x_train, y_train, x_test, y_test):
+    def feed_forward_nn(self, x_train, y_train, x_valid, y_valid):
         save_dir = self.__init_save_dir()
         log_dir = self.__init_log_file_name()
         num_of_dimension = len(x_train[0])
@@ -136,10 +134,10 @@ class MyNeuralNetwork(MyPlot):
 
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
-        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.compute_score(y_test, h, p, acc)
-        self.add_score(KEY_VALID)
-        self.show_score(target=KEY_VALID, fpr=False, tpr=False)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
+        self.compute_score(y_valid, y_predict, h, accuracy)
+        self.set_score(target=KEY_VALID)
+        self.show_score(target=KEY_VALID)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -172,7 +170,7 @@ class MyNeuralNetwork(MyPlot):
         convolution_layer = tf.reshape(layer_2, [-1, num_of_dimension], name="cnn_span_layer")
 
         if op.DO_SHOW:
-            print("\n\n--- Convolution Layer Information ---")
+            print("\n\n======== Convolution Layer ========")
             print("tf_x     -", self.tf_x.shape)
             print("tf_x_img -", tf_x_img.shape)
 
@@ -183,7 +181,7 @@ class MyNeuralNetwork(MyPlot):
 
         return convolution_layer, num_of_dimension
 
-    def convolution_nn(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+    def convolution_nn(self, x_train, y_train, x_valid, y_valid):
         log_dir = self.__init_log_file_name()
         save_dir = self.__init_save_dir()
         num_of_dimension = len(x_train[0])
@@ -195,15 +193,14 @@ class MyNeuralNetwork(MyPlot):
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
-        h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
-        self.compute_score(y_valid, h, p, acc)
-        self.add_score(KEY_VALID)
-        self.show_score(target=KEY_VALID, fpr=False, tpr=False)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
+        self.compute_score(y_valid, y_predict, h, accuracy)
+        self.set_score(target=KEY_VALID)
+        self.show_score(target=KEY_VALID)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
         if op.DO_SHOW:
-            print("Layer O -", hypothesis.shape)
-            print("\n")
+            print("Layer O -", hypothesis.shape, "\n\n\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
 
         with tf.name_scope("cost"):
@@ -263,24 +260,29 @@ class MyNeuralNetwork(MyPlot):
         predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
         keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
 
-        h, p = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
+        h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
+        self.compute_score(y_test, y_predict, h)
+        self.set_score(target=KEY_MORTALITY)
+        self.show_score(target=KEY_MORTALITY)
+        self.set_plot(target=KEY_MORTALITY)
+        self.show_plot()
 
-        logistic_fpr, logistic_tpr, _ = roc_curve(y_test, h)
-        logistic_fpr *= 100
-        logistic_tpr *= 100
-
-        _precision = precision_score(y_test, p)
-        _recall = recall_score(y_test, p)
-        _f1 = f1_score(y_test, p)
-        _accuracy = accuracy_score(y_test, p)
-        _auc = auc(logistic_fpr, logistic_tpr) / 100
-
-        self.set_score(**{
-            KEY_PRECISION: (_precision * 100),
-            KEY_RECALL: (_recall * 100),
-            KEY_F1: (_f1 * 100),
-            KEY_ACCURACY: (_accuracy * 100),
-            KEY_AUC: _auc
-        })
-        self.add_score(KEY_MORTALITY)
-        self.show_score(target=KEY_MORTALITY, fpr=logistic_fpr, tpr=logistic_tpr)
+        # logistic_fpr, logistic_tpr, _ = roc_curve(y_test, h)
+        # logistic_fpr *= 100
+        # logistic_tpr *= 100
+        #
+        # _precision = precision_score(y_test, p)
+        # _recall = recall_score(y_test, p)
+        # _f1 = f1_score(y_test, p)
+        # _accuracy = accuracy_score(y_test, p)
+        # _auc = auc(logistic_fpr, logistic_tpr) / 100
+        #
+        # self.set_score(**{
+        #     KEY_PRECISION: (_precision * 100),
+        #     KEY_RECALL: (_recall * 100),
+        #     KEY_F1: (_f1 * 100),
+        #     KEY_ACCURACY: (_accuracy * 100),
+        #     KEY_AUC: _auc
+        # })
+        # self.set_score(target=KEY_MORTALITY)
+        # self.show_score(target=KEY_MORTALITY)
