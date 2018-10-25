@@ -29,3 +29,6 @@ KEY_AUC = "auc"
 
 # gray scale for convolution neural network
 GRAY_SCALE = 255
+
+# drop out ratio
+KEEP_PROB = 0.7

@@ -16,7 +16,7 @@ class MyNeuralNetwork(MyPlot):
 
     @staticmethod
     def __init_log_file_name():
-        log_name = "./logs/" + op.SAVE_DIR_NAME + op.USE_ID + "log_"
+        log_name = "./logs/" + op.SAVE_DIR_NAME + "log_"
 
         if op.NUM_HIDDEN_LAYER < 10:
             log_name += "h_0" + str(op.NUM_HIDDEN_LAYER)
@@ -72,11 +72,7 @@ class MyNeuralNetwork(MyPlot):
 
         _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
 
-        if op.USE_ID:
-            tensor_load = _save_dir + op.USE_ID.split('#')[0] + "_"
-        else:
-            tensor_load = _save_dir
-
+        tensor_load = _save_dir
         tensor_load += _model_ + _hidden_ + _epoch_ + _learning_rate_ + "/"
 
         return tensor_load
@@ -226,10 +222,11 @@ class MyNeuralNetwork(MyPlot):
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
 
-            # if self.is_closed:
             for step in range(op.EPOCH + 1):
-                summary, cost_val, _ = sess.run([merged_summary, cost, train_op],
-                                                feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: 0.7})
+                summary, cost_val, _ = sess.run(
+                    [merged_summary, cost, train_op],
+                    feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                )
                 writer.add_summary(summary, global_step=step)
 
                 if op.DO_SHOW and step % (op.EPOCH / 10) == 0:
@@ -266,23 +263,3 @@ class MyNeuralNetwork(MyPlot):
         self.show_score(target=KEY_MORTALITY)
         self.set_plot(target=KEY_MORTALITY)
         self.show_plot()
-
-        # logistic_fpr, logistic_tpr, _ = roc_curve(y_test, h)
-        # logistic_fpr *= 100
-        # logistic_tpr *= 100
-        #
-        # _precision = precision_score(y_test, p)
-        # _recall = recall_score(y_test, p)
-        # _f1 = f1_score(y_test, p)
-        # _accuracy = accuracy_score(y_test, p)
-        # _auc = auc(logistic_fpr, logistic_tpr) / 100
-        #
-        # self.set_score(**{
-        #     KEY_PRECISION: (_precision * 100),
-        #     KEY_RECALL: (_recall * 100),
-        #     KEY_F1: (_f1 * 100),
-        #     KEY_ACCURACY: (_accuracy * 100),
-        #     KEY_AUC: _auc
-        # })
-        # self.set_score(target=KEY_MORTALITY)
-        # self.show_score(target=KEY_MORTALITY)

@@ -9,8 +9,6 @@ def get_arguments():
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
                                                     "\nUseAge : python training.py -closed 1\n\n")
-    parser.add_argument("-id", "--identify", help="set id for separating training sets (default is None)"
-                                                  "\nUseAge : python training.py -id string\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python training.py -model (svm|ffnn|cnn)\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
@@ -21,10 +19,12 @@ def get_arguments():
                                                     "\nUseAge : python training.py -hidden 2 (non-linear)\n\n")
     parser.add_argument("-learn", "--learn", help="set a learning rate for training (default is 0.001)"
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
-    parser.add_argument("-show", "--show", help="show plot (default is 0)"
+    parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
                                                 "\nUseAge : python training.py -show 1 (True)\n\n")
     parser.add_argument("-dir", "--dir", help="set directory name by distinction (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
+    parser.add_argument("-plot", "--plot", help="show plot (default is 0)"
+                                                "\nUseAge : python predict.py -plot 1 (True)\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -42,33 +42,23 @@ if args.vector:
 else:
     READ_VECTOR = vector_path + vector_name
 
-
-# # Training options #
-# try:
-#     NUM_FOLDS = int(READ_VECTOR[-1])
-# except ValueError:
-#     print(READ_VECTOR, "file name have not a number of fold!")
-#     exit(-1)
-
+# Training options #
 IS_CLOSED = False
 USE_W2V = False
 MODEL_TYPE = "svm"
-
 
 # Parameter options #
 EPOCH = 2000
 NUM_HIDDEN_LAYER = 0
 NUM_HIDDEN_DIMENSION = 0
-LEARNING_RATE = 0.001
-
+LEARNING_RATE = 0.0001
 
 # SAVE options #
-USE_ID = str()
 SAVE_DIR_NAME = str()
-
 
 # SHOW options #
 DO_SHOW = False
+DO_SHOW_PLOT = False
 
 if args.closed:
     try:
@@ -85,17 +75,11 @@ if args.closed:
         else:
             IS_CLOSED = False
 
-if args.identify:
-    USE_ID = args.identify + "#"
-
 if args.model:
     MODEL_TYPE = args.model
     if MODEL_TYPE != "ffnn" and MODEL_TYPE != "svm" and MODEL_TYPE != "cnn":
         print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
         exit(-1)
-
-if args.identify:
-    USE_ID = args.identify + "#"
 
 if args.epoch:
     try:
@@ -141,6 +125,17 @@ if args.show:
             print("\nInput Error show option!\n")
             exit(-1)
 
+if args.plot:
+    try:
+        DO_SHOW_PLOT = int(args.plot)
+    except ValueError:
+        print("\nInput Error type of show option!\n")
+        exit(-1)
+    else:
+        if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
+            print("\nInput Error show option!\n")
+            exit(-1)
+
 if args.dir:
     SAVE_DIR_NAME = args.dir + "/"
 
@@ -157,7 +152,6 @@ def show_options():
         print("Not using word2vec\n")
 
     if MODEL_TYPE != "svm":
-        # print("# of fold -", NUM_FOLDS)
         print("# of hidden layers -", NUM_HIDDEN_LAYER)
         print("Learning Rate -", LEARNING_RATE)
         print("# of EPOCH -", EPOCH)

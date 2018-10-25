@@ -101,7 +101,7 @@ class MyPlot:
             print('AUC       : %.1f' % self.score_dict[target][KEY_AUC])
 
     def init_plot(self):
-        if op.DO_SHOW:
+        if op.DO_SHOW_PLOT:
             fig = plt.figure(figsize=(10, 6))
             fig.suptitle("ROC CURVE", fontsize=16)
             self.__my_plot = plt.subplot2grid((2, 2), (0, 0))
@@ -116,11 +116,12 @@ class MyPlot:
                 self.my_plot.set_title("Convolution Neural Network")
 
     def set_plot(self, target):
-        self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
-                          label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
-        self.__tpr, self.__fpr = self.__init_plot()
+        if op.DO_SHOW_PLOT:
+            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
+                              label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
+            self.__tpr, self.__fpr = self.__init_plot()
 
     def show_plot(self):
-        if op.DO_SHOW:
+        if op.DO_SHOW_PLOT:
             self.my_plot.legend(loc="lower right")
             plt.show()
