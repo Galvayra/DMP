@@ -17,5 +17,9 @@ if [ "$vector" == "" ]; then
 	echo "please input vector"
 	echo
 else
-	python training.py -vector "$vector"
+    if [ "$result" == "" ]; then
+        python training.py -vector "$vector" -dir "$dir" -model "$model" -show "$show" -epoch "$epoch" -hidden "$hidden" -learn "$learn"
+    else
+        python training.py -vector "$vector" -dir "$dir" -model "$model" -show "$show" -epoch "$epoch" -hidden "$hidden" -learn "$learn" > result/"$result"
+    fi
 fi
