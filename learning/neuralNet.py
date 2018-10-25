@@ -12,42 +12,9 @@ import math
 class MyNeuralNetwork(MyPlot):
     def __init__(self):
         super().__init__()
-        self.__score = {
-            "P": list(),
-            "R": list(),
-            "F1": list(),
-            "Acc": list(),
-            "AUC": list()
-        }
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
-
-    @property
-    def score(self):
-        return self.__score
-
-    def add_score(self, **kwargs):
-        for k, v in kwargs.items():
-            self.__score[k].append(v)
-
-    def show_score(self, fpr, tpr):
-        if op.DO_SHOW:
-            print('Precision : %.1f' % (self.score["P"][-1] * 100))
-            print('Recall    : %.1f' % (self.score["R"][-1] * 100))
-            print('F1-Score  : %.1f' % (self.score["F1"][-1] * 100))
-            print('Accuracy  : %.1f' % (self.score["Acc"][-1] * 100))
-            print('AUC       : %.1f' % self.score["AUC"][-1])
-            # self.my_plot.plot(fpr, tpr, alpha=0.3, label='AUC = %0.1f' % self.score["AUC"][-1])
-
-    # def show_total_score(self, _method):
-    #     print("\n\n============ " + _method + " ============\n")
-    #     print("Total precision - %.1f" % ((sum(self.score["P"]) / op.NUM_FOLDS) * 100))
-    #     print("Total recall    - %.1f" % ((sum(self.score["R"]) / op.NUM_FOLDS) * 100))
-    #     print("Total F1-Score  - %.1f" % ((sum(self.score["F1"]) / op.NUM_FOLDS) * 100))
-    #     print("Total accuracy  - %.1f" % ((sum(self.score["Acc"]) / op.NUM_FOLDS) * 100))
-    #     print("Total auc       - %.1f" % (sum(self.score["AUC"]) / op.NUM_FOLDS))
-    #     print("\n\n======================================\n")
 
     @staticmethod
     def __init_log_file_name():
@@ -70,19 +37,22 @@ class MyNeuralNetwork(MyPlot):
 
     @staticmethod
     def __init_save_dir():
-        if op.NUM_HIDDEN_LAYER < 10:
-            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER)
-        else:
-            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER)
+        _model_ = op.MODEL_TYPE + "_"
 
-        _epoch_ = "_ep_" + str(op.EPOCH) + "_"
+        if op.NUM_HIDDEN_LAYER < 10:
+            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER) + "_"
+        else:
+            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER) + "_"
+
+        _epoch_ = "ep_" + str(op.EPOCH) + "_"
+        _learning_rate_ = "lr_" + str(op.LEARNING_RATE) + "_"
 
         _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
 
         if not os.path.isdir(_save_dir):
             os.mkdir(_save_dir)
 
-        _save_dir += _hidden_ + _epoch_ + "/"
+        _save_dir += _model_ + _hidden_ + _epoch_ + _learning_rate_ + "/"
 
         if os.path.isdir(_save_dir):
             shutil.rmtree(_save_dir)
@@ -92,12 +62,16 @@ class MyNeuralNetwork(MyPlot):
 
     @staticmethod
     def __load_tensor():
-        if op.NUM_HIDDEN_LAYER < 10:
-            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER)
-        else:
-            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER)
+        _model_ = op.MODEL_TYPE + "_"
 
-        _epoch_ = "_ep_" + str(op.EPOCH) + "_"
+        if op.NUM_HIDDEN_LAYER < 10:
+            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER) + "_"
+        else:
+            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER) + "_"
+
+        _epoch_ = "ep_" + str(op.EPOCH) + "_"
+        _learning_rate_ = "lr_" + str(op.LEARNING_RATE) + "_"
+
         _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
 
         if op.USE_ID:
@@ -105,7 +79,7 @@ class MyNeuralNetwork(MyPlot):
         else:
             tensor_load = _save_dir
 
-        tensor_load += _hidden_ + _epoch_ + "/"
+        tensor_load += _model_ + _hidden_ + _epoch_ + _learning_rate_ + "/"
 
         return tensor_load
 
@@ -163,7 +137,9 @@ class MyNeuralNetwork(MyPlot):
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
         h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir)
-        self.__compute_score(y_test, h, p, acc)
+        self.compute_score(y_test, h, p, acc)
+        self.add_score(KEY_VALID)
+        self.show_score(target=KEY_VALID, fpr=False, tpr=False)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -220,7 +196,9 @@ class MyNeuralNetwork(MyPlot):
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
         h, p, acc = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
-        self.__compute_score(y_valid, h, p, acc)
+        self.compute_score(y_valid, h, p, acc)
+        self.add_score(KEY_VALID)
+        self.show_score(target=KEY_VALID, fpr=False, tpr=False)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
         if op.DO_SHOW:
@@ -269,45 +247,7 @@ class MyNeuralNetwork(MyPlot):
 
         return h, p, acc
 
-    def __compute_score(self, y_test, h, p, acc):
-        _precision = precision_score(y_test, p)
-        _recall = recall_score(y_test, p)
-        _f1 = f1_score(y_test, p)
-
-        try:
-            _logistic_fpr, _logistic_tpr, _ = roc_curve(y_test, h)
-        except ValueError:
-            print("\n\ncost is NaN !!")
-            # print("erase  log directory -", log_dir)
-            # print("erase save directory -", save_dir)
-            # shutil.rmtree(save_dir)
-            # shutil.rmtree(log_dir)
-            # os.rmdir(save_dir)
-            # os.rmdir(log_dir)
-            exit(-1)
-        else:
-            _logistic_fpr *= 100
-            _logistic_tpr *= 100
-            _auc = auc(_logistic_fpr, _logistic_tpr) / 100
-
-            if _precision == 0 or _recall == 0:
-                print("\n\n------------\nIt's not working")
-                print("Precision : %.1f, Recall : %.1f" % ((_precision * 100), (_recall * 100)))
-                print("\n------------")
-
-            self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": acc, "AUC": _auc})
-
-            if op.DO_SHOW:
-                print('\n\n')
-                print('Precision : %.1f' % (_precision * 100))
-                print('Recall    : %.1f' % (_recall * 100))
-                print('F1-Score  : %.1f' % (_f1 * 100))
-                print('Accuracy  : %.1f' % (acc * 100))
-                print('AUC       : %.1f' % _auc)
-                # self.my_plot.plot(_logistic_fpr, _logistic_tpr, alpha=0.3,
-                #                   label='ROC %d (AUC = %0.1f)' % (k_fold + 1, _auc))
-
-    def load_feed_forward_nn(self, x_test, y_test):
+    def load_nn(self, x_test, y_test):
         tensor_load = self.__load_tensor()
 
         sess = tf.Session()
@@ -335,5 +275,12 @@ class MyNeuralNetwork(MyPlot):
         _accuracy = accuracy_score(y_test, p)
         _auc = auc(logistic_fpr, logistic_tpr) / 100
 
-        self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": _accuracy, "AUC": _auc})
-        self.show_score(fpr=logistic_fpr, tpr=logistic_tpr)
+        self.set_score(**{
+            KEY_PRECISION: (_precision * 100),
+            KEY_RECALL: (_recall * 100),
+            KEY_F1: (_f1 * 100),
+            KEY_ACCURACY: (_accuracy * 100),
+            KEY_AUC: _auc
+        })
+        self.add_score(KEY_MORTALITY)
+        self.show_score(target=KEY_MORTALITY, fpr=logistic_fpr, tpr=logistic_tpr)

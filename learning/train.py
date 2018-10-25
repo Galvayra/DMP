@@ -14,46 +14,6 @@ class MyTrain(MyNeuralNetwork):
         super().__init__()
         self.vector_list = vector_list
 
-    def __train_svm(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
-        model = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
-        model.fit(x_train, y_train)
-
-        # y_valid_pred = model.predict(x_valid)
-        # valid_probas_ = model.predict_proba(x_valid)
-        #
-        # _precision = precision_score(y_valid, y_valid_pred)
-        # _recall = recall_score(y_valid, y_valid_pred)
-        # _accuracy = accuracy_score(y_valid, y_valid_pred)
-        #
-        # _f1 = f1_score(y_valid, y_valid_pred)
-        # _svm_fpr, _svm_tpr, _ = roc_curve(y_valid, valid_probas_[:, 1])
-        # _svm_fpr *= 100
-        # _svm_tpr *= 100
-        # _auc = auc(_svm_fpr, _svm_tpr) / 100
-        #
-        # print('\n\nValidation score')
-        # print('Precision : %.1f' % _precision)
-        # print('Recall    : %.1f' % (_recall * 100))
-        # print('F1-Score  : %.1f' % (_f1 * 100))
-        # print('Accuracy  : %.1f' % (_accuracy * 100))
-        # print('AUC       : %.1f' % _auc)
-
-        y_test_pred = model.predict(x_test)
-        test_probas_ = model.predict_proba(x_test)
-
-        _precision = precision_score(y_test, y_test_pred)
-        _recall = recall_score(y_test, y_test_pred)
-        _accuracy = accuracy_score(y_test, y_test_pred)
-        _f1 = f1_score(y_test, y_test_pred)
-        _svm_fpr, _svm_tpr, _ = roc_curve(y_test, test_probas_[:, 1])
-        _svm_fpr *= 100
-        _svm_tpr *= 100
-        _auc = auc(_svm_fpr, _svm_tpr) / 100
-
-        print('\n\nTest score')
-        self.add_score(**{"P": _precision, "R": _recall, "F1": _f1, "Acc": _accuracy, "AUC": _auc})
-        self.show_score(fpr=_svm_fpr, tpr=_svm_tpr)
-
     def training(self):
         def __show_shape():
             def __count_mortality(_y_data_):
@@ -64,41 +24,27 @@ class MyTrain(MyNeuralNetwork):
 
                 return _count
 
-            x_train_np = np.array([np.array(j) for j in x_train])
-            y_test_np = np.array([np.array(j) for j in y_test])
-            x_valid_np = np.array([np.array(j) for j in x_valid])
-            y_valid_np = np.array([np.array(j) for j in y_valid])
-            x_test_np = np.array([np.array(j) for j in x_test])
-            y_train_np = np.array([np.array(j) for j in y_train])
+            if op.DO_SHOW:
+                x_train_np = np.array([np.array(j) for j in x_train])
+                y_test_np = np.array([np.array(j) for j in y_test])
+                x_valid_np = np.array([np.array(j) for j in x_valid])
+                y_valid_np = np.array([np.array(j) for j in y_valid])
+                x_test_np = np.array([np.array(j) for j in x_test])
+                y_train_np = np.array([np.array(j) for j in y_train])
 
-            print("\n\n\n\n=====================================\n")
-            print("dims - ", len(x_train[0]))
-            print("training   count -", len(y_train), "\t mortality count -", __count_mortality(y_train))
-            print("validation count -", len(y_valid), "\t mortality count -", __count_mortality(y_valid))
-            print("test       count -", len(y_test), "\t mortality count -", __count_mortality(y_test), "\n")
+                print("\n\n=====================================")
+                print("\nDataSet Count")
+                print("dims - ", len(x_train[0]))
+                print("Training   Count -", len(y_train), "\t Mortality Count -", __count_mortality(y_train))
+                print("Validation Count -", len(y_valid), "\t Mortality Count -", __count_mortality(y_valid))
+                print("Test       Count -", len(y_test), "\t Mortality Count -", __count_mortality(y_test))
 
-            print(np.shape(x_train_np), np.shape(y_train_np))
-            print(np.shape(x_test_np), np.shape(y_test_np))
+                print("\n\nDataSet Shape")
+                print("Training   Set :", np.shape(x_train_np), np.shape(y_train_np))
+                print("Validation Set :", np.shape(x_valid_np), np.shape(y_valid_np))
+                print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np))
 
         start_time = time.time()
-        self.init_plot()
-
-        # for k_fold in range(op.NUM_FOLDS):
-        #     x_train = self.vector_list[k_fold]["x_train"]["merge"]
-        #     x_test = self.vector_list[k_fold]["x_test"]["merge"]
-        #     y_train = self.vector_list[k_fold]["y_train"]
-        #     y_test = self.vector_list[k_fold]["y_test"]
-        #
-        #     if op.DO_SHOW:
-        #         __show_shape()
-        #
-        #     if op.MODEL_TYPE == "svm":
-        #         self.__train_svm(k_fold, x_train, y_train, x_test, y_test)
-        #     elif op.MODEL_TYPE == "ffnn":
-        #         self.feed_forward_nn(k_fold, x_train, y_train, x_test, y_test)
-        #     elif op.MODEL_TYPE == "cnn":
-        #         self.expand4square_matrix(*[x_train, x_test])
-        #         self.convolution_nn(k_fold, x_train, y_train, x_test, y_test)
 
         x_train = self.vector_list["x_train"]["merge"]
         y_train = self.vector_list["y_train"]
@@ -107,25 +53,17 @@ class MyTrain(MyNeuralNetwork):
         x_test = self.vector_list["x_test"]["merge"]
         y_test = self.vector_list["y_test"]
 
-        if op.DO_SHOW:
-            __show_shape()
+        __show_shape()
 
-        if op.MODEL_TYPE == "svm":
-            self.__train_svm(x_train, y_train, x_valid, y_valid, x_test, y_test)
-        elif op.MODEL_TYPE == "ffnn":
+        self.init_plot()
+
+        if op.MODEL_TYPE == "ffnn":
             self.feed_forward_nn(x_train, y_train, x_test, y_test)
         elif op.MODEL_TYPE == "cnn":
             self.expand4square_matrix(*[x_train, x_valid, x_test])
             self.convolution_nn(x_train, y_train, x_valid, y_valid, x_test, y_test)
 
-        print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time))
-        print("\n\n")
-
-        # if op.MODEL_TYPE == "svm":
-        #     self.show_total_score("Support Vector Machine")
-        # elif op.MODEL_TYPE == "ffnn":
-        #     self.show_total_score("Feed Forward NN")
-
+        print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
         self.show_plot()
 
     @staticmethod
@@ -186,8 +124,34 @@ class MyPredict(MyNeuralNetwork):
         super().__init__()
         self.vector_list = vector_list
 
+    def __svm(self, x_train, y_train, x_test, y_test):
+        model = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
+        model.fit(x_train, y_train)
+
+        y_test_pred = model.predict(x_test)
+        test_probas_ = model.predict_proba(x_test)
+
+        _precision = precision_score(y_test, y_test_pred)
+        _recall = recall_score(y_test, y_test_pred)
+        _accuracy = accuracy_score(y_test, y_test_pred)
+        _f1 = f1_score(y_test, y_test_pred)
+        _svm_fpr, _svm_tpr, _ = roc_curve(y_test, test_probas_[:, 1])
+        _svm_fpr *= 100
+        _svm_tpr *= 100
+        _auc = auc(_svm_fpr, _svm_tpr) / 100
+
+        self.set_score(**{
+            KEY_PRECISION: (_precision * 100),
+            KEY_RECALL: (_recall * 100),
+            KEY_F1: (_f1 * 100),
+            KEY_ACCURACY: (_accuracy * 100),
+            KEY_AUC: _auc
+        })
+        self.add_score(KEY_MORTALITY)
+        self.show_score(target=KEY_MORTALITY, fpr=_svm_fpr, tpr=_svm_tpr)
+
     def predict(self):
-        def __show_shape():
+        def __show_shape(_x_train=tuple(), _y_train=tuple()):
             def __count_mortality(_y_data_):
                 _count = 0
                 for _i in _y_data_:
@@ -199,28 +163,38 @@ class MyPredict(MyNeuralNetwork):
             x_test_np = np.array([np.array(j) for j in x_test])
             y_test_np = np.array([np.array(j) for j in y_test])
 
-            print("\n\n\n\n=====================================\n")
-            print("dims - ", len(x_test[0]))
-            print("test     count -", len(y_test), "\t mortality count -", __count_mortality(y_test), "\n")
+            print("\n\n=====================================")
+            print("\nDataSet Count")
+            print("dims - ", len(x_train[0]))
+            if _x_train and _y_train:
+                print("Training   Count -", len(_y_train), "\t Mortality Count -", __count_mortality(_y_train))
+            print("Test       Count -", len(y_test), "\t Mortality Count -", __count_mortality(y_test))
 
-            print(np.shape(x_test_np), np.shape(y_test_np))
+            print("\n\nDataSet Shape")
+            if _x_train and _y_train:
+                x_train_np = np.array([np.array(j) for j in _x_train])
+                y_train_np = np.array([np.array(j) for j in _y_train])
+                print("Training   Set :", np.shape(x_train_np), np.shape(y_train_np))
+            print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np))
 
         self.init_plot()
 
-        for k_fold in range(op.NUM_FOLDS):
+        x_test = self.vector_list["x_test"]["merge"]
+        y_test = self.vector_list["y_test"]
 
-            if op.IS_CLOSED:
-                x_test = self.vector_list[k_fold]["x_train"]["merge"]
-                y_test = self.vector_list[k_fold]["y_train"]
-            else:
-                x_test = self.vector_list[k_fold]["x_test"]["merge"]
-                y_test = self.vector_list[k_fold]["y_test"]
+        if op.MODEL_TYPE == "svm":
+            x_train = self.vector_list["x_train"]["merge"]
+            y_train = self.vector_list["y_train"]
 
+            if op.DO_SHOW:
+                __show_shape(x_train, y_train)
+
+            self.__svm(x_train, y_train, x_test, y_test)
+        elif op.MODEL_TYPE == "ffnn" or op.MODEL_TYPE == "cnn":
             if op.DO_SHOW:
                 __show_shape()
 
-            self.load_feed_forward_nn(k_fold, x_test, y_test)
+            self.load_nn(x_test, y_test)
 
-        self.show_total_score("Feed Forward NN")
         self.show_plot()
 
