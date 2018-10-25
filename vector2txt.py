@@ -13,4 +13,3 @@ from DMP.learning.dataHandler import DataHandler
 if __name__ == '__main__':
     handler = DataHandler()
     handler.vector2txt()
-
