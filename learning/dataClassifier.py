@@ -18,13 +18,13 @@ class DataClassifier:
         y_train = self.dataHandler.y_train
         x_valid = self.dataHandler.x_valid
         y_valid = self.dataHandler.y_valid
-        x_test = self.dataHandler.x_test
-        y_test = self.dataHandler.y_test
+        # x_test = self.dataHandler.x_test
+        # y_test = self.dataHandler.y_test
 
         nn = MyNeuralNetwork()
 
         if op.MODEL_TYPE == "ffnn":
-            nn.feed_forward_nn(x_train, y_train, x_test, y_test)
+            nn.feed_forward_nn(x_train, y_train, x_valid, y_valid)
         elif op.MODEL_TYPE == "cnn":
             self.dataHandler.expand4square_matrix(*[x_train, x_valid])
             nn.convolution_nn(x_train, y_train, x_valid, y_valid)
@@ -45,10 +45,13 @@ class DataClassifier:
             svm.svm(x_train, y_train, x_test, y_test)
             print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
             svm.show_plot()
-        elif op.MODEL_TYPE == "ffnn" or op.MODEL_TYPE == "cnn":
+        else:
             nn = MyNeuralNetwork()
             nn.init_plot()
-            nn.load_nn(x_test, y_test)
+            if op.MODEL_TYPE == "ffnn":
+                nn.load_nn(x_test, y_test)
+            elif op.MODEL_TYPE == "cnn":
+                pass
             print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
             nn.show_plot()
 
