@@ -5,7 +5,8 @@ SVM_KERNEL = "linear"
 NUM_HIDDEN_DIMENSION = 0
 RATIO_HIDDEN = 2
 
-TENSOR_PATH = "modeling/save/"
+PATH_LOGS = "./logs/"
+PATH_TENSOR = "modeling/save/"
 
 # name of tensor
 NAME_HYPO = "hypothesis"

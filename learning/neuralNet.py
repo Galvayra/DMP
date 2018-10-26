@@ -13,69 +13,47 @@ class MyNeuralNetwork(MyPlot):
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
+        self.__name_of_log = str()
+        self.__name_of_tensor = str()
 
-    @staticmethod
-    def __init_log_file_name():
-        log_name = "./logs/" + op.SAVE_DIR_NAME + "log_"
+    @property
+    def name_of_log(self):
+        return self.__name_of_log
 
-        if op.NUM_HIDDEN_LAYER < 10:
-            log_name += "h_0" + str(op.NUM_HIDDEN_LAYER)
-        else:
-            log_name += "h_" + str(op.NUM_HIDDEN_LAYER)
+    @name_of_log.setter
+    def name_of_log(self, name):
+        self.__name_of_log = name
 
-        log_name += "_ep_" + str(op.EPOCH)
+    @property
+    def name_of_tensor(self):
+        return self.__name_of_tensor
 
-        if op.USE_W2V:
-            log_name += "_w2v"
+    @name_of_tensor.setter
+    def name_of_tensor(self, name):
+        self.__name_of_tensor = name
+
+    def __set_name_of_log(self):
+        log_name = PATH_LOGS + op.SAVE_DIR_NAME
 
         if os.path.isdir(log_name):
             shutil.rmtree(log_name)
+        os.mkdir(log_name)
 
-        return log_name
+        print("======== Directory for Saving ========")
+        print("   Log File -", log_name)
 
-    @staticmethod
-    def __init_save_dir():
-        _model_ = op.MODEL_TYPE + "_"
+        self.name_of_log = log_name
 
-        if op.NUM_HIDDEN_LAYER < 10:
-            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER) + "_"
-        else:
-            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER) + "_"
+    def __set_name_of_tensor(self):
+        tensor_name = PATH_TENSOR + op.SAVE_DIR_NAME
 
-        _epoch_ = "ep_" + str(op.EPOCH) + "_"
-        _learning_rate_ = "lr_" + str(op.LEARNING_RATE) + "_"
+        if os.path.isdir(tensor_name):
+            shutil.rmtree(tensor_name)
+        os.mkdir(tensor_name)
 
-        _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
+        print("Tensor File -", tensor_name, "\n\n\n")
 
-        if not os.path.isdir(_save_dir):
-            os.mkdir(_save_dir)
-
-        _save_dir += _model_ + _hidden_ + _epoch_ + _learning_rate_ + "/"
-
-        if os.path.isdir(_save_dir):
-            shutil.rmtree(_save_dir)
-        os.mkdir(_save_dir)
-
-        return _save_dir
-
-    @staticmethod
-    def __load_tensor():
-        _model_ = op.MODEL_TYPE + "_"
-
-        if op.NUM_HIDDEN_LAYER < 10:
-            _hidden_ = "h_0" + str(op.NUM_HIDDEN_LAYER) + "_"
-        else:
-            _hidden_ = "h_" + str(op.NUM_HIDDEN_LAYER) + "_"
-
-        _epoch_ = "ep_" + str(op.EPOCH) + "_"
-        _learning_rate_ = "lr_" + str(op.LEARNING_RATE) + "_"
-
-        _save_dir = TENSOR_PATH + op.SAVE_DIR_NAME
-
-        tensor_load = _save_dir
-        tensor_load += _model_ + _hidden_ + _epoch_ + _learning_rate_ + "/"
-
-        return tensor_load
+        self.name_of_tensor = tensor_name
 
     def __init_feed_forward_layer(self, num_input_node, input_layer):
         if NUM_HIDDEN_DIMENSION:
@@ -120,8 +98,6 @@ class MyNeuralNetwork(MyPlot):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def feed_forward_nn(self, x_train, y_train, x_valid, y_valid):
-        save_dir = self.__init_save_dir()
-        log_dir = self.__init_log_file_name()
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -130,7 +106,7 @@ class MyNeuralNetwork(MyPlot):
 
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
         self.set_score(target=KEY_VALID)
         self.show_score(target=KEY_VALID)
@@ -178,8 +154,6 @@ class MyNeuralNetwork(MyPlot):
         return convolution_layer, num_of_dimension
 
     def convolution_nn(self, x_train, y_train, x_valid, y_valid):
-        log_dir = self.__init_log_file_name()
-        save_dir = self.__init_save_dir()
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -189,12 +163,12 @@ class MyNeuralNetwork(MyPlot):
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, log_dir, save_dir)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
         self.set_score(target=KEY_VALID)
         self.show_score(target=KEY_VALID)
 
-    def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test, log_dir, save_dir):
+    def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test):
         if op.DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
@@ -212,11 +186,14 @@ class MyNeuralNetwork(MyPlot):
         _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
         accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
 
+        # set file names for saving
+        self.__set_name_of_log()
+        self.__set_name_of_tensor()
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
-            writer = tf.summary.FileWriter(log_dir)
+            writer = tf.summary.FileWriter(self.name_of_log)
             writer.add_graph(sess.graph)  # Show the graph
 
             sess.run(tf.global_variables_initializer())
@@ -235,20 +212,18 @@ class MyNeuralNetwork(MyPlot):
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1})
 
-            saver.save(sess, save_dir + "model", global_step=op.EPOCH)
+            saver.save(sess, self.name_of_tensor + "model", global_step=op.EPOCH)
 
         tf.reset_default_graph()
 
         return h, p, acc
 
     def load_nn(self, x_test, y_test):
-        tensor_load = self.__load_tensor()
-
         sess = tf.Session()
-        saver = tf.train.import_meta_graph(tensor_load + 'model-' + str(op.EPOCH) + '.meta')
-        saver.restore(sess, tensor_load + 'model-' + str(op.EPOCH))
+        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
+        saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
 
-        print("\n\n\nRead Neural Network -", tensor_load, "\n")
+        print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
 
         graph = tf.get_default_graph()
         tf_x = graph.get_tensor_by_name(NAME_X + ":0")

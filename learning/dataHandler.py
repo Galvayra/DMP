@@ -62,7 +62,7 @@ class DataHandler:
 
         y_test_np = np.array([np.array(j) for j in self.y_test])
         x_test_np = np.array([np.array(j) for j in self.x_test])
-        print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n\n\n")
+        print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
 
     @staticmethod
     def expand4square_matrix(*vector_set_list):

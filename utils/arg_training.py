@@ -53,9 +53,6 @@ NUM_HIDDEN_LAYER = 0
 NUM_HIDDEN_DIMENSION = 0
 LEARNING_RATE = 0.0001
 
-# SAVE options #
-SAVE_DIR_NAME = str()
-
 # SHOW options #
 DO_SHOW = False
 DO_SHOW_PLOT = False
@@ -136,8 +133,13 @@ if args.plot:
             print("\nInput Error show option!\n")
             exit(-1)
 
+# SAVE options #
 if args.dir:
     SAVE_DIR_NAME = args.dir + "/"
+else:
+    # SAVE_DIR_NAME = (VECTOR_NAME)_(MODEL)_h_(NUM_OF_HIDDEN)_e_(EPOCH)_lr_(LEARNING_RATE)
+    SAVE_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
+                    MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
 
 
 def show_options():
