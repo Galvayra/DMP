@@ -1,9 +1,13 @@
 import argparse
+import sys
+
+current_frame = sys.argv[0].split('/')[-1]
+current_frame = current_frame.split('.py')[0]
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
-def get_arguments():
+def get_arguments(is_training=False):
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\n(default is vectors_dataset_parsing_{num_of_fold})"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
@@ -23,14 +27,18 @@ def get_arguments():
                                                 "\nUseAge : python training.py -show 1 (True)\n\n")
     parser.add_argument("-dir", "--dir", help="set directory name by distinction (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
-    parser.add_argument("-plot", "--plot", help="show plot (default is 0)"
-                                                "\nUseAge : python predict.py -plot 1 (True)\n\n")
+    if not is_training:
+        parser.add_argument("-plot", "--plot", help="show plot (default is 0)"
+                                                    "\nUseAge : python predict.py -plot 1 (True)\n\n")
     _args = parser.parse_args()
 
     return _args
 
 
-args = get_arguments()
+if current_frame == "training":
+    args = get_arguments(is_training=True)
+else:
+    args = get_arguments()
 
 # LOAD options #
 READ_VECTOR = False
@@ -122,16 +130,17 @@ if args.show:
             print("\nInput Error show option!\n")
             exit(-1)
 
-if args.plot:
-    try:
-        DO_SHOW_PLOT = int(args.plot)
-    except ValueError:
-        print("\nInput Error type of show option!\n")
-        exit(-1)
-    else:
-        if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
-            print("\nInput Error show option!\n")
+if current_frame == "predict":
+    if args.plot:
+        try:
+            DO_SHOW_PLOT = int(args.plot)
+        except ValueError:
+            print("\nInput Error type of show option!\n")
             exit(-1)
+        else:
+            if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
+                print("\nInput Error show option!\n")
+                exit(-1)
 
 # SAVE options #
 if args.dir:
