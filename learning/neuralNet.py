@@ -35,9 +35,10 @@ class MyNeuralNetwork(MyPlot):
     def __set_name_of_log(self):
         log_name = PATH_LOGS + op.SAVE_DIR_NAME
 
-        if os.path.isdir(log_name):
-            shutil.rmtree(log_name)
-        os.mkdir(log_name)
+        if op.DO_DELETE:
+            if os.path.isdir(log_name):
+                shutil.rmtree(log_name)
+            os.mkdir(log_name)
 
         print("======== Directory for Saving ========")
         print("   Log File -", log_name)
@@ -47,9 +48,10 @@ class MyNeuralNetwork(MyPlot):
     def __set_name_of_tensor(self):
         tensor_name = PATH_TENSOR + op.SAVE_DIR_NAME
 
-        if os.path.isdir(tensor_name):
-            shutil.rmtree(tensor_name)
-        os.mkdir(tensor_name)
+        if op.DO_DELETE:
+            if os.path.isdir(tensor_name):
+                shutil.rmtree(tensor_name)
+            os.mkdir(tensor_name)
 
         print("Tensor File -", tensor_name, "\n\n\n")
 
@@ -219,6 +221,7 @@ class MyNeuralNetwork(MyPlot):
         return h, p, acc
 
     def load_nn(self, x_test, y_test):
+        self.__set_name_of_tensor()
         sess = tf.Session()
         saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
         saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))

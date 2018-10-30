@@ -18,8 +18,6 @@ class DataClassifier:
         y_train = self.dataHandler.y_train
         x_valid = self.dataHandler.x_valid
         y_valid = self.dataHandler.y_valid
-        # x_test = self.dataHandler.x_test
-        # y_test = self.dataHandler.y_test
 
         nn = MyNeuralNetwork()
 
@@ -51,7 +49,8 @@ class DataClassifier:
             if op.MODEL_TYPE == "ffnn":
                 nn.load_nn(x_test, y_test)
             elif op.MODEL_TYPE == "cnn":
-                pass
+                self.dataHandler.expand4square_matrix(*[x_test])
+                nn.load_nn(x_test, y_test)
             print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
             nn.show_plot()
 

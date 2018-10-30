@@ -28,8 +28,14 @@ def get_arguments(is_training=False):
     parser.add_argument("-dir", "--dir", help="set directory name by distinction (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
     if not is_training:
-        parser.add_argument("-plot", "--plot", help="show plot (default is 0)"
+        parser.add_argument("-plot", "--plot", help="set a option for visualization (default is 0)"
                                                     "\nUseAge : python predict.py -plot 1 (True)\n\n")
+    else:
+        parser.add_argument("-delete", "--delete", help="set whether SAVE_DIR will be delete (default is 1)"
+                                                        "\nIf you already have dir for saving, delete it and then save"
+                                                        "\nIf you set False, It will be stopped before training"
+                                                        "\nUseAge : python training.py -delete 0 (False)\n\n")
+
     _args = parser.parse_args()
 
     return _args
@@ -64,6 +70,10 @@ LEARNING_RATE = 0.0001
 # SHOW options #
 DO_SHOW = False
 DO_SHOW_PLOT = False
+
+# SAVE options #
+SAVE_DIR_NAME = str()
+DO_DELETE = False
 
 if args.closed:
     try:
@@ -141,12 +151,23 @@ if current_frame == "predict":
             if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
                 print("\nInput Error show option!\n")
                 exit(-1)
+else:
+    if args.delete:
+        try:
+            DO_DELETE = int(args.delete)
+        except ValueError:
+            print("\nInput Error type of delete option!\n")
+            exit(-1)
+        else:
+            if DO_DELETE != 1 and DO_DELETE != 0:
+                print("\nInput Error delete option!\n")
+                exit(-1)
+
 
 # SAVE options #
 if args.dir:
     SAVE_DIR_NAME = args.dir + "/"
 else:
-    # SAVE_DIR_NAME = (VECTOR_NAME)_(MODEL)_h_(NUM_OF_HIDDEN)_e_(EPOCH)_lr_(LEARNING_RATE)
     SAVE_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
                     MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
 
