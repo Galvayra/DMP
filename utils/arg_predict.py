@@ -1,3 +1,5 @@
+from DMP.dataset.variables import columns_dict
+from DMP.modeling.variables import KEY_NAME_OF_MERGE_VECTOR
 import argparse
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -11,6 +13,8 @@ def get_arguments():
                                                     "\nUseAge : python predict.py -closed 1\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python predict.py -model (svm|ffnn|cnn)\n\n")
+    parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
+                                                      "\nUseAge : python predict.py -feature 'TYPE_OF_FEATURE'\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python predict.py -epoch 20000\n\n")
@@ -43,7 +47,9 @@ else:
 # Training options #
 IS_CLOSED = False
 USE_W2V = False
-MODEL_TYPE = "svm"
+TYPE_OF_MODEL = "svm"
+TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
+type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 
 # Parameter options #
 EPOCH = 2000
@@ -73,8 +79,8 @@ if args.closed:
             IS_CLOSED = False
 
 if args.model:
-    MODEL_TYPE = args.model
-    if MODEL_TYPE != "ffnn" and MODEL_TYPE != "svm" and MODEL_TYPE != "cnn":
+    TYPE_OF_MODEL = args.model
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "svm" and TYPE_OF_MODEL != "cnn":
         print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
         exit(-1)
 
@@ -102,7 +108,12 @@ if args.show:
 
 # SAVE options #
 if args.log:
-    LOG_DIR_NAME = args.log + "/"
+    LOG_DIR_NAME = args.log
+
+if TYPE_OF_FEATURE != KEY_NAME_OF_MERGE_VECTOR:
+    LOG_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
+else:
+    LOG_DIR_NAME += "/"
 
 if args.save:
     SAVE_DIR_NAME = args.save
@@ -133,8 +144,8 @@ def show_options():
         else:
             print("Not using word2vec\n")
 
-        print("model -", MODEL_TYPE)
-        if MODEL_TYPE != "svm":
+        print("model -", TYPE_OF_MODEL)
+        if TYPE_OF_MODEL != "svm":
             print("# of EPOCH -", EPOCH)
 
         print("\n\n")

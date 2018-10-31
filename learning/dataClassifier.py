@@ -27,9 +27,9 @@ class DataClassifier:
 
         nn = MyNeuralNetwork()
 
-        if op.MODEL_TYPE == "ffnn":
+        if op.TYPE_OF_MODEL == "ffnn":
             nn.feed_forward_nn(x_train, y_train, x_valid, y_valid)
-        elif op.MODEL_TYPE == "cnn":
+        elif op.TYPE_OF_MODEL == "cnn":
             self.dataHandler.expand4square_matrix(*[x_train, x_valid])
             nn.convolution_nn(x_train, y_train, x_valid, y_valid)
 
@@ -39,7 +39,7 @@ class DataClassifier:
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
-        if op.MODEL_TYPE == "svm":
+        if op.TYPE_OF_MODEL == "svm":
             x_train = self.dataHandler.x_train
             y_train = self.dataHandler.y_train
 
@@ -50,7 +50,7 @@ class DataClassifier:
             svm.predict(h, y_predict, y_test)
             svm.show_plot()
         else:
-            if op.MODEL_TYPE == "cnn":
+            if op.TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
 
             # initialize Neural Network

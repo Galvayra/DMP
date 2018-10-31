@@ -1,3 +1,5 @@
+from DMP.dataset.variables import columns_dict
+from DMP.modeling.variables import KEY_NAME_OF_MERGE_VECTOR
 import argparse
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -9,6 +11,8 @@ def get_arguments():
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
+    parser.add_argument("-feature", "--feature", help="set a feature to train (default is merge(all))"
+                                                      "\nUseAge : python training.py -feature 'TYPE_OF_FEATURE'\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python training.py -epoch 20000\n\n")
@@ -44,7 +48,9 @@ else:
 
 # Training options #
 USE_W2V = False
-MODEL_TYPE = "ffnn"
+TYPE_OF_MODEL = "ffnn"
+TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
+type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 
 # Parameter options #
 EPOCH = 2000
@@ -61,10 +67,19 @@ DO_DELETE = False
 
 
 if args.model:
-    MODEL_TYPE = args.model
-    if MODEL_TYPE != "ffnn" and MODEL_TYPE != "cnn":
-        print("\nInput Error model option! (You must input (ffnn|cnn))\n")
+    TYPE_OF_MODEL = args.model
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn":
+        print("\nInput Error model option! (You must input - ['ffnn', 'cnn'])\n")
         exit(-1)
+
+if args.feature:
+    TYPE_OF_FEATURE = args.feature
+
+    if TYPE_OF_FEATURE not in type_of_features:
+        print("\nInput Error feature option!")
+        print("You must input -", type_of_features)
+        exit(-1)
+
 
 if args.epoch:
     try:
@@ -112,10 +127,14 @@ if args.show:
 
 # SAVE options #
 if args.log:
-    LOG_DIR_NAME = args.log + "/"
+    LOG_DIR_NAME = args.log
 else:
-    LOG_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
-                    MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
+    LOG_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + TYPE_OF_MODEL + "_h_" + str(NUM_HIDDEN_LAYER)
+
+if TYPE_OF_FEATURE != KEY_NAME_OF_MERGE_VECTOR:
+    LOG_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
+else:
+    LOG_DIR_NAME += "/"
 
 if args.delete:
     try:
@@ -136,7 +155,8 @@ def show_options():
         else:
             print("Not using word2vec\n")
 
-        print("model -", MODEL_TYPE)
+        print("model -", TYPE_OF_MODEL)
+        print("type of feature -", TYPE_OF_FEATURE)
         print("# of hidden layers -", NUM_HIDDEN_LAYER)
         print("Learning Rate -", LEARNING_RATE)
         print("# of EPOCH -", EPOCH, "\n\n")

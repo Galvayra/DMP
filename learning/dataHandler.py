@@ -7,9 +7,9 @@ import sys
 current_frame = sys.argv[0].split('/')[-1]
 
 if current_frame == "training.py":
-    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
+    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
 else:
-    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW
+    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
 
 
 class DataHandler:
@@ -24,11 +24,11 @@ class DataHandler:
             print("\nRead vectors -", READ_VECTOR)
             show_options()
 
-            self.x_train = vector_list["x_train"]["merge"]
+            self.x_train = vector_list["x_train"][TYPE_OF_FEATURE]
             self.y_train = vector_list["y_train"]
-            self.x_valid = vector_list["x_valid"]["merge"]
+            self.x_valid = vector_list["x_valid"][TYPE_OF_FEATURE]
             self.y_valid = vector_list["y_valid"]
-            self.x_test = vector_list["x_test"]["merge"]
+            self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
 
             self.show_info()

@@ -140,11 +140,11 @@ class MyPlot:
             self.my_plot.set_ylabel("Sensitivity")
             self.my_plot.set_xlabel("100 - Specificity")
 
-            if op.MODEL_TYPE == "svm":
+            if op.TYPE_OF_MODEL == "svm":
                 self.my_plot.set_title("Support Vector Machine")
-            elif op.MODEL_TYPE == "ffnn":
+            elif op.TYPE_OF_MODEL == "ffnn":
                 self.my_plot.set_title("Feed Forward Neural Network")
-            elif op.MODEL_TYPE == "cnn":
+            elif op.TYPE_OF_MODEL == "cnn":
                 self.my_plot.set_title("Convolution Neural Network")
 
     def set_plot(self, target):
