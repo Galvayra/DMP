@@ -9,7 +9,7 @@ current_frame = sys.argv[0].split('/')[-1]
 if current_frame == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
 else:
-    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
+    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW
 
 
 class DataHandler:

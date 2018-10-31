@@ -132,7 +132,5 @@ def show_options():
     else:
         print("Not using word2vec\n")
 
-    if MODEL_TYPE != "svm":
-        print("# of hidden layers -", NUM_HIDDEN_LAYER)
-        print("Learning Rate -", LEARNING_RATE)
-        print("# of EPOCH -", EPOCH)
+    print("model -", MODEL_TYPE)
+    print("# of EPOCH -", EPOCH)
