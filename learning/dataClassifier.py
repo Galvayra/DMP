@@ -1,15 +1,16 @@
 import sys
 from sklearn.svm import SVC
 from .variables import *
-from .neuralNet import MyNeuralNetwork, MyPlot
+from .neuralNet import MyNeuralNetwork
+from .score import MyScore
 import time
 
 current_frame = sys.argv[0].split('/')[-1]
 
-if current_frame == "training.py":
-    import DMP.utils.arg_training as op
+if sys.argv[0].split('/')[-1] == "training.py":
+    from DMP.utils.arg_training import TYPE_OF_MODEL
 else:
-    import DMP.utils.arg_predict as op
+    from DMP.utils.arg_predict import TYPE_OF_MODEL
 
 
 class DataClassifier:
@@ -27,9 +28,9 @@ class DataClassifier:
 
         nn = MyNeuralNetwork()
 
-        if op.TYPE_OF_MODEL == "ffnn":
+        if TYPE_OF_MODEL == "ffnn":
             nn.feed_forward_nn(x_train, y_train, x_valid, y_valid)
-        elif op.TYPE_OF_MODEL == "cnn":
+        elif TYPE_OF_MODEL == "cnn":
             self.dataHandler.expand4square_matrix(*[x_train, x_valid])
             nn.convolution_nn(x_train, y_train, x_valid, y_valid)
 
@@ -39,7 +40,7 @@ class DataClassifier:
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
-        if op.TYPE_OF_MODEL == "svm":
+        if TYPE_OF_MODEL == "svm":
             x_train = self.dataHandler.x_train
             y_train = self.dataHandler.y_train
 
@@ -50,7 +51,7 @@ class DataClassifier:
             svm.predict(h, y_predict, y_test)
             svm.show_plot()
         else:
-            if op.TYPE_OF_MODEL == "cnn":
+            if TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
 
             # initialize Neural Network
@@ -61,7 +62,7 @@ class DataClassifier:
             nn.show_plot()
 
 
-class SVM(MyPlot):
+class SVM(MyScore):
     def __init__(self):
         super().__init__()
 

@@ -1,20 +1,18 @@
 import tensorflow as tf
 from .variables import *
-from .plot import MyPlot
+from .score import MyScore
 import os
 import shutil
 import math
 import sys
 
-current_frame = sys.argv[0].split('/')[-1]
-
-if current_frame == "training.py":
-    import DMP.utils.arg_training as op
+if sys.argv[0].split('/')[-1] == "training.py":
+    from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
 else:
-    import DMP.utils.arg_predict as op
+    from DMP.utils.arg_predict import DO_SHOW, EPOCH, DO_DELETE, LOG_DIR_NAME
 
 
-class MyNeuralNetwork(MyPlot):
+class MyNeuralNetwork(MyScore):
     def __init__(self):
         super().__init__()
         self.tf_x = None
@@ -41,28 +39,28 @@ class MyNeuralNetwork(MyPlot):
         self.__name_of_tensor = name
 
     def __set_name_of_log(self):
-        log_name = PATH_LOGS + op.LOG_DIR_NAME
+        log_name = PATH_LOGS + LOG_DIR_NAME
 
-        if op.DO_DELETE:
+        if DO_DELETE:
             if os.path.isdir(log_name):
                 shutil.rmtree(log_name)
             os.mkdir(log_name)
 
-        if op.DO_SHOW:
+        if DO_SHOW:
             print("======== Directory for Saving ========")
             print("   Log File -", log_name)
 
         self.name_of_log = log_name
 
     def __set_name_of_tensor(self):
-        tensor_name = PATH_TENSOR + op.LOG_DIR_NAME
+        tensor_name = PATH_TENSOR + LOG_DIR_NAME
 
-        if op.DO_DELETE:
+        if DO_DELETE:
             if os.path.isdir(tensor_name):
                 shutil.rmtree(tensor_name)
             os.mkdir(tensor_name)
 
-        if op.DO_SHOW:
+        if DO_SHOW:
             print("Tensor File -", tensor_name, "\n\n\n")
 
         self.name_of_tensor = tensor_name
@@ -78,7 +76,7 @@ class MyNeuralNetwork(MyPlot):
         tf_layer = [input_layer]
 
         # # make hidden layers
-        for i in range(op.NUM_HIDDEN_LAYER):
+        for i in range(NUM_HIDDEN_LAYER):
             # set number of hidden node
             num_hidden_node = int(num_input_node / RATIO_HIDDEN)
 
@@ -101,7 +99,7 @@ class MyNeuralNetwork(MyPlot):
                                          initializer=tf.contrib.layers.xavier_initializer()))
         tf_bias.append(tf.Variable(tf.random_normal([1]), name="o_bias"))
 
-        if op.DO_SHOW:
+        if DO_SHOW:
             print("\n\n======== Feed Forward Layer ========")
             for i, layer in enumerate(tf_layer):
                 print("Layer", i + 1, "-", layer.shape)
@@ -153,7 +151,7 @@ class MyNeuralNetwork(MyPlot):
         num_of_dimension = num_of_image * num_of_image * num_of_filter[-1]
         convolution_layer = tf.reshape(layer_2, [-1, num_of_dimension], name="cnn_span_layer")
 
-        if op.DO_SHOW:
+        if DO_SHOW:
             print("\n\n======== Convolution Layer ========")
             print("tf_x     -", self.tf_x.shape)
             print("tf_x_img -", tf_x_img.shape)
@@ -181,7 +179,7 @@ class MyNeuralNetwork(MyPlot):
         self.show_score(target=KEY_VALID)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test):
-        if op.DO_SHOW:
+        if DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
 
@@ -190,8 +188,8 @@ class MyNeuralNetwork(MyPlot):
             # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=tf_y))
             cost_summ = tf.summary.scalar("cost", cost)
 
-        train_op = tf.train.AdamOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
-        # train_op = tf.train.GradientDescentOptimizer(learning_rate=op.LEARNING_RATE).minimize(cost)
+        train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
+        # train_op = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
 
         # cut off
         predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT)
@@ -211,20 +209,20 @@ class MyNeuralNetwork(MyPlot):
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
 
-            for step in range(op.EPOCH + 1):
+            for step in range(EPOCH + 1):
                 summary, cost_val, _ = sess.run(
                     [merged_summary, cost, train_op],
                     feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
                 )
                 writer.add_summary(summary, global_step=step)
 
-                if op.DO_SHOW and step % (op.EPOCH / 10) == 0:
+                if DO_SHOW and step % (EPOCH / 10) == 0:
                     print(str(step).rjust(5), cost_val)
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1})
 
-            saver.save(sess, self.name_of_tensor + "model", global_step=op.EPOCH)
+            saver.save(sess, self.name_of_tensor + "model", global_step=EPOCH)
 
         tf.reset_default_graph()
 
@@ -234,8 +232,8 @@ class MyNeuralNetwork(MyPlot):
         # restore tensor
         self.__set_name_of_tensor()
         sess = tf.Session()
-        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
-        saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
+        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(EPOCH) + '.meta')
+        saver.restore(sess, self.name_of_tensor + 'model-' + str(EPOCH))
 
         print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
 

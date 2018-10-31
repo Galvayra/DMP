@@ -4,9 +4,7 @@ import json
 import math
 import sys
 
-current_frame = sys.argv[0].split('/')[-1]
-
-if current_frame == "training.py":
+if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
 else:
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
