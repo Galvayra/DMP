@@ -1,8 +1,15 @@
-import DMP.utils.arg_training as op
+import sys
 from sklearn.svm import SVC
 from .variables import *
 from .neuralNet import MyNeuralNetwork, MyPlot
 import time
+
+current_frame = sys.argv[0].split('/')[-1]
+
+if current_frame == "training.py":
+    import DMP.utils.arg_training as op
+else:
+    import DMP.utils.arg_predict as op
 
 
 class DataClassifier:
@@ -29,8 +36,6 @@ class DataClassifier:
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
 
     def predict(self):
-        start_time = time.time()
-
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
@@ -40,7 +45,6 @@ class DataClassifier:
             svm = SVM()
             svm.init_plot()
             svm.svm(x_train, y_train, x_test, y_test)
-            print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
             svm.show_plot()
         else:
             nn = MyNeuralNetwork()
@@ -50,7 +54,6 @@ class DataClassifier:
             elif op.MODEL_TYPE == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
                 nn.load_nn(x_test, y_test)
-            print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
             nn.show_plot()
 
 

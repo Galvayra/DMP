@@ -1,10 +1,17 @@
 import tensorflow as tf
-import DMP.utils.arg_training as op
 from .variables import *
 from .plot import MyPlot
 import os
 import shutil
 import math
+import sys
+
+current_frame = sys.argv[0].split('/')[-1]
+
+if current_frame == "training.py":
+    import DMP.utils.arg_training as op
+else:
+    import DMP.utils.arg_predict as op
 
 
 class MyNeuralNetwork(MyPlot):

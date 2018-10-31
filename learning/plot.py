@@ -1,9 +1,16 @@
 from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_score, accuracy_score
 from pandas import DataFrame
 from .variables import *
-import DMP.utils.arg_training as op
 import matplotlib.pyplot as plt
 import copy
+import sys
+
+current_frame = sys.argv[0].split('/')[-1]
+
+if current_frame == "training.py":
+    import DMP.utils.arg_training as op
+else:
+    import DMP.utils.arg_predict as op
 
 
 class MyPlot:
@@ -114,7 +121,7 @@ class MyPlot:
         # print([s for s in self.score])
         data_df = DataFrame(data)
         data_df.to_csv(save_name + '.csv', index=False)
-        print("save complete -", save_name, "\n\n")
+        print("\n\ncomplete saving!! -", save_name)
 
     def set_total_score(self):
         length = len(self.score_dict)

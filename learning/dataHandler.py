@@ -1,8 +1,15 @@
-from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
 from .variables import GRAY_SCALE
 import numpy as np
 import json
 import math
+import sys
+
+current_frame = sys.argv[0].split('/')[-1]
+
+if current_frame == "training.py":
+    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
+else:
+    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW
 
 
 class DataHandler:

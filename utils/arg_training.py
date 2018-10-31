@@ -1,18 +1,12 @@
 import argparse
-import sys
-
-current_frame = sys.argv[0].split('/')[-1]
-current_frame = current_frame.split('.py')[0]
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
-def get_arguments(is_training=False):
+def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\n(default is vectors_dataset_parsing_{num_of_fold})"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
-    parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
-                                                    "\nUseAge : python training.py -closed 1\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python training.py -model (svm|ffnn|cnn)\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
@@ -25,28 +19,18 @@ def get_arguments(is_training=False):
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
     parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
+    parser.add_argument("-delete", "--delete", help="set whether SAVE_DIR will be delete (default is 1)"
+                                                    "\nIf you already have dir for saving, delete it and then save"
+                                                    "\nIf you set False, It will be stopped before training"
+                                                    "\nUseAge : python training.py -delete 0 (False)\n\n")
     parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
                                                 "\nUseAge : python training.py -show 1 (True)\n\n")
-    if not is_training:
-        parser.add_argument("-save", "--save", help="save a score to csv file (default is 'LOG_NAME')"
-                                                    "\nUseAge : python predict.py -save 'NAME' (in analysis dir)\n\n")
-        parser.add_argument("-plot", "--plot", help="set a option for visualization (default is 0)"
-                                                    "\nUseAge : python predict.py -plot 1 (True)\n\n")
-    else:
-        parser.add_argument("-delete", "--delete", help="set whether SAVE_DIR will be delete (default is 1)"
-                                                        "\nIf you already have dir for saving, delete it and then save"
-                                                        "\nIf you set False, It will be stopped before training"
-                                                        "\nUseAge : python training.py -delete 0 (False)\n\n")
-
     _args = parser.parse_args()
 
     return _args
 
 
-if current_frame == "training":
-    args = get_arguments(is_training=True)
-else:
-    args = get_arguments()
+args = get_arguments()
 
 # LOAD options #
 READ_VECTOR = False
@@ -59,9 +43,8 @@ else:
     READ_VECTOR = vector_path + vector_name
 
 # Training options #
-IS_CLOSED = False
 USE_W2V = False
-MODEL_TYPE = "svm"
+MODEL_TYPE = "ffnn"
 
 # Parameter options #
 EPOCH = 2000
@@ -71,32 +54,16 @@ LEARNING_RATE = 0.0001
 
 # SHOW options #
 DO_SHOW = False
-DO_SHOW_PLOT = False
 
 # SAVE options #
 LOG_DIR_NAME = str()
-SAVE_DIR_NAME = str()
 DO_DELETE = False
 
-if args.closed:
-    try:
-        closed = int(args.closed)
-    except ValueError:
-        print("\nInput Error type of closed option!\n")
-        exit(-1)
-    else:
-        if closed != 1 and closed != 0:
-            print("\nInput Error closed option!\n")
-            exit(-1)
-        if closed == 1:
-            IS_CLOSED = True
-        else:
-            IS_CLOSED = False
 
 if args.model:
     MODEL_TYPE = args.model
-    if MODEL_TYPE != "ffnn" and MODEL_TYPE != "svm" and MODEL_TYPE != "cnn":
-        print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
+    if MODEL_TYPE != "ffnn" and MODEL_TYPE != "cnn":
+        print("\nInput Error model option! (You must input (ffnn|cnn))\n")
         exit(-1)
 
 if args.epoch:
@@ -150,41 +117,19 @@ else:
     LOG_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
                     MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
 
-if current_frame == "predict":
-    if args.save:
-        SAVE_DIR_NAME = args.save
+if args.delete:
+    try:
+        DO_DELETE = int(args.delete)
+    except ValueError:
+        print("\nInput Error type of delete option!\n")
+        exit(-1)
     else:
-        SAVE_DIR_NAME = LOG_DIR_NAME[:-1]
-
-    if args.plot:
-        try:
-            DO_SHOW_PLOT = int(args.plot)
-        except ValueError:
-            print("\nInput Error type of show option!\n")
+        if DO_DELETE != 1 and DO_DELETE != 0:
+            print("\nInput Error delete option!\n")
             exit(-1)
-        else:
-            if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
-                print("\nInput Error show option!\n")
-                exit(-1)
-else:
-    if args.delete:
-        try:
-            DO_DELETE = int(args.delete)
-        except ValueError:
-            print("\nInput Error type of delete option!\n")
-            exit(-1)
-        else:
-            if DO_DELETE != 1 and DO_DELETE != 0:
-                print("\nInput Error delete option!\n")
-                exit(-1)
 
 
 def show_options():
-    if IS_CLOSED:
-        print("\n\n========== CLOSED DATA SET ==========\n")
-    else:
-        print("\n\n========== OPENED DATA SET ==========\n")
-
     if USE_W2V:
         print("Using word2vec\n")
     else:

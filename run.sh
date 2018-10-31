@@ -1,25 +1,11 @@
 #/bin/bash
 
-epoch=10000
-learn=0.00001
-hidden=2
-show=1
-plot=0
-dir=""
-model=ffnn
-vector=""
-result=""
+./run.sh --vector modeling/vectors/all_sampling --log ffnn_h_1 --model ffnn --epoch 10000 --learn 0.000002 --hidden 1 --show 1 --result ffnn_all_sampling_h_1
+./run.sh --vector modeling/vectors/all_sampling --log ffnn_h_2 --model ffnn --epoch 10000 --learn 0.000002 --hidden 2 --show 1 --result ffnn_all_sampling_h_2
+./run.sh --vector modeling/vectors/all_sampling --log ffnn_h_3 --model ffnn --epoch 10000 --learn 0.000002 --hidden 3 --show 1 --result ffnn_all_sampling_h_3
+./run.sh --vector modeling/vectors/all_sampling --log ffnn_h_4 --model ffnn --epoch 10000 --learn 0.000002 --hidden 4 --show 1 --result ffnn_all_sampling_h_4
 
-. utils/parse_options.sh || echo "Can't find parse_options.sh" | exit 1
-
-if [ "$vector" == "" ]; then
-    echo
-	echo "please input vector"
-	echo
-else
-    if [ "$result" == "" ]; then
-        python training.py -vector "$vector" -dir "$dir" -model "$model" -show "$show" -epoch "$epoch" -hidden "$hidden" -learn "$learn"
-    else
-        python training.py -vector "$vector" -dir "$dir" -model "$model" -show "$show" -epoch "$epoch" -hidden "$hidden" -learn "$learn" > result/"$result"
-    fi
-fi
+./run.sh --vector modeling/vectors/all_sampling --log cnn_h_1 --model cnn --epoch 10000 --learn 0.000001 --hidden 1 --show 1 --result cnn_all_sampling_h_1
+./run.sh --vector modeling/vectors/all_sampling --log cnn_h_2 --model cnn --epoch 10000 --learn 0.000001 --hidden 2 --show 1 --result cnn_all_sampling_h_2
+./run.sh --vector modeling/vectors/all_sampling --log cnn_h_3 --model cnn --epoch 10000 --learn 0.000001 --hidden 3 --show 1 --result cnn_all_sampling_h_3
+./run.sh --vector modeling/vectors/all_sampling --log cnn_h_4 --model cnn --epoch 10000 --learn 0.000001 --hidden 4 --show 1 --result cnn_all_sampling_h_4
