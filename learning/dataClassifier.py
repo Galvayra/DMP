@@ -1,6 +1,5 @@
 import DMP.utils.arg_training as op
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
 from .variables import *
 from .neuralNet import MyNeuralNetwork, MyPlot
 import time

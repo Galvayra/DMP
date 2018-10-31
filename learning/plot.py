@@ -56,7 +56,7 @@ class MyPlot:
         self.score_dict[target] = copy.deepcopy(self.score)
         self.__score = self.__init_score()
 
-    def compute_score(self, y, y_predict, hypothesis, accuracy=False):
+    def compute_score(self, y_predict, y, hypothesis, accuracy=False):
         try:
             fpr, tpr, _ = roc_curve(y, hypothesis)
         except ValueError:

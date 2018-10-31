@@ -221,6 +221,21 @@ class MyNeuralNetwork(MyPlot):
         return h, p, acc
 
     def load_nn(self, x_test, y_test):
+        def __get_reverse(_y_labels, is_hypothesis=False):
+            _y_labels_reverse = list()
+
+            if is_hypothesis:
+                for _y in _y_labels:
+                    _y_labels_reverse.append([1 - _y[0]])
+            else:
+                for _y in _y_labels:
+                    if _y == [0]:
+                        _y_labels_reverse.append([1])
+                    else:
+                        _y_labels_reverse.append([0])
+
+            return _y_labels_reverse
+
         self.__set_name_of_tensor()
         sess = tf.Session()
         saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
@@ -236,8 +251,15 @@ class MyNeuralNetwork(MyPlot):
         keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
 
         h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
-        self.compute_score(y_test, y_predict, h)
+
+        self.compute_score(y_predict, y_test, h)
         self.set_score(target=KEY_MORTALITY)
         self.show_score(target=KEY_MORTALITY)
         self.set_plot(target=KEY_MORTALITY)
+
+        self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
+        self.set_score(target=KEY_IMMORTALITY)
+        self.show_score(target=KEY_IMMORTALITY)
+        self.set_plot(target=KEY_IMMORTALITY)
+
         self.show_plot()
