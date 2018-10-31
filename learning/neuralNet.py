@@ -48,8 +48,9 @@ class MyNeuralNetwork(MyPlot):
                 shutil.rmtree(log_name)
             os.mkdir(log_name)
 
-        print("======== Directory for Saving ========")
-        print("   Log File -", log_name)
+        if op.DO_SHOW:
+            print("======== Directory for Saving ========")
+            print("   Log File -", log_name)
 
         self.name_of_log = log_name
 
@@ -61,7 +62,8 @@ class MyNeuralNetwork(MyPlot):
                 shutil.rmtree(tensor_name)
             os.mkdir(tensor_name)
 
-        print("Tensor File -", tensor_name, "\n\n\n")
+        if op.DO_SHOW:
+            print("Tensor File -", tensor_name, "\n\n\n")
 
         self.name_of_tensor = tensor_name
 
@@ -234,6 +236,7 @@ class MyNeuralNetwork(MyPlot):
         sess = tf.Session()
         saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
         saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
+
         print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
 
         # load tensor

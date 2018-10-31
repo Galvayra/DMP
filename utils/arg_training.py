@@ -130,12 +130,13 @@ if args.delete:
 
 
 def show_options():
-    if USE_W2V:
-        print("Using word2vec\n")
-    else:
-        print("Not using word2vec\n")
+    if DO_SHOW:
+        if USE_W2V:
+            print("Using word2vec\n")
+        else:
+            print("Not using word2vec\n")
 
-    print("model -", MODEL_TYPE)
-    print("# of hidden layers -", NUM_HIDDEN_LAYER)
-    print("Learning Rate -", LEARNING_RATE)
-    print("# of EPOCH -", EPOCH, "\n\n")
+        print("model -", MODEL_TYPE)
+        print("# of hidden layers -", NUM_HIDDEN_LAYER)
+        print("Learning Rate -", LEARNING_RATE)
+        print("# of EPOCH -", EPOCH, "\n\n")

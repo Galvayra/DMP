@@ -31,8 +31,7 @@ class DataHandler:
             self.x_test = vector_list["x_test"]["merge"]
             self.y_test = vector_list["y_test"]
 
-            if DO_SHOW:
-                self.show_info()
+            self.show_info()
 
     def show_info(self):
         def __count_mortality(_y_data_):
@@ -43,33 +42,34 @@ class DataHandler:
 
             return _count
 
-        print("\n\n\n======== DataSet Count ========")
-        print("dims - ", len(self.x_train[0]))
+        if DO_SHOW:
+            print("\n\n\n======== DataSet Count ========")
+            print("dims - ", len(self.x_train[0]))
 
-        print("Training   Count -", str(len(self.y_train)).rjust(4),
-              "\t Mortality Count -", str(__count_mortality(self.y_train)).rjust(3),
-              "\t Immortality Count -", str(len(self.y_train) - __count_mortality(self.y_train)).rjust(4))
+            print("Training   Count -", str(len(self.y_train)).rjust(4),
+                  "\t Mortality Count -", str(__count_mortality(self.y_train)).rjust(3),
+                  "\t Immortality Count -", str(len(self.y_train) - __count_mortality(self.y_train)).rjust(4))
 
-        print("Validation Count -", str(len(self.y_valid)).rjust(4),
-              "\t Mortality Count -", str(__count_mortality(self.y_valid)).rjust(3),
-              "\t Immortality Count -", str(len(self.y_valid) - __count_mortality(self.y_valid)).rjust(4))
+            print("Validation Count -", str(len(self.y_valid)).rjust(4),
+                  "\t Mortality Count -", str(__count_mortality(self.y_valid)).rjust(3),
+                  "\t Immortality Count -", str(len(self.y_valid) - __count_mortality(self.y_valid)).rjust(4))
 
-        print("Test       Count -", str(len(self.y_test)).rjust(4),
-              "\t Mortality Count -", str(__count_mortality(self.y_test)).rjust(3),
-              "\t Immortality Count -", str(len(self.y_test) - __count_mortality(self.y_test)).rjust(4))
+            print("Test       Count -", str(len(self.y_test)).rjust(4),
+                  "\t Mortality Count -", str(__count_mortality(self.y_test)).rjust(3),
+                  "\t Immortality Count -", str(len(self.y_test) - __count_mortality(self.y_test)).rjust(4))
 
-        print("\n\n======== DataSet Shape ========")
-        x_train_np = np.array([np.array(j) for j in self.x_train])
-        y_train_np = np.array([np.array(j) for j in self.y_train])
-        print("Training   Set :", np.shape(x_train_np), np.shape(y_train_np))
+            print("\n\n======== DataSet Shape ========")
+            x_train_np = np.array([np.array(j) for j in self.x_train])
+            y_train_np = np.array([np.array(j) for j in self.y_train])
+            print("Training   Set :", np.shape(x_train_np), np.shape(y_train_np))
 
-        x_valid_np = np.array([np.array(j) for j in self.x_valid])
-        y_valid_np = np.array([np.array(j) for j in self.y_valid])
-        print("Validation Set :", np.shape(x_valid_np), np.shape(y_valid_np))
+            x_valid_np = np.array([np.array(j) for j in self.x_valid])
+            y_valid_np = np.array([np.array(j) for j in self.y_valid])
+            print("Validation Set :", np.shape(x_valid_np), np.shape(y_valid_np))
 
-        y_test_np = np.array([np.array(j) for j in self.y_test])
-        x_test_np = np.array([np.array(j) for j in self.x_test])
-        print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
+            y_test_np = np.array([np.array(j) for j in self.y_test])
+            x_test_np = np.array([np.array(j) for j in self.x_test])
+            print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
 
     @staticmethod
     def expand4square_matrix(*vector_set_list):

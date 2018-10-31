@@ -122,18 +122,19 @@ if args.plot:
 
 
 def show_options():
-    if IS_CLOSED:
-        print("\n\n========== CLOSED DATA SET ==========\n")
-    else:
-        print("\n\n========== OPENED DATA SET ==========\n")
+    if DO_SHOW:
+        if IS_CLOSED:
+            print("\n\n========== CLOSED DATA SET ==========\n")
+        else:
+            print("\n\n========== OPENED DATA SET ==========\n")
 
-    if USE_W2V:
-        print("Using word2vec\n")
-    else:
-        print("Not using word2vec\n")
+        if USE_W2V:
+            print("Using word2vec\n")
+        else:
+            print("Not using word2vec\n")
 
-    print("model -", MODEL_TYPE)
-    if MODEL_TYPE != "svm":
-        print("# of EPOCH -", EPOCH)
+        print("model -", MODEL_TYPE)
+        if MODEL_TYPE != "svm":
+            print("# of EPOCH -", EPOCH)
 
-    print("\n\n")
+        print("\n\n")

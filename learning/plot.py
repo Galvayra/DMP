@@ -121,7 +121,9 @@ class MyPlot:
         # print([s for s in self.score])
         data_df = DataFrame(data)
         data_df.to_csv(save_name + '.csv', index=False)
-        print("\n\ncomplete saving!! -", save_name)
+
+        if op.DO_SHOW:
+            print("\n\ncomplete saving!! -", save_name, "\n")
 
     def set_total_score(self):
         length = len(self.score_dict)
