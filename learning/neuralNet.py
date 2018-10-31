@@ -20,6 +20,7 @@ class MyNeuralNetwork(MyPlot):
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
+        self.hypothesis = None
         self.__name_of_log = str()
         self.__name_of_tensor = str()
 
@@ -228,6 +229,26 @@ class MyNeuralNetwork(MyPlot):
         return h, p, acc
 
     def load_nn(self, x_test, y_test):
+        # restore tensor
+        self.__set_name_of_tensor()
+        sess = tf.Session()
+        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
+        saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
+        print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
+
+        # load tensor
+        graph = tf.get_default_graph()
+        tf_x = graph.get_tensor_by_name(NAME_X + ":0")
+        tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
+        keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
+        hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
+        predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
+
+        h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
+
+        return h, y_predict
+
+    def predict(self, h, y_predict, y_test):
         def __get_reverse(_y_labels, is_hypothesis=False):
             _y_labels_reverse = list()
 
@@ -242,24 +263,6 @@ class MyNeuralNetwork(MyPlot):
                         _y_labels_reverse.append([0])
 
             return _y_labels_reverse
-
-        # restore tensor
-        self.__set_name_of_tensor()
-        sess = tf.Session()
-        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
-        saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
-        print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
-
-        # load tensor
-        graph = tf.get_default_graph()
-        tf_x = graph.get_tensor_by_name(NAME_X + ":0")
-        tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
-        hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
-        predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
-        keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
-
-        # testing
-        h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
         # set score of immortality
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))

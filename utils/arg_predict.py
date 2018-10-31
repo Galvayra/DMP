@@ -133,4 +133,7 @@ def show_options():
         print("Not using word2vec\n")
 
     print("model -", MODEL_TYPE)
-    print("# of EPOCH -", EPOCH)
+    if MODEL_TYPE != "svm":
+        print("# of EPOCH -", EPOCH)
+
+    print("\n\n")

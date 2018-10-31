@@ -8,7 +8,7 @@ def get_arguments():
                                                     "\n(default is vectors_dataset_parsing_{num_of_fold})"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
-                                                  "\nUseAge : python training.py -model (svm|ffnn|cnn)\n\n")
+                                                  "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python training.py -epoch 20000\n\n")
@@ -138,4 +138,4 @@ def show_options():
     print("model -", MODEL_TYPE)
     print("# of hidden layers -", NUM_HIDDEN_LAYER)
     print("Learning Rate -", LEARNING_RATE)
-    print("# of EPOCH -", EPOCH)
+    print("# of EPOCH -", EPOCH, "\n\n")

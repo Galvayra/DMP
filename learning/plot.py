@@ -112,7 +112,7 @@ class MyPlot:
         save_name = PATH_RESULT + op.SAVE_DIR_NAME
 
         data = {
-            "": [key for key in self.score],
+            op.SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_IMMORTALITY].values()],
             KEY_MORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_MORTALITY].values()],
             KEY_TOTAL: ["%0.2f" % score for score in self.score_dict[KEY_TOTAL].values()]
