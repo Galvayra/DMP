@@ -1,7 +1,8 @@
 from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_score, accuracy_score
-from .variables import KEY_PRECISION, KEY_RECALL, KEY_F1, KEY_ACCURACY, KEY_AUC
-import matplotlib.pyplot as plt
+from pandas import DataFrame
+from .variables import *
 import DMP.utils.arg_training as op
+import matplotlib.pyplot as plt
 import copy
 
 
@@ -99,6 +100,28 @@ class MyPlot:
             print('F1-Score  : %.1f' % self.score_dict[target][KEY_F1])
             print('Accuracy  : %.1f' % self.score_dict[target][KEY_ACCURACY])
             print('AUC       : %.1f' % self.score_dict[target][KEY_AUC])
+
+    def save_score(self):
+        save_name = PATH_RESULT + op.SAVE_DIR_NAME
+
+        data = {
+            "": [key for key in self.score],
+            KEY_IMMORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_IMMORTALITY].values()],
+            KEY_MORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_MORTALITY].values()],
+            KEY_TOTAL: ["%0.2f" % score for score in self.score_dict[KEY_TOTAL].values()]
+        }
+
+        # print([s for s in self.score])
+        data_df = DataFrame(data)
+        data_df.to_csv(save_name + '.csv', index=False)
+        print("save complete -", save_name, "\n\n")
+
+    def set_total_score(self):
+        length = len(self.score_dict)
+
+        for key in self.score_dict[KEY_MORTALITY]:
+            self.score[key] = (self.score_dict[KEY_MORTALITY][key] + self.score_dict[KEY_IMMORTALITY][key]) / length
+        self.set_score(target=KEY_TOTAL)
 
     def init_plot(self):
         if op.DO_SHOW_PLOT:

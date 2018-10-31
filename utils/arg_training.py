@@ -23,11 +23,13 @@ def get_arguments(is_training=False):
                                                     "\nUseAge : python training.py -hidden 2 (non-linear)\n\n")
     parser.add_argument("-learn", "--learn", help="set a learning rate for training (default is 0.001)"
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
-    parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
-                                                "\nUseAge : python training.py -show 1 (True)\n\n")
     parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
+    parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
+                                                "\nUseAge : python training.py -show 1 (True)\n\n")
     if not is_training:
+        parser.add_argument("-save", "--save", help="save a score to csv file (default is 'LOG_NAME')"
+                                                    "\nUseAge : python predict.py -save 'NAME' (in analysis dir)\n\n")
         parser.add_argument("-plot", "--plot", help="set a option for visualization (default is 0)"
                                                     "\nUseAge : python predict.py -plot 1 (True)\n\n")
     else:
@@ -72,6 +74,7 @@ DO_SHOW = False
 DO_SHOW_PLOT = False
 
 # SAVE options #
+LOG_DIR_NAME = str()
 SAVE_DIR_NAME = str()
 DO_DELETE = False
 
@@ -140,7 +143,19 @@ if args.show:
             print("\nInput Error show option!\n")
             exit(-1)
 
+# SAVE options #
+if args.log:
+    LOG_DIR_NAME = args.log + "/"
+else:
+    LOG_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
+                    MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
+
 if current_frame == "predict":
+    if args.save:
+        SAVE_DIR_NAME = args.save
+    else:
+        SAVE_DIR_NAME = LOG_DIR_NAME[:-1]
+
     if args.plot:
         try:
             DO_SHOW_PLOT = int(args.plot)
@@ -162,14 +177,6 @@ else:
             if DO_DELETE != 1 and DO_DELETE != 0:
                 print("\nInput Error delete option!\n")
                 exit(-1)
-
-
-# SAVE options #
-if args.log:
-    SAVE_DIR_NAME = args.log + "/"
-else:
-    SAVE_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
-                    MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"
 
 
 def show_options():

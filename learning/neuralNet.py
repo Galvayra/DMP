@@ -33,7 +33,7 @@ class MyNeuralNetwork(MyPlot):
         self.__name_of_tensor = name
 
     def __set_name_of_log(self):
-        log_name = PATH_LOGS + op.SAVE_DIR_NAME
+        log_name = PATH_LOGS + op.LOG_DIR_NAME
 
         if op.DO_DELETE:
             if os.path.isdir(log_name):
@@ -46,7 +46,7 @@ class MyNeuralNetwork(MyPlot):
         self.name_of_log = log_name
 
     def __set_name_of_tensor(self):
-        tensor_name = PATH_TENSOR + op.SAVE_DIR_NAME
+        tensor_name = PATH_TENSOR + op.LOG_DIR_NAME
 
         if op.DO_DELETE:
             if os.path.isdir(tensor_name):
@@ -236,13 +236,14 @@ class MyNeuralNetwork(MyPlot):
 
             return _y_labels_reverse
 
+        # restore tensor
         self.__set_name_of_tensor()
         sess = tf.Session()
         saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(op.EPOCH) + '.meta')
         saver.restore(sess, self.name_of_tensor + 'model-' + str(op.EPOCH))
-
         print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
 
+        # load tensor
         graph = tf.get_default_graph()
         tf_x = graph.get_tensor_by_name(NAME_X + ":0")
         tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
@@ -250,16 +251,25 @@ class MyNeuralNetwork(MyPlot):
         predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
         keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
 
+        # testing
         h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
+        # set score of immortality
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
         self.show_score(target=KEY_IMMORTALITY)
         self.set_plot(target=KEY_IMMORTALITY)
 
+        # set score of mortality
         self.compute_score(y_predict, y_test, h)
         self.set_score(target=KEY_MORTALITY)
         self.show_score(target=KEY_MORTALITY)
         self.set_plot(target=KEY_MORTALITY)
 
+        # set total score of immortality and mortality
+        self.set_total_score()
+        self.show_score(target=KEY_TOTAL)
+
+        # save score & show plot
+        self.save_score()
         self.show_plot()

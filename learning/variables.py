@@ -5,8 +5,10 @@ SVM_KERNEL = "linear"
 NUM_HIDDEN_DIMENSION = 0
 RATIO_HIDDEN = 2
 
+# path of directory for loading and storing
 PATH_LOGS = "./logs/"
 PATH_TENSOR = "modeling/save/"
+PATH_RESULT = "analysis/"
 
 # name of tensor
 NAME_HYPO = "hypothesis"
@@ -20,6 +22,7 @@ NAME_ACC = "accuracy"
 KEY_VALID = "validation"
 KEY_MORTALITY = "mortality"
 KEY_IMMORTALITY = "immortality"
+KEY_TOTAL = "total"
 
 # key of measure of process
 KEY_PRECISION = "precision"
