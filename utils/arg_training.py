@@ -25,7 +25,7 @@ def get_arguments(is_training=False):
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
     parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
                                                 "\nUseAge : python training.py -show 1 (True)\n\n")
-    parser.add_argument("-dir", "--dir", help="set directory name by distinction (default is Null)"
+    parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")
     if not is_training:
         parser.add_argument("-plot", "--plot", help="set a option for visualization (default is 0)"
@@ -165,8 +165,8 @@ else:
 
 
 # SAVE options #
-if args.dir:
-    SAVE_DIR_NAME = args.dir + "/"
+if args.log:
+    SAVE_DIR_NAME = args.log + "/"
 else:
     SAVE_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + \
                     MODEL_TYPE + "_h_" + str(NUM_HIDDEN_LAYER) + "_e_" + str(EPOCH) + "_lr_" + str(LEARNING_RATE) + "/"

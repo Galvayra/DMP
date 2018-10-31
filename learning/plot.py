@@ -117,8 +117,9 @@ class MyPlot:
 
     def set_plot(self, target):
         if op.DO_SHOW_PLOT:
-            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
-                              label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
+            # self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
+            #                   label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
+            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC of %s' % target)
             self.__tpr, self.__fpr = self.__init_plot()
 
     def show_plot(self):

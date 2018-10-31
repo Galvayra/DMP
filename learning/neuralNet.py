@@ -252,14 +252,14 @@ class MyNeuralNetwork(MyPlot):
 
         h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
-        self.compute_score(y_predict, y_test, h)
-        self.set_score(target=KEY_MORTALITY)
-        self.show_score(target=KEY_MORTALITY)
-        self.set_plot(target=KEY_MORTALITY)
-
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
         self.show_score(target=KEY_IMMORTALITY)
         self.set_plot(target=KEY_IMMORTALITY)
+
+        self.compute_score(y_predict, y_test, h)
+        self.set_score(target=KEY_MORTALITY)
+        self.show_score(target=KEY_MORTALITY)
+        self.set_plot(target=KEY_MORTALITY)
 
         self.show_plot()
