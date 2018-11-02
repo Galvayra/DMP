@@ -84,6 +84,14 @@ if args.model:
         print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
         exit(-1)
 
+if args.feature:
+    TYPE_OF_FEATURE = args.feature
+
+    if TYPE_OF_FEATURE not in type_of_features:
+        print("\nInput Error feature option!")
+        print("You must input -", type_of_features)
+        exit(-1)
+        
 if args.epoch:
     try:
         EPOCH = int(args.epoch)

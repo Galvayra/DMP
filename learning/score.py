@@ -8,7 +8,7 @@ import sys
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW
 else:
-    from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
+    from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME, TYPE_OF_FEATURE
 
 
 class MyScore(MyPlot):
@@ -93,7 +93,7 @@ class MyScore(MyPlot):
         save_name = PATH_RESULT + SAVE_DIR_NAME
 
         data = {
-            SAVE_DIR_NAME: [key for key in self.score],
+            SAVE_DIR_NAME + "_" + TYPE_OF_FEATURE: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_IMMORTALITY].values()],
             KEY_MORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_MORTALITY].values()],
             KEY_TOTAL: ["%0.2f" % score for score in self.score_dict[KEY_TOTAL].values()]
