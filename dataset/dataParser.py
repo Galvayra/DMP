@@ -142,7 +142,7 @@ class DataParser(DataHandler):
             _w = _w.replace('_op._', '_postoperative_')
             _w = _w.replace('_lac._', '_laceration_')
             _w = _w.replace('_vesicles_', '_vesicle_')
-            _w = re.sub('_(with|without|&|\+|in|-)_', '_', _w)
+            _w = re.sub('_(with|without|&|\+|in|-|for)_', '_', _w)
             _w = _w.replace('n/v', '')
             _w = _w.replace(',_', '_')
             _w = _w.replace('._', '_')
@@ -229,7 +229,7 @@ class DataParser(DataHandler):
             _w = _w.replace('_cholangiocarcinoma_', '_cholangio_carcinoma_')
             _w = _w.replace('/nsclc', 'nsclc')
             _w = _w.replace('/bladder', 'bladder')
-            _w = re.sub('_(with|without|&|of|or|and|from)_', '_', _w)
+            _w = re.sub('_(with|without|&|of|or|and|from|for)_', '_', _w)
             _w = __process_under_bar(_w, "colon")
             _w = __process_under_bar(_w, "cell")
 
@@ -368,7 +368,7 @@ class DataParser(DataHandler):
             _w = __process_slash(_w)
 
             _w = re.sub('[&.>?]', '', _w)
-            _w = re.sub('_(with|without|of|or|from|and)_', '_', _w)
+            _w = re.sub('_(with|without|of|or|from|and|for)_', '_', _w)
             _w = _w.replace('-_', '_')
             _w = _w.replace(';', '_')
 

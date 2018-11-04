@@ -13,7 +13,7 @@ class W2vReader:
 
             try:
                 with open(w2v_file, "r") as r_file:
-                    print("\n\nLoad word2vec model -", w2v_file, "\n\n")
+                    print("\n\nLoad word2vec model -", w2v_file)
 
                     # add embed dictionary
                     for line in r_file:
@@ -23,3 +23,5 @@ class W2vReader:
             except FileNotFoundError:
                 print("There is no File -", w2v_file, "\n")
                 exit(-1)
+
+            print("Complete Loading!!\n")
