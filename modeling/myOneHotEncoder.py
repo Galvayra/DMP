@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-from .variables import *
+from .variables import KEY_NAME_OF_MERGE_VECTOR
+from DMP.modeling.w2vReader import W2vReader
 import math
 
 DIMENSION_W2V = 300
@@ -8,8 +9,9 @@ SCALAR_DEFAULT_WEIGHT = 0.1
 
 
 # initial information & Past history 만을 이용하여 학습
-class MyOneHotEncoder:
+class MyOneHotEncoder(W2vReader):
     def __init__(self, data_handler):
+        super().__init__()
         self.vector_matrix = OrderedDict()
         self.__vector = OrderedDict()
         self.__vector_dict = dict()
