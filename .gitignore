@@ -6,6 +6,7 @@ modeling/embedding/
 reference/
 result/
 make/
+images/
 logs/
 parsing_result/
 analysis/
