@@ -47,19 +47,27 @@ class W2vReader:
         w2v_vector = [float(0) for _ in range(self.dimension)]
         cnt = 0
 
-        # sum of vectors
+        # sum into w2v vector
         for w in word:
             if w in vector_dict:
                 for i, v in enumerate(self.w2v_dict[w + self.pos_tag]):
                     w2v_vector[i] += v
                 cnt += 1
 
-        # divide into vector
-        if cnt:
-            return [v/cnt for v in w2v_vector]
+        # divide vector using total count which is existed in dictionary
+        w2v_vector = self.__normalize_vector(w2v_vector, cnt)
+
+        # scaling values in vector from [-1, 1] to [0, 1]
+        return self.__scaling_vector(w2v_vector)
+
+    @staticmethod
+    def __normalize_vector(w2v_vector, total_cnt):
+        if total_cnt:
+            return [v/total_cnt for v in w2v_vector]
         else:
             return w2v_vector
 
-    def __scaling_vector(self, w2v_vector):
-        #### pass
+    @staticmethod
+    def __scaling_vector(w2v_vector):
+        return [(v + 1)/float(2) for v in w2v_vector]
 
