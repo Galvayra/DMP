@@ -2,11 +2,14 @@
 from collections import OrderedDict
 
 DATA_PATH = "dataset/"
+ORIGIN_PATH = "origin/"
+PARSING_PATH = "parsing/"
 
 POSITION_OF_ROW = 2
 ID_COLUMN = "C"
 RR_COLUMN = "K"
 TEMP_COLUMN = "L"
+Y_COLUMN = "DA"
 
 default_info_columns = {
     "scalar": ['E'],

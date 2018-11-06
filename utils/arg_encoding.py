@@ -13,9 +13,6 @@ def get_arguments():
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
                                                     "\ndefault is 'None'.csv "
                                                     "\nUseAge : python encoding.py -target 'Symptom'\n\n")
-    parser.add_argument("-ratio", "--ratio", help="set a ratio of training set in data set(default is 0.8)"
-                                                  "\ntrain:test:validate = N:(10-N)/2:(10-N)/2"
-                                                  "\nUseAge : python encoding.py -ratio 0.5 (2:1:1)\n\n")
     parser.add_argument("-w2v", "--w2v", help="using word2vec or not"
                                               "\nUseAge : python encoding.py -id string\n\n")
     _args = parser.parse_args()
@@ -25,16 +22,19 @@ def get_arguments():
 
 args = get_arguments()
 
-READ_FILE = "dataset_parsing.csv"
+EXTENSION_FILE = ".csv"
+SAVE_FILE_TOTAL = "parsing"
+SAVE_FILE_TRAIN = "parsing_train" + EXTENSION_FILE
+SAVE_FILE_VALID = "parsing_valid" + EXTENSION_FILE
+SAVE_FILE_TEST = "parsing_test" + EXTENSION_FILE
 COLUMN_TARGET = str()
-FILE_VECTOR = str()
+FILE_VECTOR = "model"
 
-RATIO = 0.8
 USE_W2V = True
 
 if args.input:
-    READ_FILE = args.input
-
+    SAVE_FILE_TOTAL = args.input
+    
 if args.output:
     FILE_VECTOR = args.output
 
@@ -43,25 +43,27 @@ if args.target:
 
     if COLUMN_TARGET == "b":
         COLUMN_TARGET = "CR"
-        READ_FILE = READ_FILE.split(".csv")[0] + "_bacteremia" + ".csv"
+        symptom = "bacteremia"
     elif COLUMN_TARGET == "s":
         COLUMN_TARGET = "CU"
-        READ_FILE = READ_FILE.split(".csv")[0] + "_sepsis" + ".csv"
+        symptom = "sepsis"
     elif COLUMN_TARGET == "p":
         COLUMN_TARGET = "CS"
-        READ_FILE = READ_FILE.split(".csv")[0] + "_pneumonia" + ".csv"
-
-if args.ratio:
-    try:
-        RATIO = float(args.ratio)
-    except ValueError:
-        print("\nInput Error type of ratio option!\n")
-        exit(-1)
+        symptom = "pneumonia"
     else:
-        if RATIO < 0 or RATIO > 1:
-            print("\nInput Error a boundary of ratio option!\n")
-            exit(-1)
+        symptom = str()
 
+    if symptom:
+        SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_" + symptom + "_train" + EXTENSION_FILE
+        SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_" + symptom + "_valid" + EXTENSION_FILE
+        SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_" + symptom + "_test" + EXTENSION_FILE
+        SAVE_FILE_TOTAL = SAVE_FILE_TOTAL + "_" + symptom + EXTENSION_FILE
+else:
+    SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_train" + EXTENSION_FILE
+    SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_valid" + EXTENSION_FILE
+    SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_test" + EXTENSION_FILE
+    SAVE_FILE_TOTAL += EXTENSION_FILE
+    
 if args.w2v:
     try:
         USE_W2V = int(args.w2v)

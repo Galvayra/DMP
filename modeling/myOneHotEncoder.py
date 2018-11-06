@@ -12,13 +12,13 @@ SCALAR_DEFAULT_WEIGHT = 0.1
 class MyOneHotEncoder(W2vReader):
     def __init__(self, data_handler):
         super().__init__()
-        self.vector_matrix = OrderedDict()
         self.__vector = OrderedDict()
         self.__vector_dict = dict()
 
         self.dataHandler = data_handler
-        self.__x_data = self.dataHandler.x_data_dict
-        self.__len_data = len(self.dataHandler.y_data)
+        self.__x_data = data_handler.x_data_dict
+        # self.__x_data = self.dataHandler.x_data_dict
+        # self.__len_data = len(self.dataHandler.y_data)
 
     @property
     def vector(self):
@@ -32,12 +32,11 @@ class MyOneHotEncoder(W2vReader):
     def x_data(self):
         return self.__x_data
 
-    @property
-    def len_data(self):
-        return self.__len_data
+    # @property
+    # def len_data(self):
+    #     return self.__len_data
 
     def encoding(self):
-
         # scalar dictionary 생성을 위해 앞 뒤 예외처리를 해야하는지 각 column 마다 확인해주어야 한다
         def __set_scalar_dict(value_list):
             scalar_dict = dict()
@@ -134,36 +133,41 @@ class MyOneHotEncoder(W2vReader):
             elif type_of_column == "word":
                 self.vector_dict[column] = __set_one_hot_dict(self.x_data[column])
 
-    def __init_vector(self):
-        # _x_vector_dict = OrderedDict()
-        self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR] = list()
+    def __init_vector(self, data_handler):
+        vector_matrix = OrderedDict()
 
-        for _ in range(self.len_data):
-            self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR].append(list())
+        vector_matrix[KEY_NAME_OF_MERGE_VECTOR] = list()
+        num_of_data = len(data_handler.y_data)
+
+        for _ in range(num_of_data):
+            vector_matrix[KEY_NAME_OF_MERGE_VECTOR].append(list())
 
         # set X(number of rows) using rows_data
         for class_of_column in self.dataHandler.columns_dict:
-            self.vector_matrix[class_of_column] = list()
+            vector_matrix[class_of_column] = list()
 
-            for _ in range(self.len_data):
-                self.vector_matrix[class_of_column].append(list())
+            for _ in range(num_of_data):
+                vector_matrix[class_of_column].append(list())
 
-        # initialize vector
-        for column in self.x_data.keys():
-            self.vector[column] = list()
+        return vector_matrix
+        # # initialize vector
+        # for column in self.x_data.keys():
+        #     self.vector[column] = list()
+        #
+        #     for _ in range(num_of_data):
+        #         self.vector[column].append(list())
 
-            for _ in range(self.len_data):
-                self.vector[column].append(list())
-
-    def fit(self):
-        self.__init_vector()
+    def fit(self, data_handler):
+        vector_matrix = self.__init_vector(data_handler)
 
         for class_of_column, _ in self.dataHandler.columns_dict.items():
             for type_of_column, column_of_list in _.items():
                 for column in column_of_list:
-                    self.__vector_maker(class_of_column, column, type_of_column)
+                    self.__vector_maker(data_handler.x_data_dict, vector_matrix, class_of_column, column, type_of_column)
 
-    def __vector_maker(self, class_of_column, column, type_of_column):
+        return vector_matrix
+
+    def __vector_maker(self, x_data, vector_matrix, class_of_column, column, type_of_column):
         def __set_scalar_vector():
             # If dict of scalar vector, make vector using dict
             # But, If not have it, do not make vector (we consider that the column will be noise)
@@ -175,7 +179,7 @@ class MyOneHotEncoder(W2vReader):
                 # ex) vector size == 1
                 #     if value in vector_dict ? [1.0] : [0.0]
                 if not differ:
-                    for index, value in enumerate(self.x_data[column]):
+                    for index, value in enumerate(x_data[column]):
                         values = [0.0]
 
                         if not math.isnan(value):
@@ -185,7 +189,7 @@ class MyOneHotEncoder(W2vReader):
                 # ex) vector size > 1
                 #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
                 else:
-                    for index, value in enumerate(self.x_data[column]):
+                    for index, value in enumerate(x_data[column]):
 
                         values = [0.0, 0.0]
 
@@ -196,16 +200,15 @@ class MyOneHotEncoder(W2vReader):
                         __set_vector(index, values)
 
         def __set_class_vector():
-            # print(column, self.vector_dict[column])
-            for index, value in enumerate(self.x_data[column]):
+            for index, value in enumerate(x_data[column]):
                 __set_vector(index, __get_one_hot([value], self.vector_dict[column]))
 
         def __set_embedded_vector():
-            for index, value in enumerate(self.x_data[column]):
+            for index, value in enumerate(x_data[column]):
                 __set_vector(index, self.get_w2v_vector(value.split('_'), self.vector_dict[column]))
 
         def __set_one_hot_vector():
-            for index, value in enumerate(self.x_data[column]):
+            for index, value in enumerate(x_data[column]):
                 __set_vector(index, __get_one_hot(value.split('_'), self.vector_dict[column]))
 
         def __get_one_hot(word, vector_dict):
@@ -221,9 +224,15 @@ class MyOneHotEncoder(W2vReader):
 
         def __set_vector(index, vector):
             for v in vector:
-                self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
-                self.vector_matrix[class_of_column][index].append(v)
-                self.vector[column][index].append(v)
+                vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
+                vector_matrix[class_of_column][index].append(v)
+
+        #
+        # def __set_vector(index, vector):
+        #     for v in vector:
+        #         self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
+        #         self.vector_matrix[class_of_column][index].append(v)
+        #         self.vector[column][index].append(v)
 
         if type_of_column == "id":
             return

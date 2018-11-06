@@ -1,30 +1,41 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-import math
 import re
 import random
+import sys
 from .variables import *
 
+if sys.argv[0].split('/')[-1] == "parsing.py":
+    from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO
+
+
 HAVE_SYMPTOM = 1
-SEED = 444
 PROPOSITION = 10
 
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, data_file, do_parsing=False, do_sampling=False, column_target=False, eliminate_target=False):
+    def __init__(self, read_csv, do_parsing=False, do_sampling=False, column_target=False, eliminate_target=False):
+        # set path of csv file
+        if do_parsing:
+            # execute parsing.py
+            data_path = DATA_PATH + ORIGIN_PATH
+        else:
+            # execute encoding.py
+            data_path = DATA_PATH + PARSING_PATH
+
+        # read csv file
         try:
-            self.__file_name = data_file
-            print("Read csv file -", DATA_PATH + self.file_name, "\n\n")
-            self.__raw_data = pd.read_csv(DATA_PATH + self.file_name)
+            self.__raw_data = pd.read_csv(data_path + read_csv)
+            print("Read csv file -", data_path + read_csv, "\n")
         except FileNotFoundError:
-            print("There is no file !!\n\n")
+            print("FileNotFoundError]", data_path + read_csv, "\n")
             exit(-1)
 
         self.__column_target = column_target
         self.__columns_dict = columns_dict
 
-        # eliminate target column in column dict
+        # if use target option, eliminate target column in column dict because it is not necessary
         if eliminate_target and column_target:
             for class_of_column in list(self.columns_dict.keys()):
                 for type_of_column in list(self.columns_dict[class_of_column].keys()):
@@ -53,7 +64,6 @@ class DataHandler:
         self.y_data = self.__set_labels()
 
         self.__do_parsing = do_parsing
-        self.__do_set_data = False
         self.__do_sampling = do_sampling
 
         if self.do_parsing:
@@ -64,16 +74,8 @@ class DataHandler:
             if self.column_target:
                 self.__append_target_in_erase_index_list()
 
-            # print(self.__erase_index_list, len(self.__erase_index_list))
-            # print(len(self.__erase_index_list))
             self.__apply_exception()
-
-        # print(self.header_list)
-        # print(self.x_data_dict.keys())
-
-    @property
-    def file_name(self):
-        return self.__file_name
+            self.__save_dict = OrderedDict()
 
     @property
     def column_target(self):
@@ -120,16 +122,12 @@ class DataHandler:
         return self.__do_parsing
 
     @property
-    def do_set_data(self):
-        return self.__do_set_data
-
-    @property
     def do_sampling(self):
         return self.__do_sampling
 
-    @do_set_data.setter
-    def do_set_data(self, do_set_data):
-        self.__do_set_data = do_set_data
+    @property
+    def save_dict(self):
+        return self.__save_dict
 
     def __get_head_dict_key(self, index):
 
@@ -226,10 +224,10 @@ class DataHandler:
         print("# of     all data set -", str(self.x_data_count).rjust(5),
               "\t# of mortality -", str(self.y_data_count).rjust(5))
         print("# of parsing data set -", str(len(self.y_data) - down_sampling_count).rjust(5),
-              "\t# of mortality -", str(self.counting_mortality(self.y_data)).rjust(5), "\n\n")
+              "\t# of mortality -", str(self.counting_mortality(self.y_data)).rjust(5))
+        print("\n=========================================================\n\n")
 
     def parsing(self):
-
         # set data
         self.__reset_data_dict()
 
@@ -308,24 +306,10 @@ class DataHandler:
 
         self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
 
-    # focus on target column
-    def __down_sampling(self):
-        down_sample_count = (self.y_data_count - len(self.erase_index_list)) * PROPOSITION
-        print(len(self.erase_index_list))
-
-        if down_sample_count < self.x_data_count:
-            print(down_sample_count)
-        # print(self.x_data_count, self.y_data_count)
-        # for index, symptom in self.__get_raw_data(self.column_target).items():
-        #     if not symptom == HAVE_SYMPTOM:
-        #         self.erase_index_list.append(index + POSITION_OF_ROW)
-        #
-        # self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
-
-    # DA is a column for y labels
+    # Y_COLUMN(=DA) is a column for y labels
     def __set_labels(self):
         y_labels = list()
-        header = "DA"
+        header = Y_COLUMN
 
         for i, value in enumerate(self.__get_raw_data(header)):
             if value == HAVE_SYMPTOM:
@@ -362,66 +346,34 @@ class DataHandler:
 
         return count
 
-    # show type of columns
-    def show_type_of_columns(self):
+    def save(self):
+        self.__set_save_dict()
+        train_dict, valid_dict, test_dict = self.__split_files()
 
-        if not self.do_set_data:
-            for header, data_lines in self.x_data_dict.items():
-                type_dict = {"total": 0}
+        df_dict = {
+            SAVE_FILE_TOTAL: self.save_dict,
+            SAVE_FILE_TRAIN: train_dict,
+            SAVE_FILE_VALID: valid_dict,
+            SAVE_FILE_TEST: test_dict
+        }
 
-                for _, v in data_lines.items():
-                    key = 0
+        for file_name, data_dict in df_dict.items():
+            df = pd.DataFrame(data_dict)
+            df.to_csv(DATA_PATH + PARSING_PATH + file_name, index=False)
+            print("Write csv file -", DATA_PATH + PARSING_PATH + file_name)
 
-                    if type(v) is float:
-                        if math.isnan(v):
-                            key = "float_nan"
-                        else:
-                            key = "float"
-                    elif type(v) is str:
-                        if v == "nan":
-                            key = "nan"
-                        else:
-                            key = "str"
-                    elif type(v) is int:
-                        key = "int"
+            cnt_mortality = self.counting_mortality(data_dict[self.raw_header_dict[Y_COLUMN]])
+            cnt_total = len(data_dict[self.raw_header_dict[Y_COLUMN]])
+            print("\n# of     total -", str(cnt_total).rjust(4),
+                  "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
+                  "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
 
-                    if key not in type_dict:
-                        type_dict[key] = 1
-                    else:
-                        type_dict[key] += 1
-                    type_dict["total"] += 1
-
-                print(header.rjust(2), type_dict)
-        else:
-            for header, data_lines in self.x_data_dict.items():
-                type_dict = {"total": 0}
-
-                for v in data_lines:
-                    key = 0
-                    if type(v) is float:
-                        if math.isnan(v):
-                            key = "float_nan"
-                        else:
-                            key = "float"
-                    elif type(v) is str:
-                        if v == "nan":
-                            key = "nan"
-                        else:
-                            key = "str"
-                    elif type(v) is int:
-                        key = "int"
-
-                    if key not in type_dict:
-                        type_dict[key] = 1
-                    else:
-                        type_dict[key] += 1
-                    type_dict["total"] += 1
-
-                print(header.rjust(2), type_dict)
-
-        print("\n\n")
-
-    def save(self, save_file_name):
+    # set save dictionary for csv file
+    # {
+    #   header_1 : [ data_1 , ... , data_N ], ... , h
+    #   header_I
+    # }
+    def __set_save_dict(self):
         # copy raw data to raw data list except for erase index
         def __get_copied_raw_data(raw_data):
             _raw_data_list = list()
@@ -441,9 +393,9 @@ class DataHandler:
 
             return sorted(random.sample(_down_sampling_list, down_sampling_count), reverse=True)
 
-        save_dict = OrderedDict()
         down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * PROPOSITION)
 
+        # apply down sampling
         if self.do_sampling and down_sampling_count > 0:
             down_sampling_list = __init_down_sampling_list()
 
@@ -456,11 +408,10 @@ class DataHandler:
                 for index in down_sampling_list:
                     del raw_data_list[index]
 
-                # random.seed(SEED)
-                # random.shuffle(raw_data_list)
-                save_dict[header_key] = raw_data_list
+                self.save_dict[header_key] = raw_data_list
 
             self.__summary(down_sampling_count)
+        # do not apply sampling
         else:
             for header, header_key in self.raw_header_dict.items():
                 if header in self.header_list:
@@ -468,16 +419,60 @@ class DataHandler:
                 else:
                     raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
 
-                # random.seed(SEED)
-                # random.shuffle(raw_data_list)
-                save_dict[header_key] = raw_data_list
+                self.save_dict[header_key] = raw_data_list
 
             self.__summary()
 
-        df = pd.DataFrame(save_dict)
-        df.to_csv(DATA_PATH + save_file_name, index=False)
+    # train:test:valid  --> 5 : 2.5 : 2.5
+    # if ratio == 0.8   --> 8 :   1 :   1
+    def __init_index_dict(self):
+        index_dict = dict()
+        data_dict = {
+            "train": list(),
+            "test": list(),
+            "valid": list()
+        }
 
-        print("Write csv file -", DATA_PATH + save_file_name, "\n")
+        def __is_choice(ratio=0.5):
+            if random.randrange(10) < (ratio * 10):
+                return True
+            else:
+                return False
+
+        for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
+            if __is_choice(RATIO):
+                index_dict[index] = "train"
+                data_dict["train"].append(index)
+            elif __is_choice():
+                index_dict[index] = "test"
+                data_dict["test"].append(index)
+            else:
+                index_dict[index] = "valid"
+                data_dict["valid"].append(index)
+
+        return index_dict
+
+    def __split_files(self):
+        def __copy(target, data_dict):
+            for header in data_dict:
+                target[header].append(data_dict[header][index])
+
+        index_dict = self.__init_index_dict()
+        train_dict = {header: list() for header in self.save_dict.keys()}
+        valid_dict = {header: list() for header in self.save_dict.keys()}
+        test_dict = {header: list() for header in self.save_dict.keys()}
+
+        for index in range(len(index_dict)):
+            which = index_dict[index]
+
+            if which is "train":
+                __copy(train_dict, self.save_dict)
+            elif which is "valid":
+                __copy(valid_dict, self.save_dict)
+            elif which is "test":
+                __copy(test_dict, self.save_dict)
+
+        return train_dict, valid_dict, test_dict
 
     def load(self):
         self.__reset_data_dict(do_casting=True)

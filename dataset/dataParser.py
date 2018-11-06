@@ -1,17 +1,17 @@
 from DMP.dataset.dataHandler import DataHandler
 import math
 import re
-from DMP.utils.arg_parsing import SAVE_FILE, COLUMN_TARGET, COLUMN_TARGET_NAME, DO_SAMPLING
+from DMP.utils.arg_parsing import COLUMN_TARGET, COLUMN_TARGET_NAME, DO_SAMPLING
 
 
 class DataParser(DataHandler):
-    def __init__(self, data_file):
+    def __init__(self, read_csv):
         if COLUMN_TARGET_NAME:
             print("The Target is", COLUMN_TARGET_NAME, "\n\n")
         else:
             print("The Target is None\n\n")
 
-        super().__init__(data_file, do_parsing=True, do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET)
+        super().__init__(read_csv, do_parsing=True, do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET)
 
     def parsing(self):
 
@@ -44,7 +44,7 @@ class DataParser(DataHandler):
         super().parsing()
 
     def save(self):
-        super().save(SAVE_FILE)
+        super().save()
 
     @staticmethod
     def __init_data_dict(data_lines):

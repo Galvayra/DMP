@@ -1,17 +1,24 @@
 import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
-from .variables import DUMP_FILE, DUMP_PATH
+from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST
 import json
-import random
 
 
+###
+# list of KEY
+#   total == train set + validation set + test set
+#   train == train set
+#   valid == validation set
+#   test == test set
+###
 class VectorMaker:
     # must using DataParser or DataHandler
-    def __init__(self, data_handler):
-        self.dataHandler = data_handler
-        self.__y_data = self.dataHandler.y_data
-        self.__len_data = len(self.dataHandler.y_data)
+    def __init__(self, **data_handler):
+        # dataHandler_dict = { KEY : handler }
+        self.dataHandler_dict = {key: handler for key, handler in data_handler.items()}
+        self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
+        self.__len_data = len(self.dataHandler_dict[KEY_TOTAL].y_data)
 
         # { x_train: [ vector 1, ... vector n ], ... x_test, x_valid , ... , y_valid }
         self.__vector_matrix = OrderedDict()
@@ -24,14 +31,6 @@ class VectorMaker:
             "y_test": list()
         }
 
-        # { 0: "train", 1: "test" , ..., n: "valid" }
-        self.__index_dict = self.__init_index_dict()
-        self.__file_name = self.dataHandler.file_name.split('.')[0]
-
-    @property
-    def file_name(self):
-        return self.__file_name
-
     @property
     def y_data(self):
         return self.__y_data
@@ -41,52 +40,24 @@ class VectorMaker:
         return self.__len_data
 
     @property
-    def index_dict(self):
-        return self.__index_dict
-
-    @property
     def vector_matrix(self):
         return self.__vector_matrix
 
-    # train:test:valid  --> 5 : 2.5 : 2.5
-    # if ratio == 0.8   --> 8 :   1 :   1
-    def __init_index_dict(self):
-        index_dict = dict()
-        data_dict = {
-            "train": list(),
-            "test": list(),
-            "valid": list()
-        }
-
-        def __is_choice(ratio=0.5):
-            if random.randrange(10) < (ratio * 10):
-                return True
-            else:
-                return False
-
-        for index in range(self.len_data):
-            if __is_choice(op.RATIO):
-                index_dict[index] = "train"
-                data_dict["train"].append(index)
-            elif __is_choice():
-                index_dict[index] = "test"
-                data_dict["test"].append(index)
-            else:
-                index_dict[index] = "valid"
-                data_dict["valid"].append(index)
-
-        return index_dict
-
     def encoding(self):
         # init encoder and fit it
-        encoder = MyOneHotEncoder(self.dataHandler)
+        encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL])
         encoder.encoding()
-        encoder.fit()
+
+        matrix_train = encoder.fit(self.dataHandler_dict[KEY_TRAIN])
+        matrix_valid = encoder.fit(self.dataHandler_dict[KEY_VALID])
+        matrix_test = encoder.fit(self.dataHandler_dict[KEY_TEST])
         # encoder.show_vectors(*self.dataHandler.header_list)
 
+        print(len(matrix_train), len(matrix_valid), len(matrix_test))
+        exit(-1)
         self.__set_vector_matrix(encoder.vector_matrix)
 
-        del self.dataHandler
+        del self.dataHandler_dict
 
     def __set_vector_matrix(self, vector_matrix):
         def __copy(x_target, y_target, y_data):
