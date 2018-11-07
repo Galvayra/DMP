@@ -322,9 +322,17 @@ class DataHandler:
 
     def get_type_of_column(self, column):
         for columns in self.columns_dict.values():
-            for column_type, column_list in columns.items():
-                if column in column_list:
-                    return column_type
+            for type_of_column, column_of_list in columns.items():
+                if column in column_of_list:
+                    return type_of_column
+
+        return None
+
+    def get_class_of_column(self, column):
+        for class_of_column, _ in self.columns_dict.items():
+            for _, column_of_list in _.items():
+                if column in column_of_list:
+                    return class_of_column
 
         return None
 

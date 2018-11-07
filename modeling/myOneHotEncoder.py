@@ -15,10 +15,9 @@ class MyOneHotEncoder(W2vReader):
         self.__vector = OrderedDict()
         self.__vector_dict = dict()
 
+        # init handler for making dictionary
         self.dataHandler = data_handler
-        self.__x_data = data_handler.x_data_dict
-        # self.__x_data = self.dataHandler.x_data_dict
-        # self.__len_data = len(self.dataHandler.y_data)
+        self.__x_data_dict = data_handler.x_data_dict
 
     @property
     def vector(self):
@@ -29,12 +28,8 @@ class MyOneHotEncoder(W2vReader):
         return self.__vector_dict
 
     @property
-    def x_data(self):
-        return self.__x_data
-
-    # @property
-    # def len_data(self):
-    #     return self.__len_data
+    def x_data_dict(self):
+        return self.__x_data_dict
 
     def encoding(self):
         # scalar dictionary 생성을 위해 앞 뒤 예외처리를 해야하는지 각 column 마다 확인해주어야 한다
@@ -119,19 +114,19 @@ class MyOneHotEncoder(W2vReader):
 
             return embedded_dict
 
-        for column in list(self.x_data.keys()):
+        for column in list(self.x_data_dict.keys()):
             type_of_column = self.dataHandler.get_type_of_column(column)
 
             if type_of_column == "id":
                 continue
             elif type_of_column == "scalar":
-                self.vector_dict[column] = __set_scalar_dict(self.x_data[column])
+                self.vector_dict[column] = __set_scalar_dict(self.x_data_dict[column])
             elif type_of_column == "class":
-                self.vector_dict[column] = __set_class_dict(self.x_data[column])
+                self.vector_dict[column] = __set_class_dict(self.x_data_dict[column])
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
-                self.vector_dict[column] = __set_embedded_dict(self.x_data[column])
+                self.vector_dict[column] = __set_embedded_dict(self.x_data_dict[column])
             elif type_of_column == "word":
-                self.vector_dict[column] = __set_one_hot_dict(self.x_data[column])
+                self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
 
     def __init_vector(self, data_handler):
         vector_matrix = OrderedDict()
@@ -150,20 +145,84 @@ class MyOneHotEncoder(W2vReader):
                 vector_matrix[class_of_column].append(list())
 
         return vector_matrix
-        # # initialize vector
-        # for column in self.x_data.keys():
-        #     self.vector[column] = list()
-        #
-        #     for _ in range(num_of_data):
-        #         self.vector[column].append(list())
 
     def fit(self, data_handler):
-        vector_matrix = self.__init_vector(data_handler)
+        def __set_scalar_vector():
+            # If dict of scalar vector, make vector using dict
+            # But, If not have it, do not make vector (we consider that the column will be noise)
+            if self.vector_dict[column]:
+                differ = self.vector_dict[column]["dif"]
+                minimum = self.vector_dict[column]["min"]
 
-        for class_of_column, _ in self.dataHandler.columns_dict.items():
-            for type_of_column, column_of_list in _.items():
-                for column in column_of_list:
-                    self.__vector_maker(data_handler.x_data_dict, vector_matrix, class_of_column, column, type_of_column)
+                # The differ is 0 == The scalar vector size is 1
+                # ex) vector size == 1
+                #     if value in vector_dict ? [1.0] : [0.0]
+                if not differ:
+                    for index, value in enumerate(target_data_dict[column]):
+                        values = [0.0]
+
+                        if not math.isnan(value):
+                            values[0] = 1.0
+
+                        __set_vector(index, values)
+                # ex) vector size > 1
+                #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
+                else:
+                    for index, value in enumerate(target_data_dict[column]):
+
+                        values = [0.0, 0.0]
+
+                        if not math.isnan(value):
+                            values[0] = SCALAR_DEFAULT_WEIGHT
+                            values[1] = (value - minimum) / differ
+
+                        __set_vector(index, values)
+
+        def __set_class_vector():
+            for index, value in enumerate(target_data_dict[column]):
+                __set_vector(index, __get_one_hot([value], self.vector_dict[column]))
+
+        def __set_embedded_vector():
+            for index, value in enumerate(target_data_dict[column]):
+                __set_vector(index, self.get_w2v_vector(value.split('_'), self.vector_dict[column]))
+
+        def __set_one_hot_vector():
+            for index, value in enumerate(target_data_dict[column]):
+                __set_vector(index, __get_one_hot(value.split('_'), self.vector_dict[column]))
+
+        def __get_one_hot(word, vector_dict):
+            one_hot_vector = list()
+
+            for w in vector_dict:
+                if w in word:
+                    one_hot_vector.append(float(1))
+                else:
+                    one_hot_vector.append(float(0))
+
+            return one_hot_vector
+
+        def __set_vector(index, vector):
+            for v in vector:
+                vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
+                vector_matrix[class_of_column][index].append(v)
+
+        vector_matrix = self.__init_vector(data_handler)
+        target_data_dict = data_handler.x_data_dict
+
+        for column in list(self.x_data_dict.keys()):
+            type_of_column = self.dataHandler.get_type_of_column(column)
+            class_of_column = self.dataHandler.get_class_of_column(column)
+
+            if type_of_column == "id":
+                pass
+            elif type_of_column == "scalar":
+                __set_scalar_vector()
+            elif type_of_column == "class":
+                __set_class_vector()
+            elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
+                __set_embedded_vector()
+            else:
+                __set_one_hot_vector()
 
         return vector_matrix
 
@@ -250,7 +309,7 @@ class MyOneHotEncoder(W2vReader):
             if column in self.vector_dict:
                 print("column " + str(i + 1) + " -", column, "\n")
                 print(self.vector_dict[column], "\n")
-                for data, data_vector in zip(self.x_data[column], self.vector[column]):
+                for data, data_vector in zip(self.x_data_dict[column], self.vector[column]):
                     print(str(data))
                     print(data_vector)
                 print("\n=============================================================\n\n")

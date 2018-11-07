@@ -1,7 +1,7 @@
 import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
-from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST
+from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR
 import json
 
 
@@ -48,37 +48,32 @@ class VectorMaker:
         encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL])
         encoder.encoding()
 
-        matrix_train = encoder.fit(self.dataHandler_dict[KEY_TRAIN])
-        matrix_valid = encoder.fit(self.dataHandler_dict[KEY_VALID])
-        matrix_test = encoder.fit(self.dataHandler_dict[KEY_TEST])
-        # encoder.show_vectors(*self.dataHandler.header_list)
+        # initialize dictionary of matrix after encoding
+        matrix_dict = {
+            ("x_train", "y_train", KEY_TRAIN): encoder.fit(self.dataHandler_dict[KEY_TRAIN]),
+            ("x_valid", "y_valid", KEY_VALID): encoder.fit(self.dataHandler_dict[KEY_VALID]),
+            ("x_test", "y_test", KEY_TEST): encoder.fit(self.dataHandler_dict[KEY_TEST])
+        }
 
-        print(len(matrix_train), len(matrix_valid), len(matrix_test))
-        exit(-1)
-        self.__set_vector_matrix(encoder.vector_matrix)
+        self.__set_vector_matrix(matrix_dict)
 
         del self.dataHandler_dict
 
-    def __set_vector_matrix(self, vector_matrix):
+    def __set_vector_matrix(self, matrix_dict):
         def __copy(x_target, y_target, y_data):
-            for _class_of_column in x_target:
-                x_target[_class_of_column].append(vector_matrix[_class_of_column][index])
+            for index in range(len(matrix[KEY_NAME_OF_MERGE_VECTOR])):
+                for class_of_column in x_target:
+                    x_target[class_of_column].append(matrix[class_of_column][index])
 
-            y_target.append(y_data)
+                y_target.append(y_data[index])
 
-        self.vector_matrix["x_train"] = {class_of_column: list() for class_of_column in vector_matrix}
-        self.vector_matrix["x_valid"] = {class_of_column: list() for class_of_column in vector_matrix}
-        self.vector_matrix["x_test"] = {class_of_column: list() for class_of_column in vector_matrix}
+        # initialize x data in self.vector_matrix
+        for key, matrix in matrix_dict.items():
+            self.vector_matrix[key[0]] = {class_of_column: list() for class_of_column in matrix}
 
-        for index in range(self.len_data):
-            which = self.index_dict[index]
-
-            if which is "train":
-                __copy(self.vector_matrix["x_train"], self.vector_matrix["y_train"], self.y_data[index])
-            elif which is "valid":
-                __copy(self.vector_matrix["x_valid"], self.vector_matrix["y_valid"], self.y_data[index])
-            elif which is "test":
-                __copy(self.vector_matrix["x_test"], self.vector_matrix["y_test"], self.y_data[index])
+        # copy x data in self.vector_matrix
+        for key, matrix in matrix_dict.items():
+            __copy(self.vector_matrix[key[0]], self.vector_matrix[key[1]], self.dataHandler_dict[key[2]].y_data)
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):
@@ -96,10 +91,11 @@ class VectorMaker:
 
         with open(file_name, 'w') as outfile:
             json.dump(self.vector_matrix, outfile, indent=4)
+            print("\n=========================================================\n\n")
             print("success make dump file! - file name is", file_name)
 
         if do_show:
-            print("\n\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
+            print("\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
                   "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
             print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
                   "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
