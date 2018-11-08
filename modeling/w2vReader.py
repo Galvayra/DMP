@@ -2,7 +2,6 @@ from .variables import W2V_FILE, W2V_PATH
 from DMP.utils.arg_encoding import USE_W2V
 
 
-
 class W2vReader:
     def __init__(self):
         self.w2v_dict = dict()
@@ -57,6 +56,7 @@ class W2vReader:
         # divide vector using total count which is existed in dictionary
         w2v_vector = self.__normalize_vector(w2v_vector, cnt)
 
+        # return w2v_vector
         # scaling values in vector from [-1, 1] to [0, 1]
         return self.__scaling_vector(w2v_vector)
 

@@ -9,15 +9,14 @@ def get_arguments():
                                                   "\nthe File will be loaded in dataset dictionary"
                                                   "\nUseAge : python parsing.py -input 'Name'\n\n")
     parser.add_argument("-output", "--output", help="set a name of output csv file"
-                                                    "\ndefault is 'dataset_parsing'.csv "
-                                                    "\nthe File will be saved in dataset dictionary"
+                                                    "\ndefault is 'parsing'.csv "
+                                                    "\nthe File will be saved in dataset/parsing"
                                                     "\nUseAge : python parsing.py -output 'Name'\n\n")
     parser.add_argument("-ratio", "--ratio", help="set a ratio of training set in data set(default is 0.8)"
                                                   "\ntrain:test:validate = N:(10-N)/2:(10-N)/2"
                                                   "\nUseAge : python encoding.py -ratio 0.5 (2:1:1)\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
-                                                    "\ndefault is 'None'.csv "
-                                                    "\nUseAge : python parsing.py -target 'Symptom'\n\n")
+                                                    "\nUseAge : python parsing.py -target 'symptom'\n\n")
     parser.add_argument("-sampling", "--sampling", help="set whether sampling or not (default is 0)"
                                                         "\nUseAge : python parsing.py -sampling 1\n\n")
 

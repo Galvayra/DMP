@@ -124,7 +124,10 @@ class MyOneHotEncoder(W2vReader):
             elif type_of_column == "class":
                 self.vector_dict[column] = __set_class_dict(self.x_data_dict[column])
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
-                self.vector_dict[column] = __set_embedded_dict(self.x_data_dict[column])
+                if self.w2v_dict:
+                    self.vector_dict[column] = __set_embedded_dict(self.x_data_dict[column])
+                else:
+                    self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
             elif type_of_column == "word":
                 self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
 
@@ -220,89 +223,14 @@ class MyOneHotEncoder(W2vReader):
             elif type_of_column == "class":
                 __set_class_vector()
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
-                __set_embedded_vector()
+                if self.w2v_dict:
+                    __set_embedded_vector()
+                else:
+                    __set_one_hot_vector()
             else:
                 __set_one_hot_vector()
 
         return vector_matrix
-
-    def __vector_maker(self, x_data, vector_matrix, class_of_column, column, type_of_column):
-        def __set_scalar_vector():
-            # If dict of scalar vector, make vector using dict
-            # But, If not have it, do not make vector (we consider that the column will be noise)
-            if self.vector_dict[column]:
-                differ = self.vector_dict[column]["dif"]
-                minimum = self.vector_dict[column]["min"]
-
-                # The differ is 0 == The scalar vector size is 1
-                # ex) vector size == 1
-                #     if value in vector_dict ? [1.0] : [0.0]
-                if not differ:
-                    for index, value in enumerate(x_data[column]):
-                        values = [0.0]
-
-                        if not math.isnan(value):
-                            values[0] = 1.0
-
-                        __set_vector(index, values)
-                # ex) vector size > 1
-                #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
-                else:
-                    for index, value in enumerate(x_data[column]):
-
-                        values = [0.0, 0.0]
-
-                        if not math.isnan(value):
-                            values[0] = SCALAR_DEFAULT_WEIGHT
-                            values[1] = (value - minimum) / differ
-
-                        __set_vector(index, values)
-
-        def __set_class_vector():
-            for index, value in enumerate(x_data[column]):
-                __set_vector(index, __get_one_hot([value], self.vector_dict[column]))
-
-        def __set_embedded_vector():
-            for index, value in enumerate(x_data[column]):
-                __set_vector(index, self.get_w2v_vector(value.split('_'), self.vector_dict[column]))
-
-        def __set_one_hot_vector():
-            for index, value in enumerate(x_data[column]):
-                __set_vector(index, __get_one_hot(value.split('_'), self.vector_dict[column]))
-
-        def __get_one_hot(word, vector_dict):
-            one_hot_vector = list()
-
-            for w in vector_dict:
-                if w in word:
-                    one_hot_vector.append(float(1))
-                else:
-                    one_hot_vector.append(float(0))
-
-            return one_hot_vector
-
-        def __set_vector(index, vector):
-            for v in vector:
-                vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
-                vector_matrix[class_of_column][index].append(v)
-
-        #
-        # def __set_vector(index, vector):
-        #     for v in vector:
-        #         self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
-        #         self.vector_matrix[class_of_column][index].append(v)
-        #         self.vector[column][index].append(v)
-
-        if type_of_column == "id":
-            return
-        elif type_of_column == "scalar":
-            __set_scalar_vector()
-        elif type_of_column == "class":
-            __set_class_vector()
-        elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
-            __set_embedded_vector()
-        else:
-            __set_one_hot_vector()
 
     def show_vectors(self, *columns):
         for i, column in enumerate(columns):

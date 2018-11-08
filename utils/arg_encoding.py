@@ -8,13 +8,12 @@ def get_arguments():
                                                   "\ndefault is 'dataset_parsing'.csv"
                                                   "\nthe File will be loaded in dataset dictionary"
                                                   "\nUseAge : python encoding.py -input 'Name'\n\n")
-    parser.add_argument("-output", "--output", help="set vector file name to train or predict (default is Null)"
-                                                    "\nUseAge : python encoding.py -output 'file_name'\n\n")
+    parser.add_argument("-output", "--output", help="set vector file name to train or predict (default is 'model')"
+                                                    "\nUseAge : python encoding.py -output 'NAME_OF_VECTOR'\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
-                                                    "\ndefault is 'None'.csv "
-                                                    "\nUseAge : python encoding.py -target 'Symptom'\n\n")
-    parser.add_argument("-w2v", "--w2v", help="using word2vec or not"
-                                              "\nUseAge : python encoding.py -id string\n\n")
+                                                    "\nUseAge : python encoding.py -target 'symptom'\n\n")
+    parser.add_argument("-w2v", "--w2v", help="using word2vec or not (default is 1)"
+                                              "\nUseAge : python encoding.py -w2v 1 (True)\n\n")
     _args = parser.parse_args()
 
     return _args
