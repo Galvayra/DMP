@@ -1,12 +1,12 @@
 dataset/parsing/
 dataset/origin/
+dataset/images/
 modeling/vectors/
 modeling/save/
 modeling/embedding/
 reference/
 result/
 make/
-images/
 logs/
 analysis/
 experiments/
