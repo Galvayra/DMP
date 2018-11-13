@@ -12,7 +12,7 @@ def get_arguments():
     parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
                                                     "\nUseAge : python predict.py -closed 1\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
-                                                  "\nUseAge : python predict.py -model (svm|ffnn|cnn)\n\n")
+                                                  "\nUseAge : python predict.py -model (svm|rf|ffnn|cnn)\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
                                                       "\nUseAge : python predict.py -feature 'TYPE_OF_FEATURE'\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
@@ -81,7 +81,7 @@ if args.closed:
 if args.model:
     TYPE_OF_MODEL = args.model
     if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "svm" and TYPE_OF_MODEL != "cnn":
-        print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
+        print("\nInput Error model option! (You must input (svm|rf|ffnn|cnn))\n")
         exit(-1)
 
 if args.feature:

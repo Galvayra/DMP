@@ -1,5 +1,6 @@
 import sys
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestRegressor
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
@@ -40,16 +41,22 @@ class DataClassifier:
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
-        if TYPE_OF_MODEL == "svm":
+        if TYPE_OF_MODEL == "svm" or TYPE_OF_MODEL == "rf":
             x_train = self.dataHandler.x_train
             y_train = self.dataHandler.y_train
 
-            # initialize svm
-            svm = SVM()
-            svm.init_plot()
-            h, y_predict = svm.load_svm(x_train, y_train, x_test)
-            svm.predict(h, y_predict, y_test)
-            svm.show_plot()
+            ocf = OlderClassifier()
+            ocf.init_plot()
+
+            # initialize support vector machine
+            if TYPE_OF_MODEL == "svm":
+                h, y_predict = ocf.load_svm(x_train, y_train, x_test)
+            # initialize random forest
+            else:
+                h, y_predict = ocf.load_random_forest(x_train, y_train, x_test)
+
+            ocf.predict(h, y_predict, y_test)
+            ocf.show_plot()
         else:
             if TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
@@ -62,13 +69,23 @@ class DataClassifier:
             nn.show_plot()
 
 
-class SVM(MyScore):
+class OlderClassifier(MyScore):
     def __init__(self):
         super().__init__()
 
     @staticmethod
     def load_svm(x_train, y_train, x_test):
         model = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
+        model.fit(x_train, y_train)
+
+        y_predict = model.predict(x_test)
+        test_probas_ = model.predict_proba(x_test)
+
+        return test_probas_[:, 1], y_predict
+
+    @staticmethod
+    def load_random_forest(x_train, y_train, x_test):
+        model = RandomForestRegressor(criterion='entropy', n_estimators=10, n_jobs=2, random_state=1)
         model.fit(x_train, y_train)
 
         y_predict = model.predict(x_test)
