@@ -12,16 +12,13 @@ for vector in $@
 do
 	echo "test" $vector
 
-    # if not w2v lr 4e-06 && 5000 epoch
-	./run.sh --vector modeling/vectors/$vector --log ffnn_h1_$vector --model ffnn --epoch 5000 --learn 0.000004 --hidden 1 --result ffnn_h1_$vector --delete 1
-	./run.sh --vector modeling/vectors/$vector --log ffnn_h2_$vector --model ffnn --epoch 5000 --learn 0.000004 --hidden 2 --result ffnn_h2_$vector --delete 1
-	./run.sh --vector modeling/vectors/$vector --log ffnn_h3_$vector --model ffnn --epoch 5000 --learn 0.000004 --hidden 3 --result ffnn_h3_$vector --delete 1
-	./run.sh --vector modeling/vectors/$vector --log ffnn_h4_$vector --model ffnn --epoch 5000 --learn 0.000004 --hidden 4 --result ffnn_h4_$vector --delete 1
+#	./run.sh --vector modeling/vectors/$vector --log ffnn_h1_$vector --model ffnn --epoch 2500 --learn 0.00001 --hidden 1 --result ffnn_h1_$vector --delete 1
+#	./run.sh --vector modeling/vectors/$vector --log ffnn_h2_$vector --model ffnn --epoch 2500 --learn 0.00001 --hidden 2 --result ffnn_h2_$vector --delete 1
+#	./run.sh --vector modeling/vectors/$vector --log ffnn_h3_$vector --model ffnn --epoch 2500 --learn 0.00001 --hidden 3 --result ffnn_h3_$vector --delete 1
+#	./run.sh --vector modeling/vectors/$vector --log ffnn_h4_$vector --model ffnn --epoch 2500 --learn 0.00001 --hidden 4 --result ffnn_h4_$vector --delete 1
 
-    # if not  w2v lr 2e-06 && 10000 epoch
-    #         w2v lr 2e-05 && 3000 epoch
-	./run.sh --vector modeling/vectors/$vector --log cnn_h1_$vector --model cnn --epoch 3000 --learn 0.00002 --hidden 1 --result cnn_h1_$vector --delete 1
-    ./run.sh --vector modeling/vectors/$vector --log cnn_h2_$vector --model cnn --epoch 3000 --learn 0.00002 --hidden 2 --result cnn_h2_$vector --delete 1
-	./run.sh --vector modeling/vectors/$vector --log cnn_h3_$vector --model cnn --epoch 3000 --learn 0.00002 --hidden 3 --result cnn_h3_$vector --delete 1
-    ./run.sh --vector modeling/vectors/$vector --log cnn_h4_$vector --model cnn --epoch 3000 --learn 0.00002 --hidden 4 --result cnn_h4_$vector --delete 1
+#	./run.sh --vector modeling/vectors/$vector --log cnn_h1_$vector --model cnn --epoch 5000 --learn 0.000005 --hidden 1 --result cnn_h1_$vector --delete 1
+    ./run.sh --vector modeling/vectors/$vector --log cnn_h2_$vector --model cnn --epoch 3000 --learn 0.000005 --hidden 2 --result cnn_h2_$vector --delete 1
+	./run.sh --vector modeling/vectors/$vector --log cnn_h3_$vector --model cnn --epoch 4000 --learn 0.000005 --hidden 3 --result cnn_h3_$vector --delete 1
+    ./run.sh --vector modeling/vectors/$vector --log cnn_h4_$vector --model cnn --epoch 4000 --learn 0.000005 --hidden 4 --result cnn_h4_$vector --delete 1
 done
