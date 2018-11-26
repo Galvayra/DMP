@@ -5,17 +5,13 @@ from DMP.utils.arg_encoding import USE_W2V
 class W2vReader:
     def __init__(self):
         self.w2v_dict = dict()
+        self.dimension = 300
         self.__load_model()
         self.__pos_tag = "_noun"
-        self.__dimension = 300
 
     @property
     def pos_tag(self):
         return self.__pos_tag
-
-    @property
-    def dimension(self):
-        return self.__dimension
 
     def __load_model(self):
         if USE_W2V:

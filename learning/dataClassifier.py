@@ -1,10 +1,11 @@
 import sys
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
 import time
+from tabulate import tabulate
 
 current_frame = sys.argv[0].split('/')[-1]
 
@@ -40,6 +41,7 @@ class DataClassifier:
     def predict(self):
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
+        feature = self.dataHandler.feature
 
         if TYPE_OF_MODEL == "svm" or TYPE_OF_MODEL == "rf":
             x_train = self.dataHandler.x_train
@@ -51,12 +53,15 @@ class DataClassifier:
             # initialize support vector machine
             if TYPE_OF_MODEL == "svm":
                 h, y_predict = ocf.load_svm(x_train, y_train, x_test)
+
+                ocf.predict(h, y_predict, y_test)
+                ocf.show_plot()
             # initialize random forest
             else:
-                h, y_predict = ocf.load_random_forest(x_train, y_train, x_test)
+                feature_importance = ocf.feature_importance_by_random_forest(x_train, y_train, x_test, feature)
+                for i in feature_importance:
+                    print(str(i[0]).ljust(30), i[1])
 
-            ocf.predict(h, y_predict, y_test)
-            ocf.show_plot()
         else:
             if TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
@@ -75,24 +80,29 @@ class OlderClassifier(MyScore):
 
     @staticmethod
     def load_svm(x_train, y_train, x_test):
-        model = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
-        model.fit(x_train, y_train)
+        svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
+        svc.fit(x_train, y_train)
 
-        y_predict = model.predict(x_test)
-        test_probas_ = model.predict_proba(x_test)
+        y_predict = svc.predict(x_test)
+        test_probas_ = svc.predict_proba(x_test)
 
         return test_probas_[:, 1], y_predict
 
     @staticmethod
-    def load_random_forest(x_train, y_train, x_test):
-        model = RandomForestRegressor(criterion='entropy', n_estimators=10, n_jobs=2, random_state=1)
-        model.fit(x_train, y_train)
+    def feature_importance_by_random_forest(x_train, y_train, x_test, feature):
+        rf = RandomForestRegressor(n_estimators=30, n_jobs=4, random_state=1)
+        model = rf.fit(x_train, y_train)
 
-        y_predict = model.predict(x_test)
-        test_probas_ = model.predict_proba(x_test)
+        values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
-        return test_probas_[:, 1], y_predict
+        return [(feature[f[0]], f[1]) for f in values if f[1] > 0]
 
+        # y_predict = rf.predict(x_test)
+        # return y_predict
+
+        # test_probas_ = rf.predict_proba(x_test)
+        #
+        # return test_probas_[:, 1], y_predict
     def predict(self, h, y_predict, y_test):
         def __get_reverse(_y_labels, is_hypothesis=False):
             _y_labels_reverse = list()

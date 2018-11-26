@@ -22,6 +22,7 @@ class DataHandler:
             print("\nRead vectors -", READ_VECTOR)
             show_options()
 
+            self.feature = vector_list["feature"]
             self.x_train = vector_list["x_train"][TYPE_OF_FEATURE]
             self.y_train = vector_list["y_train"]
             self.x_valid = vector_list["x_valid"][TYPE_OF_FEATURE]

@@ -20,9 +20,13 @@ class VectorMaker:
         self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
         self.__len_data = len(self.dataHandler_dict[KEY_TOTAL].y_data)
 
-        # { x_train: [ vector 1, ... vector n ], ... x_test, x_valid , ... , y_valid }
+        # {
+        #   feature: { 0: ["D", "header_name"], ... , n(dimensionality): ["CZ", "header_name"] }
+        #   x_train: [ vector 1, ... vector n ], ... x_test, x_valid , ... , y_valid
+        # }
         self.__vector_matrix = OrderedDict()
         self.__vector_matrix = {
+            "feature": dict(),
             "x_train": dict(),
             "y_train": list(),
             "x_valid": dict(),
@@ -46,7 +50,8 @@ class VectorMaker:
     def encoding(self):
         # init encoder and fit it
         encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL])
-        encoder.encoding()
+        feature_dict = encoder.encoding()
+        self.__set_vector_matrix_feature(feature_dict)
 
         # initialize dictionary of matrix after encoding
         matrix_dict = {
@@ -58,6 +63,10 @@ class VectorMaker:
         self.__set_vector_matrix(matrix_dict)
 
         del self.dataHandler_dict
+
+    def __set_vector_matrix_feature(self, feature_dict):
+        self.vector_matrix["feature"] = feature_dict
+        print("# of dim -", len(feature_dict), "\n\n")
 
     def __set_vector_matrix(self, matrix_dict):
         def __copy(x_target, y_target, y_data):

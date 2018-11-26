@@ -114,22 +114,54 @@ class MyOneHotEncoder(W2vReader):
 
             return embedded_dict
 
+        # { 0: ["column", "header"], .... n: ["column", "header"] }
+        # n == dimensionality
+        feature_dict = dict()
+        dimensionality = int()
+
         for column in list(self.x_data_dict.keys()):
             type_of_column = self.dataHandler.get_type_of_column(column)
+            column_info = [column, self.dataHandler.raw_header_dict[column]]
 
             if type_of_column == "id":
                 continue
+            # type of column is "scalar"
             elif type_of_column == "scalar":
                 self.vector_dict[column] = __set_scalar_dict(self.x_data_dict[column])
+
+                for _ in range(2):
+                    feature_dict[dimensionality] = column_info
+                    dimensionality += 1
+            # type of column is "class"
             elif type_of_column == "class":
                 self.vector_dict[column] = __set_class_dict(self.x_data_dict[column])
+
+                for _ in range(len(self.vector_dict[column])):
+                    feature_dict[dimensionality] = column_info
+                    dimensionality += 1
+            # type of column is "symptom" or "mal_type" or "diagnosis"
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
                 if self.w2v_dict:
                     self.vector_dict[column] = __set_embedded_dict(self.x_data_dict[column])
+
+                    for _ in range(self.dimension):
+                        feature_dict[dimensionality] = column_info
+                        dimensionality += 1
                 else:
                     self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
+
+                    for _ in range(len(self.vector_dict[column])):
+                        feature_dict[dimensionality] = column_info
+                        dimensionality += 1
+            # type of column is "word"
             elif type_of_column == "word":
                 self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
+
+                for _ in range(len(self.vector_dict[column])):
+                    feature_dict[dimensionality] = column_info
+                    dimensionality += 1
+
+        return feature_dict
 
     def __init_vector(self, data_handler):
         vector_matrix = OrderedDict()

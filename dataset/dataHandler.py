@@ -48,7 +48,7 @@ class DataHandler:
 
         # a dictionary of header in raw data (csv file)
         # { header: name of column }
-        self.__raw_header_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
+        self.raw_header_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(self.raw_data)}
 
         # a length of data
         self.__x_data_count = int()
@@ -88,10 +88,6 @@ class DataHandler:
     @property
     def raw_data(self):
         return self.__raw_data
-
-    @property
-    def raw_header_dict(self):
-        return self.__raw_header_dict
 
     @property
     def erase_index_list(self):
@@ -341,7 +337,6 @@ class DataHandler:
             del self.__erase_index_list
 
         del self.__raw_data
-        del self.__raw_header_dict
         del self.__x_data_count
         del self.__y_data_count
     

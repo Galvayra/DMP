@@ -80,7 +80,7 @@ if args.closed:
 
 if args.model:
     TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "svm" and TYPE_OF_MODEL != "cnn":
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn" and TYPE_OF_MODEL != "svm" and TYPE_OF_MODEL != "rf":
         print("\nInput Error model option! (You must input (svm|rf|ffnn|cnn))\n")
         exit(-1)
 
