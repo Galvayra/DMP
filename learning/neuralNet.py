@@ -168,7 +168,7 @@ class MyNeuralNetwork(MyScore):
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
-        self.keep_prob = tf.placeholder(dtype=tf.float32, name=NAME_PROB)
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
@@ -178,7 +178,7 @@ class MyNeuralNetwork(MyScore):
         self.set_score(target=KEY_VALID)
         self.show_score(target=KEY_VALID)
 
-    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    def __sess_run(self, hypothesis, x_train, y_train, x_test, y_test):
         if DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
@@ -203,40 +203,24 @@ class MyNeuralNetwork(MyScore):
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
-            train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
-            val_writer = tf.summary.FileWriter(self.name_of_log + "/val", sess.graph)
+            writer = tf.summary.FileWriter(self.name_of_log)
+            writer.add_graph(sess.graph)  # Show the graph
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
 
             for step in range(EPOCH + 1):
-                _, tra_loss, tra_acc = sess.run(
-                    [train_op, cost, _accuracy],
+                summary, cost_val, _ = sess.run(
+                    [merged_summary, cost, train_op],
                     feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
                 )
+                writer.add_summary(summary, global_step=step)
 
-                # training
-                if DO_SHOW and step % 100 == 0:
-                    print("Step %d, train loss = %.2f, train accuracy = %.2f%%" % (step, tra_loss, tra_acc*100.0))
-                    summary = sess.run(merged_summary)
-                    train_writer.add_summary(summary, global_step=step)
-
-                # valid
-                if DO_SHOW and step % 200 == 0:
-                    val_loss, val_acc = sess.run(
-                        [cost, _accuracy],
-                        feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0}
-                    )
-                    print(str(step).rjust(5), tra_loss, tra_acc)
-                    print("**  Step %d, train loss = %.2f, train accuracy = %.2f%%" % (step, val_loss, val_acc*100.0))
-                    summary = sess.run(merged_summary)
-                    val_writer.add_summary(summary, global_step=step)
-
-                # if DO_SHOW and step % (EPOCH / 10) == 0:
-                #     print(str(step).rjust(5), cost_val)
+                if DO_SHOW and step % (EPOCH / 10) == 0:
+                    print(str(step).rjust(5), cost_val)
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
-                                 feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
+                                 feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1})
 
             saver.save(sess, self.name_of_tensor + "model", global_step=EPOCH)
 
