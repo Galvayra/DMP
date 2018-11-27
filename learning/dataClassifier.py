@@ -1,10 +1,11 @@
 import sys
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
 import time
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 current_frame = sys.argv[0].split('/')[-1]
 
