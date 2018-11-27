@@ -5,7 +5,7 @@ from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
 import time
-from tabulate import tabulate
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 current_frame = sys.argv[0].split('/')[-1]
 
@@ -53,15 +53,12 @@ class DataClassifier:
             # initialize support vector machine
             if TYPE_OF_MODEL == "svm":
                 h, y_predict = ocf.load_svm(x_train, y_train, x_test)
-
-                ocf.predict(h, y_predict, y_test)
-                ocf.show_plot()
             # initialize random forest
             else:
-                feature_importance = ocf.feature_importance_by_random_forest(x_train, y_train, x_test, feature)
-                for i in feature_importance:
-                    print(str(i[0]).ljust(30), i[1])
+                h, y_predict = ocf.load_random_forest(x_train, y_train, x_test, feature)
 
+            ocf.predict(h, y_predict, y_test)
+            ocf.show_plot()
         else:
             if TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
@@ -89,20 +86,25 @@ class OlderClassifier(MyScore):
         return test_probas_[:, 1], y_predict
 
     @staticmethod
-    def feature_importance_by_random_forest(x_train, y_train, x_test, feature):
-        rf = RandomForestRegressor(n_estimators=30, n_jobs=4, random_state=1)
+    def load_random_forest(x_train, y_train, x_test, feature):
+        rf = RandomForestClassifier(n_estimators=50, n_jobs=4)
         model = rf.fit(x_train, y_train)
 
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
-        return [(feature[f[0]], f[1]) for f in values if f[1] > 0]
+        y_predict = rf.predict(x_test)
+        test_probas_ = rf.predict_proba(x_test)
 
-        # y_predict = rf.predict(x_test)
-        # return y_predict
+        feature_importance = [(feature[f[0]], f[1]) for f in values if f[1] > 0]
 
-        # test_probas_ = rf.predict_proba(x_test)
-        #
-        # return test_probas_[:, 1], y_predict
+        for i, feature in enumerate(feature_importance):
+            print(str(i + 1).rjust(3), str(feature[0]).ljust(25), feature[1])
+
+            if i + 1 == 100:
+                break
+
+        return test_probas_[:, 1], y_predict
+
     def predict(self, h, y_predict, y_test):
         def __get_reverse(_y_labels, is_hypothesis=False):
             _y_labels_reverse = list()
