@@ -4,6 +4,7 @@ dataset/images/
 modeling/vectors/
 modeling/save/
 modeling/embedding/
+modeling/parsing_result/
 reference/
 result/
 make/
