@@ -19,7 +19,7 @@ def get_arguments():
     parser.add_argument("-hidden", "--hidden", help="set a number of hidden layer (default is 0)"
                                                     "\ndefault is not using hidden layer for linear model"
                                                     "\nUseAge : python training.py -hidden 2 (non-linear)\n\n")
-    parser.add_argument("-learn", "--learn", help="set a learning rate for training (default is 0.001)"
+    parser.add_argument("-learn", "--learn", help="set a learning rate for training (default is 0.0001)"
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
     parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python training.py -dir 'dir_name'\n\n")

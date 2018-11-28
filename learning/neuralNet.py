@@ -11,6 +11,9 @@ if sys.argv[0].split('/')[-1] == "training.py":
 else:
     from DMP.utils.arg_predict import DO_SHOW, EPOCH, DO_DELETE, LOG_DIR_NAME
 
+# if valid loss increase X in a row
+NUM_OF_LOSS_OVER_FIT = 2
+
 
 class MyNeuralNetwork(MyScore):
     def __init__(self):
@@ -19,8 +22,18 @@ class MyNeuralNetwork(MyScore):
         self.tf_y = None
         self.keep_prob = None
         self.hypothesis = None
+        self.__save_sess = list()
+        self.__loss_list = list()
         self.__name_of_log = str()
         self.__name_of_tensor = str()
+
+    @property
+    def save_sess(self):
+        return self.__save_sess
+
+    @property
+    def loss_list(self):
+        return self.__loss_list
 
     @property
     def name_of_log(self):
@@ -168,7 +181,7 @@ class MyNeuralNetwork(MyScore):
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
-        self.keep_prob = tf.placeholder(dtype=tf.float32, name=NAME_PROB)
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
 
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer(num_of_dimension)
@@ -185,11 +198,9 @@ class MyNeuralNetwork(MyScore):
 
         with tf.name_scope("cost"):
             cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
-            # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=tf_y))
             cost_summ = tf.summary.scalar("cost", cost)
 
         train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
-        # train_op = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
 
         # cut off
         predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT)
@@ -208,33 +219,32 @@ class MyNeuralNetwork(MyScore):
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
+            print("\n\n\n")
 
-            for step in range(EPOCH + 1):
-                _, tra_loss, tra_acc = sess.run(
-                    [train_op, cost, _accuracy],
+            for step in range(1, EPOCH + 1):
+                _, summary, tra_loss, tra_acc = sess.run(
+                    [train_op, merged_summary, cost, _accuracy],
                     feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
                 )
 
                 # training
                 if DO_SHOW and step % 100 == 0:
-                    print("Step %d, train loss = %.2f, train accuracy = %.2f%%" % (step, tra_loss, tra_acc*100.0))
-                    summary = sess.run(merged_summary)
                     train_writer.add_summary(summary, global_step=step)
 
-                # valid
-                if DO_SHOW and step % 200 == 0:
-                    val_loss, val_acc = sess.run(
-                        [cost, _accuracy],
-                        feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0}
+                    val_summary, val_loss, val_acc = sess.run(
+                        [merged_summary, cost, _accuracy],
+                        feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
                     )
-                    print(str(step).rjust(5), tra_loss, tra_acc)
-                    print("**  Step %d, train loss = %.2f, train accuracy = %.2f%%" % (step, val_loss, val_acc*100.0))
-                    summary = sess.run(merged_summary)
-                    val_writer.add_summary(summary, global_step=step)
+                    val_writer.add_summary(val_summary, global_step=step)
 
-                # if DO_SHOW and step % (EPOCH / 10) == 0:
-                #     print(str(step).rjust(5), cost_val)
+                    print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc*100.0))
+                    print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
 
+                    if self.__is_stopped_training(sess, val_loss):
+                        break
+
+            # load sess previous NUM_OF_LOSS_OVER_FIT
+            sess = self.save_sess[len(self.loss_list) - (NUM_OF_LOSS_OVER_FIT + 1)]
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
 
@@ -243,6 +253,28 @@ class MyNeuralNetwork(MyScore):
         tf.reset_default_graph()
 
         return h, p, acc
+
+    def __is_stopped_training(self, sess, val_loss):
+        self.loss_list.append(val_loss)
+        self.save_sess.append(sess)
+
+        cnt_train = len(self.loss_list)
+
+        if cnt_train < 5:
+            return False
+        else:
+            loss_default = self.loss_list[cnt_train - (NUM_OF_LOSS_OVER_FIT + 1)]
+            cnt_loss_over_fit = int()
+
+            for loss in self.loss_list[cnt_train - NUM_OF_LOSS_OVER_FIT:cnt_train]:
+                if loss > loss_default:
+                    cnt_loss_over_fit += 1
+                loss_default = loss
+
+            if cnt_loss_over_fit == NUM_OF_LOSS_OVER_FIT:
+                return True
+            else:
+                return False
 
     def load_nn(self, x_test, y_test):
         # restore tensor
