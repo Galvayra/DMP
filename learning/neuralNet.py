@@ -9,10 +9,7 @@ import sys
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
 else:
-    from DMP.utils.arg_predict import DO_SHOW, EPOCH, DO_DELETE, LOG_DIR_NAME
-
-# if valid loss increase X in a row
-NUM_OF_LOSS_OVER_FIT = 2
+    from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, LOG_DIR_NAME
 
 
 class MyNeuralNetwork(MyScore):
@@ -22,14 +19,9 @@ class MyNeuralNetwork(MyScore):
         self.tf_y = None
         self.keep_prob = None
         self.hypothesis = None
-        self.__save_sess = list()
         self.__loss_list = list()
         self.__name_of_log = str()
         self.__name_of_tensor = str()
-
-    @property
-    def save_sess(self):
-        return self.__save_sess
 
     @property
     def loss_list(self):
@@ -210,12 +202,13 @@ class MyNeuralNetwork(MyScore):
         # set file names for saving
         self.__set_name_of_log()
         self.__set_name_of_tensor()
-        saver = tf.train.Saver()
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
             train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
             val_writer = tf.summary.FileWriter(self.name_of_log + "/val", sess.graph)
+
+            saver = tf.train.Saver()
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -228,35 +221,36 @@ class MyNeuralNetwork(MyScore):
                 )
 
                 # training
-                if DO_SHOW and step % 100 == 0:
+                if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
+                    # write train curve on tensor board
                     train_writer.add_summary(summary, global_step=step)
 
                     val_summary, val_loss, val_acc = sess.run(
                         [merged_summary, cost, _accuracy],
                         feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
                     )
+
+                    # write validation curve on tensor board
                     val_writer.add_summary(val_summary, global_step=step)
 
                     print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc*100.0))
                     print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
 
-                    if self.__is_stopped_training(sess, val_loss):
+                    # save tensor every NUM_OF_SAVE_EPOCH
+                    saver.save(sess, self.name_of_tensor + "model", global_step=step)
+
+                    if self.__is_stopped_training(val_loss):
                         break
 
-            # load sess previous NUM_OF_LOSS_OVER_FIT
-            sess = self.save_sess[len(self.loss_list) - (NUM_OF_LOSS_OVER_FIT + 1)]
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
-
-            saver.save(sess, self.name_of_tensor + "model", global_step=EPOCH)
 
         tf.reset_default_graph()
 
         return h, p, acc
 
-    def __is_stopped_training(self, sess, val_loss):
+    def __is_stopped_training(self, val_loss):
         self.loss_list.append(val_loss)
-        self.save_sess.append(sess)
 
         cnt_train = len(self.loss_list)
 
@@ -279,21 +273,26 @@ class MyNeuralNetwork(MyScore):
     def load_nn(self, x_test, y_test):
         # restore tensor
         self.__set_name_of_tensor()
-        sess = tf.Session()
-        saver = tf.train.import_meta_graph(self.name_of_tensor + 'model-' + str(EPOCH) + '.meta')
-        saver.restore(sess, self.name_of_tensor + 'model-' + str(EPOCH))
+        checkpoint = tf.train.get_checkpoint_state(self.name_of_tensor)
+        paths = checkpoint.all_model_checkpoint_paths
+        path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
+        print("Tensor Name -", path.split("/")[-1])
 
-        print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
+        with tf.Session() as sess:
+            saver = tf.train.import_meta_graph(path + '.meta')
+            saver.restore(sess, checkpoint.model_checkpoint_path)
 
-        # load tensor
-        graph = tf.get_default_graph()
-        tf_x = graph.get_tensor_by_name(NAME_X + ":0")
-        tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
-        keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
-        hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
-        predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
+            print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
 
-        h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
+            # load tensor
+            graph = tf.get_default_graph()
+            tf_x = graph.get_tensor_by_name(NAME_X + ":0")
+            tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
+            keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
+            hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
+            predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
+
+            h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
         return h, y_predict
 

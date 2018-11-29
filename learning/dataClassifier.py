@@ -86,7 +86,7 @@ class OlderClassifier(MyScore):
 
     @staticmethod
     def load_random_forest(x_train, y_train, x_test, feature):
-        rf = RandomForestClassifier(n_estimators=50, n_jobs=4)
+        rf = RandomForestClassifier(n_estimators=100, n_jobs=4)
         model = rf.fit(x_train, y_train)
 
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
@@ -94,13 +94,13 @@ class OlderClassifier(MyScore):
         y_predict = rf.predict(x_test)
         test_probas_ = rf.predict_proba(x_test)
 
-        feature_importance = [(feature[f[0]], f[1]) for f in values if f[1] > 0]
-
-        for i, feature in enumerate(feature_importance):
-            print(str(i + 1).rjust(3), str(feature[0]).ljust(25), feature[1])
-
-            if i + 1 == 100:
-                break
+        # feature_importance = [(feature[f[0]], f[1]) for f in values if f[1] > 0]
+        #
+        # for i, feature in enumerate(feature_importance):
+        #     print(str(i + 1).rjust(3), str(feature[0]).ljust(25), feature[1])
+        #
+        #     if i + 1 == 100:
+        #         break
 
         return test_probas_[:, 1], y_predict
 

@@ -15,9 +15,6 @@ def get_arguments():
                                                   "\nUseAge : python predict.py -model (svm|rf|ffnn|cnn)\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
                                                       "\nUseAge : python predict.py -feature 'TYPE_OF_FEATURE'\n\n")
-    parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
-                                                  "\nyou have to use this option more than 100"
-                                                  "\nUseAge : python predict.py -epoch 20000\n\n")
     parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python predict.py -dir 'dir_name'\n\n")
     parser.add_argument("-save", "--save", help="save a score to csv file (default is 'LOG_NAME')"
@@ -50,9 +47,6 @@ USE_W2V = False
 TYPE_OF_MODEL = "svm"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
-
-# Parameter options #
-EPOCH = 2000
 
 # SHOW options #
 DO_SHOW = False
@@ -91,17 +85,6 @@ if args.feature:
         print("\nInput Error feature option!")
         print("You must input -", type_of_features)
         exit(-1)
-        
-if args.epoch:
-    try:
-        EPOCH = int(args.epoch)
-    except ValueError:
-        print("\nInput Error type of epoch option!\n")
-        exit(-1)
-    else:
-        if EPOCH < 100:
-            print("\nInput Error epoch option!\n")
-            exit(-1)
 
 if args.show:
     try:
@@ -152,8 +135,4 @@ def show_options():
         else:
             print("Not using word2vec\n")
 
-        print("model -", TYPE_OF_MODEL)
-        if TYPE_OF_MODEL != "svm":
-            print("# of EPOCH -", EPOCH)
-
-        print("\n\n")
+        print("model -", TYPE_OF_MODEL, "\n\n")
