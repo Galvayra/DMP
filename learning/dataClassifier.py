@@ -6,12 +6,14 @@ from .neuralNet import MyNeuralNetwork
 from .score import MyScore
 import time
 
-current_frame = sys.argv[0].split('/')[-1]
+current_script = sys.argv[0].split('/')[-1]
 
-if sys.argv[0].split('/')[-1] == "training.py":
+if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
-else:
+elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL
+else:
+    from DMP.utils.arg_extract_feature import DO_SHOW
 
 
 class DataClassifier:
@@ -40,7 +42,6 @@ class DataClassifier:
     def predict(self):
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
-        feature = self.dataHandler.feature
 
         if TYPE_OF_MODEL == "svm" or TYPE_OF_MODEL == "rf":
             x_train = self.dataHandler.x_train
@@ -50,12 +51,7 @@ class DataClassifier:
             ocf.init_plot()
 
             # initialize support vector machine
-            if TYPE_OF_MODEL == "svm":
-                h, y_predict = ocf.load_svm(x_train, y_train, x_test)
-            # initialize random forest
-            else:
-                h, y_predict = ocf.load_random_forest(x_train, y_train, x_test, feature)
-
+            h, y_predict = ocf.load_svm(x_train, y_train, x_test)
             ocf.predict(h, y_predict, y_test)
             ocf.show_plot()
         else:
@@ -68,6 +64,14 @@ class DataClassifier:
             h, y_predict = nn.load_nn(x_test, y_test)
             nn.predict(h, y_predict, y_test)
             nn.show_plot()
+
+    def extract_feature(self):
+        ocf = OlderClassifier()
+        feature_importance = ocf.get_importance_features(self.dataHandler.x_train,
+                                                         self.dataHandler.y_train,
+                                                         self.dataHandler.feature)
+
+        feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
 
 
 class OlderClassifier(MyScore):
@@ -85,25 +89,13 @@ class OlderClassifier(MyScore):
         return test_probas_[:, 1], y_predict
 
     @staticmethod
-    def load_random_forest(x_train, y_train, x_test, feature):
+    def get_importance_features(x_train, y_train, feature):
         rf = RandomForestClassifier(n_estimators=400, n_jobs=4)
         model = rf.fit(x_train, y_train)
 
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
-        y_predict = rf.predict(x_test)
-        test_probas_ = rf.predict_proba(x_test)
-
-        feature_importance = [(feature[f[0]], f[1]) for f in values if f[1] > 0]
-        # feature_importance = [(feature[f[0]], f[1]) for f in values if f[1] <= 0]
-
-        for i, feature in enumerate(feature_importance):
-            print(str(i + 1).rjust(3), str(feature[0]).ljust(25), feature[1])
-            #
-            # if i + 1 == 100:
-            #     break
-
-        return test_probas_[:, 1], y_predict
+        return [(f[0], feature[f[0]], f[1]) for f in values if f[1] > 0]
 
     def predict(self, h, y_predict, y_test):
         def __get_reverse(_y_labels, is_hypothesis=False):

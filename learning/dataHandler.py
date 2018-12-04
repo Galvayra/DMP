@@ -4,10 +4,14 @@ import json
 import math
 import sys
 
-if sys.argv[0].split('/')[-1] == "training.py":
+current_script = sys.argv[0].split('/')[-1]
+
+if current_script == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
-else:
+elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
+else:
+    from DMP.utils.arg_extract_feature import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE
 
 
 class DataHandler:
@@ -20,7 +24,9 @@ class DataHandler:
             print("FileNotFoundError] READ_VECTOR is", "'" + READ_VECTOR + "'", "\n\n")
         else:
             print("\nRead vectors -", READ_VECTOR)
-            show_options()
+
+            if not current_script == "extract_feature.py":
+                show_options()
 
             self.feature = vector_list["feature"]
             self.x_train = vector_list["x_train"][TYPE_OF_FEATURE]

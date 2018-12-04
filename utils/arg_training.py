@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
-                                                    "\n(default is vectors_dataset_parsing_{num_of_fold})"
+                                                    "\n(default is 'model')"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
@@ -39,7 +39,7 @@ args = get_arguments()
 # LOAD options #
 READ_VECTOR = False
 vector_path = "modeling/vectors/"
-vector_name = "vectors_dataset_parsing_5"
+vector_name = "model"
 
 if args.vector:
     READ_VECTOR = args.vector
