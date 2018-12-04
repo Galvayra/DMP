@@ -8,7 +8,7 @@ import sys
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW
 else:
-    from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME, TYPE_OF_FEATURE
+    from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
 
 
 class MyScore(MyPlot):
@@ -89,18 +89,21 @@ class MyScore(MyPlot):
             print('Accuracy  : %.1f' % self.score_dict[target][KEY_ACCURACY])
             print('AUC       : %.1f' % self.score_dict[target][KEY_AUC])
 
-    def save_score(self):
+    def save_score(self, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
         save_name = PATH_RESULT + SAVE_DIR_NAME
 
-        data = {
-            SAVE_DIR_NAME + "_" + TYPE_OF_FEATURE: [key for key in self.score],
+        data_frame = {
+            "# of dimension": [num_of_dimension] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
+            "Best Epoch": [best_epoch] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
+            "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
+            "learning rate": [learning_rate] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
+            SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_IMMORTALITY].values()],
             KEY_MORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_MORTALITY].values()],
             KEY_TOTAL: ["%0.2f" % score for score in self.score_dict[KEY_TOTAL].values()]
         }
 
-        # print([s for s in self.score])
-        data_df = DataFrame(data)
+        data_df = DataFrame(data_frame)
         data_df.to_csv(save_name + '.csv', index=False)
 
         if DO_SHOW:

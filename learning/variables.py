@@ -17,11 +17,13 @@ NAME_X = "tf_x"
 NAME_Y = "tf_y"
 NAME_PROB = "keep_prob"
 NAME_ACC = "accuracy"
+NAME_LEARNING_RATE = "learning_rate"
+NAME_HIDDEN = "num_of_hidden"
 
 # key of target
 KEY_VALID = "validation"
 KEY_MORTALITY = "mortality"
-KEY_IMMORTALITY = "immortality"
+KEY_IMMORTALITY = "alive"
 KEY_TOTAL = "total"
 
 # key of measure of process

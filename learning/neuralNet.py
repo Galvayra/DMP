@@ -19,6 +19,10 @@ class MyNeuralNetwork(MyScore):
         self.tf_y = None
         self.keep_prob = None
         self.hypothesis = None
+        self.best_epoch = int()
+        self.num_of_dimension = int()
+        self.num_of_hidden = float()
+        self.learning_rate = float()
         self.__loss_list = list()
         self.__name_of_log = str()
         self.__name_of_tensor = str()
@@ -202,6 +206,8 @@ class MyNeuralNetwork(MyScore):
         # set file names for saving
         self.__set_name_of_log()
         self.__set_name_of_tensor()
+        tf.Variable(LEARNING_RATE, name=NAME_LEARNING_RATE)
+        tf.Variable(NUM_HIDDEN_LAYER, name=NAME_HIDDEN)
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
@@ -212,7 +218,7 @@ class MyNeuralNetwork(MyScore):
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            print("\n\n\n")
+            print("\n\n")
 
             for step in range(1, EPOCH + 1):
                 _, summary, tra_loss, tra_acc = sess.run(
@@ -263,7 +269,7 @@ class MyNeuralNetwork(MyScore):
             for loss in self.loss_list[cnt_train - NUM_OF_LOSS_OVER_FIT:cnt_train]:
                 if loss > loss_default:
                     cnt_loss_over_fit += 1
-                loss_default = loss
+                # loss_default = loss
 
             if cnt_loss_over_fit == NUM_OF_LOSS_OVER_FIT:
                 return True
@@ -276,7 +282,8 @@ class MyNeuralNetwork(MyScore):
         checkpoint = tf.train.get_checkpoint_state(self.name_of_tensor)
         paths = checkpoint.all_model_checkpoint_paths
         path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
-        print("Tensor Name -", path.split("/")[-1])
+        self.best_epoch = int(path.split("/")[-1].split("model-")[-1])
+        self.num_of_dimension = len(x_test[0])
 
         with tf.Session() as sess:
             saver = tf.train.import_meta_graph(path + '.meta')
@@ -291,7 +298,10 @@ class MyNeuralNetwork(MyScore):
             keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
             hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
             predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
+            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + ":0")
+            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + ":0")
 
+            self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
 
         return h, y_predict
@@ -329,5 +339,5 @@ class MyNeuralNetwork(MyScore):
         self.show_score(target=KEY_TOTAL)
 
         # save score & show plot
-        self.save_score()
+        self.save_score(self.best_epoch, self.num_of_dimension, self.num_of_hidden, self.learning_rate)
         self.show_plot()
