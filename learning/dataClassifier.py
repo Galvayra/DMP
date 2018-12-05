@@ -12,8 +12,6 @@ if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL
-else:
-    from DMP.utils.arg_extract_feature import DO_SHOW
 
 
 class DataClassifier:
@@ -64,14 +62,6 @@ class DataClassifier:
             h, y_predict = nn.load_nn(x_test, y_test)
             nn.predict(h, y_predict, y_test)
             nn.show_plot()
-
-    def extract_feature(self):
-        ocf = OlderClassifier()
-        feature_importance = ocf.get_importance_features(self.dataHandler.x_train,
-                                                         self.dataHandler.y_train,
-                                                         self.dataHandler.feature)
-
-        feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
 
 
 class OlderClassifier(MyScore):

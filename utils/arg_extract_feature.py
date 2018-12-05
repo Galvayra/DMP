@@ -8,9 +8,9 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python extract_feature.py -vector 'V'\n\n")
-    parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
-                                                    "\n(default is 'vector'+'_new')"
-                                                    "\nUseAge : python extract_feature.py -output 'O'\n\n")
+    # parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
+    #                                                 "\n(default is 'vector'+'_new')"
+    #                                                 "\nUseAge : python extract_feature.py -output 'O'\n\n")
     parser.add_argument("-ntree", "--ntree", help="set a number of tree in random forest (default is 400)"
                                                   "\nUseAge : python extract_feature.py -ntree 400\n\n")
     parser.add_argument("-show", "--show", help="show importance features (default is 0)"
@@ -23,9 +23,10 @@ def get_arguments():
 args = get_arguments()
 
 # LOAD options #
-READ_VECTOR = False
-vector_path = "modeling/vectors/"
-vector_name = "model"
+DUMP_PATH = "modeling/vectors/"
+DUMP_FILE = "model"
+READ_VECTOR = DUMP_PATH + DUMP_FILE
+SAVE_VECTOR = READ_VECTOR + "_new"
 
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 
@@ -37,13 +38,9 @@ NUM_OF_TREE = 400
 
 if args.vector:
     READ_VECTOR = args.vector
-else:
-    READ_VECTOR = vector_path + vector_name
 
-if args.output:
-    SAVE_VECTOR = args.output
-else:
-    SAVE_VECTOR = READ_VECTOR + "_new"
+# if args.output:
+#     SAVE_VECTOR = args.output
 
 if args.show:
     try:
@@ -66,3 +63,8 @@ if args.ntree:
         if NUM_OF_TREE < 10 or NUM_OF_TREE > 10000:
             print("\nInput Error ntree option!\n")
             exit(-1)
+
+
+def show_options():
+    if DO_SHOW:
+        print("# of tree in random forest -", NUM_OF_TREE)

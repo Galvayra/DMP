@@ -11,7 +11,9 @@ if current_script == "training.py":
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
 else:
-    from DMP.utils.arg_extract_feature import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE
+    from DMP.utils.arg_extract_feature import *
+    from .dataClassifier import OlderClassifier
+    from collections import OrderedDict
 
 
 class DataHandler:
@@ -25,8 +27,23 @@ class DataHandler:
         else:
             print("\nRead vectors -", READ_VECTOR)
 
-            if not current_script == "extract_feature.py":
-                show_options()
+            show_options()
+
+            # {
+            #   feature: { 0: ["D", "header_name"], ... , n(dimensionality): ["CZ", "header_name"] }
+            #   x_train: [ vector 1, ... vector n ], ... x_test, x_valid , ... , y_valid
+            # }
+            if current_script == "extract_feature.py":
+                self.vector_matrix = OrderedDict()
+                self.vector_matrix = {
+                    "feature": dict(),
+                    "x_train": dict(),
+                    "y_train": list(),
+                    "x_valid": dict(),
+                    "y_valid": list(),
+                    "x_test": dict(),
+                    "y_test": list()
+                }
 
             self.feature = vector_list["feature"]
             self.x_train = vector_list["x_train"][TYPE_OF_FEATURE]
@@ -92,25 +109,77 @@ class DataHandler:
 
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
 
-    def vector2txt(self):
-        def __write_vector(_w_file):
-            for dimension, v in enumerate(x):
-                if v != 0:
-                    _w_file.write(str(dimension + 1) + ":" + str(v) + token)
-            _w_file.write("\n")
+    # def vector2txt(self):
+    #     def __write_vector(_w_file):
+    #         for dimension, v in enumerate(x):
+    #             if v != 0:
+    #                 _w_file.write(str(dimension + 1) + ":" + str(v) + token)
+    #         _w_file.write("\n")
+    #
+    #     token = " "
+    #     train_file_name = "train_" + READ_VECTOR.split('/')[-1]
+    #     valid_file_name = "test_" + READ_VECTOR.split('/')[-1]
+    #     test_file_name = "test_" + READ_VECTOR.split('/')[-1]
+    #
+    #     for file_name, data in zip(
+    #             (train_file_name, valid_file_name, test_file_name),
+    #             ((self.x_train, self.y_train), (self.x_valid, self.y_valid), (self.x_test, self.y_test))):
+    #         with open("make/" + file_name + ".txt", 'w') as train_file:
+    #             for x, y in zip(data[0], data[1]):
+    #                 if y[0] == 1:
+    #                     train_file.write(str(1) + token)
+    #                 else:
+    #                     train_file.write(str(-1) + token)
+    #             __write_vector(train_file)
 
-        token = " "
-        train_file_name = "train_" + READ_VECTOR.split('/')[-1]
-        valid_file_name = "test_" + READ_VECTOR.split('/')[-1]
-        test_file_name = "test_" + READ_VECTOR.split('/')[-1]
+    def extract_feature(self):
+        ocf = OlderClassifier()
+        feature_importance = ocf.get_importance_features(self.x_train,
+                                                         self.y_train,
+                                                         self.feature)
+        feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
+        self.__set_vector_matrix(feature_importance_index, self.x_train, 'x_train', TYPE_OF_FEATURE)
+        self.__set_vector_matrix(feature_importance_index, self.x_valid, 'x_valid', TYPE_OF_FEATURE)
+        self.__set_vector_matrix(feature_importance_index, self.x_test, 'x_test', TYPE_OF_FEATURE)
+        self.__set_vector_matrix(feature_importance_index, self.y_train, 'y_train')
+        self.__set_vector_matrix(feature_importance_index, self.y_valid, 'y_valid')
+        self.__set_vector_matrix(feature_importance_index, self.y_test, 'y_test')
 
-        for file_name, data in zip(
-                (train_file_name, valid_file_name, test_file_name),
-                ((self.x_train, self.y_train), (self.x_valid, self.y_valid), (self.x_test, self.y_test))):
-            with open("make/" + file_name + ".txt", 'w') as train_file:
-                for x, y in zip(data[0], data[1]):
-                    if y[0] == 1:
-                        train_file.write(str(1) + token)
-                    else:
-                        train_file.write(str(-1) + token)
-                __write_vector(train_file)
+        for new_key, key in enumerate(sorted(feature_importance_index)):
+            self.vector_matrix['feature'][str(new_key)] = self.feature[str(key)]
+
+    def __set_vector_matrix(self, feature_importance_index, target, _key, _type=False):
+        if _type:
+            self.vector_matrix[_key][_type] = list()
+
+            for data in target:
+                self.vector_matrix[_key][_type].append([data[i] for i in feature_importance_index])
+        else:
+            self.vector_matrix[_key] = [data for data in target]
+
+    def dump(self):
+        def __counting_mortality(_data):
+            count = 0
+            for _d in _data:
+                if _d == [1]:
+                    count += 1
+
+            return count
+        #
+        # if SAVE_VECTOR:
+        #     file_name = DUMP_PATH + SAVE_VECTOR
+        # else:
+        #     file_name = DUMP_PATH + DUMP_FILE
+
+        with open(SAVE_VECTOR, 'w') as outfile:
+            json.dump(self.vector_matrix, outfile, indent=4)
+            print("\n=========================================================\n\n")
+            print("success make dump file! - file name is", SAVE_VECTOR)
+
+        if DO_SHOW:
+            print("\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
+            print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
+            print("Test  total count -", str(len(self.vector_matrix["x_test"]["merge"])).rjust(4),
+                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_test"])).rjust(4), "\n\n")
