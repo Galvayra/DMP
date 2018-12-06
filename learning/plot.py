@@ -3,7 +3,7 @@ import sys
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
-else:
+elif sys.argv[0].split('/')[-1] == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
 
 

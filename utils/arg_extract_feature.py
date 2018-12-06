@@ -8,9 +8,9 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python extract_feature.py -vector 'V'\n\n")
-    # parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
-    #                                                 "\n(default is 'vector'+'_new')"
-    #                                                 "\nUseAge : python extract_feature.py -output 'O'\n\n")
+    parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
+                                                    "\n(default is 'vector'+'_new')"
+                                                    "\nUseAge : python extract_feature.py -output 'O'\n\n")
     parser.add_argument("-ntree", "--ntree", help="set a number of tree in random forest (default is 400)"
                                                   "\nUseAge : python extract_feature.py -ntree 400\n\n")
     parser.add_argument("-show", "--show", help="show importance features (default is 0)"
@@ -35,12 +35,11 @@ DO_SHOW = False
 # Random Forest Option #
 NUM_OF_TREE = 400
 
-
 if args.vector:
     READ_VECTOR = args.vector
 
-# if args.output:
-#     SAVE_VECTOR = args.output
+if args.output:
+    SAVE_VECTOR = DUMP_PATH + args.output
 
 if args.show:
     try:

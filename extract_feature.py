@@ -16,4 +16,3 @@ if __name__ == '__main__':
     dataHandler = DataHandler()
     dataHandler.extract_feature()
     dataHandler.dump()
-

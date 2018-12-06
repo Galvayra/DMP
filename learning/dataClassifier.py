@@ -1,6 +1,5 @@
 import sys
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
@@ -77,15 +76,6 @@ class OlderClassifier(MyScore):
         test_probas_ = svc.predict_proba(x_test)
 
         return test_probas_[:, 1], y_predict
-
-    @staticmethod
-    def get_importance_features(x_train, y_train, feature):
-        rf = RandomForestClassifier(n_estimators=400, n_jobs=4)
-        model = rf.fit(x_train, y_train)
-
-        values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
-
-        return [(f[0], feature[f[0]], f[1]) for f in values if f[1] > 0]
 
     def predict(self, h, y_predict, y_test):
         def __get_reverse(_y_labels, is_hypothesis=False):

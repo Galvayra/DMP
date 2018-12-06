@@ -7,7 +7,7 @@ import sys
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW
-else:
+elif sys.argv[0].split('/')[-1] == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
 
 

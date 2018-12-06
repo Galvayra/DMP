@@ -12,8 +12,8 @@ elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
 else:
     from DMP.utils.arg_extract_feature import *
-    from .dataClassifier import OlderClassifier
     from collections import OrderedDict
+    from sklearn.ensemble import RandomForestClassifier
 
 
 class DataHandler:
@@ -132,11 +132,17 @@ class DataHandler:
     #                     train_file.write(str(-1) + token)
     #             __write_vector(train_file)
 
+    @staticmethod
+    def get_importance_features(x_train, y_train, feature):
+        rf = RandomForestClassifier(n_estimators=400, n_jobs=4)
+        model = rf.fit(x_train, y_train)
+
+        values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
+
+        return [(f[0], feature[f[0]], f[1]) for f in values if f[1] > 0]
+
     def extract_feature(self):
-        ocf = OlderClassifier()
-        feature_importance = ocf.get_importance_features(self.x_train,
-                                                         self.y_train,
-                                                         self.feature)
+        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature)
         feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
         self.__set_vector_matrix(feature_importance_index, self.x_train, 'x_train', TYPE_OF_FEATURE)
         self.__set_vector_matrix(feature_importance_index, self.x_valid, 'x_valid', TYPE_OF_FEATURE)
@@ -165,11 +171,6 @@ class DataHandler:
                     count += 1
 
             return count
-        #
-        # if SAVE_VECTOR:
-        #     file_name = DUMP_PATH + SAVE_VECTOR
-        # else:
-        #     file_name = DUMP_PATH + DUMP_FILE
 
         with open(SAVE_VECTOR, 'w') as outfile:
             json.dump(self.vector_matrix, outfile, indent=4)
