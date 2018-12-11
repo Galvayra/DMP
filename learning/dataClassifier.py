@@ -10,7 +10,7 @@ current_script = sys.argv[0].split('/')[-1]
 if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import TYPE_OF_MODEL
+    from DMP.utils.arg_predict import TYPE_OF_MODEL, COLUMN_TARGET
 
 
 class DataClassifier:
@@ -37,6 +37,7 @@ class DataClassifier:
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
 
     def predict(self):
+        self.set_x_y_test()
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
@@ -61,6 +62,26 @@ class DataClassifier:
             h, y_predict = nn.load_nn(x_test, y_test)
             nn.predict(h, y_predict, y_test)
             nn.show_plot()
+
+    def set_x_y_test(self):
+        if COLUMN_TARGET:
+            x_test = self.dataHandler.x_test
+            y_test = self.dataHandler.y_test
+            target = list()
+            target_index = list()
+
+            for index_dim, feature in self.dataHandler.feature.items():
+                if feature[0] == COLUMN_TARGET:
+                    target.append(int(index_dim))
+
+            for index, x in enumerate(x_test):
+                if x[target[1]] == 1.0:
+                    target_index.append(index)
+
+            self.dataHandler.x_test = [x_test[index] for index in target_index]
+            self.dataHandler.y_test = [y_test[index] for index in target_index]
+
+        self.dataHandler.show_info()
 
 
 class OlderClassifier(MyScore):

@@ -53,8 +53,6 @@ class DataHandler:
             self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
 
-            self.show_info()
-
     def show_info(self):
         def __count_mortality(_y_data_):
             _count = 0

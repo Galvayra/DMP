@@ -15,6 +15,9 @@ def get_arguments():
                                                   "\nUseAge : python predict.py -model (svm|ffnn|cnn)\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
                                                       "\nUseAge : python predict.py -feature 'TYPE_OF_FEATURE'\n\n")
+    parser.add_argument("-target", "--target", help="set a target of specific symptom"
+                                                    "\n(s, sepsis), (p, pneumonia), (b, bacteremia)"
+                                                    "\nUseAge : python predict.py -target s(sepsis)\n\n")
     parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
                                               "\nUseAge : python predict.py -dir 'dir_name'\n\n")
     parser.add_argument("-save", "--save", help="save a score to csv file (default is 'LOG_NAME')"
@@ -48,6 +51,10 @@ TYPE_OF_MODEL = "svm"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 
+# Target options #
+COLUMN_TARGET = False
+COLUMN_TARGET_NAME = str()
+
 # SHOW options #
 DO_SHOW = False
 DO_SHOW_PLOT = False
@@ -76,6 +83,23 @@ if args.model:
     TYPE_OF_MODEL = args.model
     if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn" and TYPE_OF_MODEL != "svm":
         print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
+        exit(-1)
+
+if args.target:
+    COLUMN_TARGET = args.target
+
+    if COLUMN_TARGET == "b":
+        COLUMN_TARGET_NAME = "bacteremia"
+        COLUMN_TARGET = "CR"
+    elif COLUMN_TARGET == "s":
+        COLUMN_TARGET_NAME = "sepsis"
+        COLUMN_TARGET = "CU"
+    elif COLUMN_TARGET == "p":
+        COLUMN_TARGET_NAME = "pneumonia"
+        COLUMN_TARGET = "CS"
+    else:
+        print("\nInput Error target option!")
+        print("Please input target (s|p|b)")
         exit(-1)
 
 if args.feature:
@@ -134,5 +158,10 @@ def show_options():
             print("Using word2vec\n")
         else:
             print("Not using word2vec\n")
+
+        if COLUMN_TARGET_NAME:
+            print("Target is -", COLUMN_TARGET_NAME, "\n")
+        else:
+            print("Target is All\n")
 
         print("model -", TYPE_OF_MODEL, "\n\n")
