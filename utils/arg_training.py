@@ -13,6 +13,9 @@ def get_arguments():
                                                   "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to train (default is merge(all))"
                                                       "\nUseAge : python training.py -feature 'TYPE_OF_FEATURE'\n\n")
+    parser.add_argument("-target", "--target", help="set a target of specific symptom"
+                                                    "\n(s, sepsis), (p, pneumonia), (b, bacteremia)"
+                                                    "\nUseAge : python training.py -target s(sepsis)\n\n")
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python training.py -epoch 20000\n\n")
@@ -52,6 +55,10 @@ TYPE_OF_MODEL = "ffnn"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 
+# Target options #
+COLUMN_TARGET = False
+COLUMN_TARGET_NAME = str()
+
 # Parameter options #
 EPOCH = 2000
 NUM_HIDDEN_LAYER = 0
@@ -80,6 +87,22 @@ if args.feature:
         print("You must input -", type_of_features)
         exit(-1)
 
+if args.target:
+    COLUMN_TARGET = args.target
+
+    if COLUMN_TARGET == "b":
+        COLUMN_TARGET_NAME = "bacteremia"
+        COLUMN_TARGET = "CR"
+    elif COLUMN_TARGET == "s":
+        COLUMN_TARGET_NAME = "sepsis"
+        COLUMN_TARGET = "CU"
+    elif COLUMN_TARGET == "p":
+        COLUMN_TARGET_NAME = "pneumonia"
+        COLUMN_TARGET = "CS"
+    else:
+        print("\nInput Error target option!")
+        print("Please input target (s|p|b)")
+        exit(-1)
 
 if args.epoch:
     try:
@@ -155,6 +178,11 @@ def show_options():
         else:
             print("Not using word2vec\n")
 
+        if COLUMN_TARGET_NAME:
+            print("Target is -", COLUMN_TARGET_NAME, "\n")
+        else:
+            print("Target is All\n")
+            
         print("model -", TYPE_OF_MODEL)
         print("type of feature -", TYPE_OF_FEATURE)
         print("# of hidden layers -", NUM_HIDDEN_LAYER)

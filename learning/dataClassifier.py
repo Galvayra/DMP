@@ -10,16 +10,20 @@ current_script = sys.argv[0].split('/')[-1]
 if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import TYPE_OF_MODEL, COLUMN_TARGET
+    from DMP.utils.arg_predict import TYPE_OF_MODEL
 
 
 class DataClassifier:
     def __init__(self, data_handler):
-        super().__init__()
         self.dataHandler = data_handler
 
     def training(self):
         start_time = time.time()
+
+        self.dataHandler.set_x_y_set(name_of_set="train")
+        self.dataHandler.set_x_y_set(name_of_set="valid")
+        self.dataHandler.set_x_y_set(name_of_set="test")
+        self.dataHandler.show_info()
 
         x_train = self.dataHandler.x_train
         y_train = self.dataHandler.y_train
@@ -29,15 +33,16 @@ class DataClassifier:
         nn = MyNeuralNetwork()
 
         if TYPE_OF_MODEL == "ffnn":
-            nn.feed_forward_nn(x_train, y_train, x_valid, y_valid)
+            nn.feed_forward(x_train, y_train, x_valid, y_valid)
         elif TYPE_OF_MODEL == "cnn":
             self.dataHandler.expand4square_matrix(*[x_train, x_valid])
-            nn.convolution_nn(x_train, y_train, x_valid, y_valid)
+            nn.convolution(x_train, y_train, x_valid, y_valid)
 
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
 
     def predict(self):
-        self.set_x_y_test()
+        self.dataHandler.set_x_y_set(name_of_set="test")
+        self.dataHandler.show_info()
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
@@ -51,37 +56,19 @@ class DataClassifier:
             # initialize support vector machine
             h, y_predict = ocf.load_svm(x_train, y_train, x_test)
             ocf.predict(h, y_predict, y_test)
+            ocf.save(self.dataHandler)
             ocf.show_plot()
         else:
             if TYPE_OF_MODEL == "cnn":
                 self.dataHandler.expand4square_matrix(*[x_test])
 
             # initialize Neural Network
-            nn = MyNeuralNetwork(self.dataHandler)
+            nn = MyNeuralNetwork()
             nn.init_plot()
             h, y_predict = nn.load_nn(x_test, y_test)
             nn.predict(h, y_predict, y_test)
+            nn.save(self.dataHandler)
             nn.show_plot()
-
-    def set_x_y_test(self):
-        if COLUMN_TARGET:
-            x_test = self.dataHandler.x_test
-            y_test = self.dataHandler.y_test
-            target = list()
-            target_index = list()
-
-            for index_dim, feature in self.dataHandler.feature.items():
-                if feature[0] == COLUMN_TARGET:
-                    target.append(int(index_dim))
-
-            for index, x in enumerate(x_test):
-                if x[target[1]] == 1.0:
-                    target_index.append(index)
-
-            self.dataHandler.x_test = [x_test[index] for index in target_index]
-            self.dataHandler.y_test = [y_test[index] for index in target_index]
-
-        self.dataHandler.show_info()
 
 
 class OlderClassifier(MyScore):
@@ -130,6 +117,5 @@ class OlderClassifier(MyScore):
         self.set_total_score()
         self.show_score(target=KEY_TOTAL)
 
-        # save score & show plot
-        self.save_score()
-        self.show_plot()
+    def save(self, data_handler):
+        self.save_score(data_handler)

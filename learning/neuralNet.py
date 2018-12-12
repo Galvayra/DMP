@@ -13,9 +13,8 @@ else:
 
 
 class MyNeuralNetwork(MyScore):
-    def __init__(self, data_handler):
+    def __init__(self):
         super().__init__()
-        self.dataHandler = data_handler
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
@@ -117,7 +116,7 @@ class MyNeuralNetwork(MyScore):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def feed_forward_nn(self, x_train, y_train, x_valid, y_valid):
+    def feed_forward(self, x_train, y_train, x_valid, y_valid):
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -173,7 +172,7 @@ class MyNeuralNetwork(MyScore):
 
         return convolution_layer, num_of_dimension
 
-    def convolution_nn(self, x_train, y_train, x_valid, y_valid):
+    def convolution(self, x_train, y_train, x_valid, y_valid):
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -339,7 +338,5 @@ class MyNeuralNetwork(MyScore):
         self.set_total_score()
         self.show_score(target=KEY_TOTAL)
 
-        # save score & show plot
-        self.save_score(self.dataHandler, self.best_epoch, self.num_of_dimension, self.num_of_hidden,
-                        self.learning_rate)
-        self.show_plot()
+    def save(self, data_handler):
+        self.save_score(data_handler, self.best_epoch, self.num_of_dimension, self.num_of_hidden, self.learning_rate)

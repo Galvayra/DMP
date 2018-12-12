@@ -7,9 +7,9 @@ import sys
 current_script = sys.argv[0].split('/')[-1]
 
 if current_script == "training.py":
-    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
+    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE
+    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
 else:
     from DMP.utils.arg_extract_feature import *
     from collections import OrderedDict
@@ -58,6 +58,39 @@ class DataHandler:
             self.count_all = list()
             self.count_mortality = list()
             self.count_alive = list()
+
+    def set_x_y_set(self, name_of_set="test"):
+        if COLUMN_TARGET:
+            if name_of_set == "train":
+                x_target = self.x_train
+                y_target = self.y_train
+            elif name_of_set == "valid":
+                x_target = self.x_valid
+                y_target = self.y_valid
+            else:
+                x_target = self.x_test
+                y_target = self.y_test
+
+            target = list()
+            target_index = list()
+
+            for index_dim, feature in self.feature.items():
+                if feature[0] == COLUMN_TARGET:
+                    target.append(int(index_dim))
+
+            for index, x in enumerate(x_target):
+                if x[target[1]] == 1.0:
+                    target_index.append(index)
+
+            if name_of_set == "train":
+                self.x_train = [x_target[index] for index in target_index]
+                self.y_train = [y_target[index] for index in target_index]
+            elif name_of_set == "valid":
+                self.x_valid = [x_target[index] for index in target_index]
+                self.y_valid = [y_target[index] for index in target_index]
+            else:
+                self.x_test = [x_target[index] for index in target_index]
+                self.y_test = [y_target[index] for index in target_index]
 
     def show_info(self):
         def __count_mortality(_y_data_):
