@@ -53,6 +53,12 @@ class DataHandler:
             self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
 
+            # count list
+            # index == 0, all // index == 1, mortality // index == 2, alive
+            self.count_all = list()
+            self.count_mortality = list()
+            self.count_alive = list()
+
     def show_info(self):
         def __count_mortality(_y_data_):
             _count = 0
@@ -62,21 +68,42 @@ class DataHandler:
 
             return _count
 
+        self.count_all = [len(self.y_train), len(self.y_valid), len(self.y_test)]
+        self.count_mortality = [__count_mortality(self.y_train),
+                                __count_mortality(self.y_valid),
+                                __count_mortality(self.y_test)]
+        self.count_alive = [self.count_all[i] - self.count_mortality[i] for i in range(3)]
+
         if DO_SHOW:
+            # print("\n\n\n======== DataSet Count ========")
+            # print("dims - ", len(self.x_train[0]))
+            #
+            # print("Training   Count -", str(len(self.y_train)).rjust(4),
+            #       "\t Mortality Count -", str(__count_mortality(self.y_train)).rjust(3),
+            #       "\t Immortality Count -", str(len(self.y_train) - __count_mortality(self.y_train)).rjust(4))
+            #
+            # print("Validation Count -", str(len(self.y_valid)).rjust(4),
+            #       "\t Mortality Count -", str(__count_mortality(self.y_valid)).rjust(3),
+            #       "\t Immortality Count -", str(len(self.y_valid) - __count_mortality(self.y_valid)).rjust(4))
+            #
+            # print("Test       Count -", str(len(self.y_test)).rjust(4),
+            #       "\t Mortality Count -", str(__count_mortality(self.y_test)).rjust(3),
+            #       "\t Immortality Count -", str(len(self.y_test) - __count_mortality(self.y_test)).rjust(4))
+
             print("\n\n\n======== DataSet Count ========")
             print("dims - ", len(self.x_train[0]))
 
-            print("Training   Count -", str(len(self.y_train)).rjust(4),
-                  "\t Mortality Count -", str(__count_mortality(self.y_train)).rjust(3),
-                  "\t Immortality Count -", str(len(self.y_train) - __count_mortality(self.y_train)).rjust(4))
+            print("Training   Count -", str(self.count_all[0]).rjust(4),
+                  "\t Mortality Count -", str(self.count_mortality[0]).rjust(3),
+                  "\t Immortality Count -", str(self.count_alive[0]).rjust(4))
 
-            print("Validation Count -", str(len(self.y_valid)).rjust(4),
-                  "\t Mortality Count -", str(__count_mortality(self.y_valid)).rjust(3),
-                  "\t Immortality Count -", str(len(self.y_valid) - __count_mortality(self.y_valid)).rjust(4))
+            print("Validation Count -", str(self.count_all[1]).rjust(4),
+                  "\t Mortality Count -", str(self.count_mortality[1]).rjust(3),
+                  "\t Immortality Count -", str(self.count_alive[1]).rjust(4))
 
-            print("Test       Count -", str(len(self.y_test)).rjust(4),
-                  "\t Mortality Count -", str(__count_mortality(self.y_test)).rjust(3),
-                  "\t Immortality Count -", str(len(self.y_test) - __count_mortality(self.y_test)).rjust(4))
+            print("Test       Count -", str(self.count_all[2]).rjust(4),
+                  "\t Mortality Count -", str(self.count_mortality[2]).rjust(3),
+                  "\t Immortality Count -", str(self.count_alive[2]).rjust(4))
 
             print("\n\n======== DataSet Shape ========")
             x_train_np = np.array([np.array(j) for j in self.x_train])

@@ -13,8 +13,9 @@ else:
 
 
 class MyNeuralNetwork(MyScore):
-    def __init__(self):
+    def __init__(self, data_handler):
         super().__init__()
+        self.dataHandler = data_handler
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
@@ -339,5 +340,6 @@ class MyNeuralNetwork(MyScore):
         self.show_score(target=KEY_TOTAL)
 
         # save score & show plot
-        self.save_score(self.best_epoch, self.num_of_dimension, self.num_of_hidden, self.learning_rate)
+        self.save_score(self.dataHandler, self.best_epoch, self.num_of_dimension, self.num_of_hidden,
+                        self.learning_rate)
         self.show_plot()

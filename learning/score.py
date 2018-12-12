@@ -89,14 +89,21 @@ class MyScore(MyPlot):
             print('Accuracy  : %.1f' % self.score_dict[target][KEY_ACCURACY])
             print('AUC       : %.1f' % self.score_dict[target][KEY_AUC])
 
-    def save_score(self, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
+    def save_score(self, data_handler=None, best_epoch=None, num_of_dimension=None, num_of_hidden=None,
+                   learning_rate=None):
         save_name = PATH_RESULT + SAVE_DIR_NAME
 
         data_frame = {
+            "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, len(self.score_dict[KEY_TOTAL]))],
+            "# of total": data_handler.count_all + ["" for _ in range(3, len(self.score_dict[KEY_TOTAL]))],
+            "# of mortality": data_handler.count_mortality + ["" for _ in range(3, len(self.score_dict[KEY_TOTAL]))],
+            "# of alive": data_handler.count_alive + ["" for _ in range(3, len(self.score_dict[KEY_TOTAL]))],
+            "": ["" for _ in range(len(self.score_dict[KEY_TOTAL]))],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
             "Best Epoch": [best_epoch] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
             "learning rate": [learning_rate] + ["" for _ in range(1, len(self.score_dict[KEY_TOTAL]))],
+            " ": ["" for _ in range(len(self.score_dict[KEY_TOTAL]))],
             SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_IMMORTALITY].values()],
             KEY_MORTALITY: ["%0.2f" % score for score in self.score_dict[KEY_MORTALITY].values()],

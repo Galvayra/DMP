@@ -57,7 +57,7 @@ class DataClassifier:
                 self.dataHandler.expand4square_matrix(*[x_test])
 
             # initialize Neural Network
-            nn = MyNeuralNetwork()
+            nn = MyNeuralNetwork(self.dataHandler)
             nn.init_plot()
             h, y_predict = nn.load_nn(x_test, y_test)
             nn.predict(h, y_predict, y_test)
