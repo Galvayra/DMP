@@ -1,6 +1,11 @@
 dataset/parsing/
 dataset/origin/
-dataset/images/
+dataset/images/1/
+dataset/images/2/
+dataset/images/3/
+dataset/images/4/
+dataset/images/5/
+dataset/images/dataset/
 modeling/vectors/
 modeling/save/
 modeling/embedding/
