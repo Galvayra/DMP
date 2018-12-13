@@ -10,6 +10,7 @@ model=ffnn
 vector=""
 result=""
 feature=""
+target=""
 
 . utils/parse_options.sh || echo "Can't find parse_options.sh" | exit 1
 
@@ -19,8 +20,8 @@ if [ "$vector" == "" ]; then
 	echo
 else
     if [ "$result" == "" ]; then
-        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature"
+        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target"
     else
-        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" > result/"$result"
+        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target" > result/"$result"
     fi
 fi
