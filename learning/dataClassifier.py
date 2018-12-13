@@ -16,14 +16,13 @@ elif current_script == "predict.py":
 class DataClassifier:
     def __init__(self, data_handler):
         self.dataHandler = data_handler
-
-    def training(self):
-        start_time = time.time()
-
         self.dataHandler.set_x_y_set(name_of_set="train")
         self.dataHandler.set_x_y_set(name_of_set="valid")
         self.dataHandler.set_x_y_set(name_of_set="test")
         self.dataHandler.show_info()
+
+    def training(self):
+        start_time = time.time()
 
         x_train = self.dataHandler.x_train
         y_train = self.dataHandler.y_train
@@ -41,8 +40,6 @@ class DataClassifier:
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
 
     def predict(self):
-        self.dataHandler.set_x_y_set(name_of_set="test")
-        self.dataHandler.show_info()
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
