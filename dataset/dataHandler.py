@@ -66,6 +66,7 @@ class DataHandler:
 
         # a data of y labels
         # [ y_1, y_2, ... y_n ]
+        self.y_column = Y_COLUMN
         self.y_data = self.__set_labels()
 
         self.__do_sampling = do_sampling
@@ -309,9 +310,8 @@ class DataHandler:
     # Y_COLUMN(=DA) is a column for y labels
     def __set_labels(self):
         y_labels = list()
-        header = Y_COLUMN
 
-        for i, value in enumerate(self.__get_raw_data(header)):
+        for i, value in enumerate(self.__get_raw_data(self.y_column)):
             if value == HAVE_SYMPTOM:
                 y_labels.append([1])
                 self.y_data_count += 1
@@ -369,8 +369,8 @@ class DataHandler:
             df.to_csv(DATA_PATH + PARSING_PATH + file_name, index=False)
             print("Write csv file -", DATA_PATH + PARSING_PATH + file_name)
 
-            cnt_mortality = self.counting_mortality(data_dict[self.raw_header_dict[Y_COLUMN]])
-            cnt_total = len(data_dict[self.raw_header_dict[Y_COLUMN]])
+            cnt_mortality = self.counting_mortality(data_dict[self.raw_header_dict[self.y_column]])
+            cnt_total = len(data_dict[self.raw_header_dict[self.y_column]])
             print("\n# of     total -", str(cnt_total).rjust(4),
                   "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
                   "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
