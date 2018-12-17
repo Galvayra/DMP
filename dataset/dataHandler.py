@@ -15,14 +15,19 @@ PROPOSITION = 10
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, read_csv, do_parsing=False, do_sampling=False, column_target=False, eliminate_target=False):
+    def __init__(self, read_csv, data_path=DATA_PATH, do_what="encoding", do_sampling=False, column_target=False,
+                 eliminate_target=False):
+
+        self.__do_parsing = False
+
         # set path of csv file
-        if do_parsing:
+        if do_what == "parsing":
             # execute parsing.py
-            data_path = DATA_PATH + ORIGIN_PATH
-        else:
+            data_path += ORIGIN_PATH
+            self.__do_parsing = True
+        elif do_what == "encoding":
             # execute encoding.py
-            data_path = DATA_PATH + PARSING_PATH
+            data_path += PARSING_PATH
 
         # read csv file
         try:
@@ -63,7 +68,6 @@ class DataHandler:
         # [ y_1, y_2, ... y_n ]
         self.y_data = self.__set_labels()
 
-        self.__do_parsing = do_parsing
         self.__do_sampling = do_sampling
 
         if self.do_parsing:

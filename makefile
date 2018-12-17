@@ -1,6 +1,7 @@
 clean:
 	rm -r __pycache__
 	rm -r */__pycache__
+	rm -r dataset/images/__pycache__
 
 clean-saves:
 	rm -r logs/*

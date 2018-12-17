@@ -11,7 +11,7 @@ class DataParser(DataHandler):
         else:
             print("The Target is None\n\n")
 
-        super().__init__(read_csv, do_parsing=True, do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET)
+        super().__init__(read_csv, do_what="parsing", do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET)
 
     def parsing(self):
 
