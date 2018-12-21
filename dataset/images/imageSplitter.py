@@ -10,6 +10,12 @@ class ImageSplitter(DataHandler):
         super().__init__(read_csv=READ_CSV, data_path=DATA_PATH, do_what="splitting")
         self.count()
         self.make_train_test_dir()
+        self.__ct_dict = dict()
+        self.set_ct_dict()
+
+    @property
+    def ct_dict(self):
+        return self.__ct_dict
 
     @staticmethod
     def make_train_test_dir():
@@ -29,3 +35,8 @@ class ImageSplitter(DataHandler):
         print("\n# of     total -", str(cnt_total).rjust(4),
               "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
               "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
+
+    def set_ct_dict(self):
+        
+        for i, n in self.x_data_dict[COLUMN_ID].items():
+            print(i, n)

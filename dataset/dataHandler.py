@@ -166,6 +166,7 @@ class DataHandler:
         return self.raw_data[self.raw_header_dict[header]]
 
     def __set_data_dict(self):
+
         # {
         #   column: { row: data }
         #   C: { 2: C_1, 3: C_2, ... n: C_n }       ## ID
@@ -174,20 +175,21 @@ class DataHandler:
         #   CZ: { .... }                            ## Final Diagnosis
         # }
         #
+        def __append_data_dict(_header_list):
+            for _header in _header_list:
+                self.x_data_dict[_header] = dict()
+                for _i, _data in enumerate(self.__get_raw_data(_header)):
 
-        for header in self.header_list:
-            self.x_data_dict[header] = dict()
+                    # all of data convert to string
+                    if type(_data) is int or type(_data) is float:
+                        _data = str(_data)
 
-            for i, data in enumerate(self.__get_raw_data(header)):
+                    _data = _data.strip()
 
-                # all of data convert to string
-                if type(data) is int or type(data) is float:
-                    data = str(data)
+                    self.x_data_dict[_header][_i + POSITION_OF_ROW] = _data
 
-                data = data.strip()
-
-                self.x_data_dict[header][i + POSITION_OF_ROW] = data
-
+        __append_data_dict([COLUMN_NUMBER, COLUMN_HOSPITAL])
+        __append_data_dict(self.header_list)
         self.x_data_count = len(self.x_data_dict[ID_COLUMN].values())
 
         return self.x_data_dict
