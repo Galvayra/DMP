@@ -13,3 +13,5 @@ from DMP.dataset.images.imageSplitter import ImageSplitter
 
 if __name__ == '__main__':
     imageSplitter = ImageSplitter()
+    imageSplitter.copy_images()
+    imageSplitter.save_ct_dict2log()
