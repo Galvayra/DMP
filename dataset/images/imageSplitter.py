@@ -13,6 +13,7 @@ class ImageSplitter(DataHandler):
 
         # initialize train test directory
         self.__train_path = IMAGE_PATH + CSV_PATH + TRAIN_DIR
+        self.__test_path = IMAGE_PATH + CSV_PATH + TEST_DIR
         self.__init_train_test_dir()
 
         # set dictionary of ct images
@@ -49,6 +50,14 @@ class ImageSplitter(DataHandler):
         self.__set_ct_dict()
 
     @property
+    def train_path(self):
+        return self.__train_path
+
+    @property
+    def test_path(self):
+        return self.__test_path
+
+    @property
     def ct_dict(self):
         return self.__ct_dict
 
@@ -80,21 +89,21 @@ class ImageSplitter(DataHandler):
     def patient_hospital(self):
         return self.__patient_hospital
 
-    @property
-    def train_path(self):
-        return self.__train_path
-
     def __init_train_test_dir(self):
         def __make_dir__(_path):
             if os.path.isdir(_path):
                 shutil.rmtree(_path)
             os.mkdir(_path)
 
-            print("\nSuccess to make directory -", _path)
+            # print("\nSuccess to make directory -", _path)
 
         __make_dir__(self.train_path)
         __make_dir__(self.train_path + "/" + ALIVE_DIR)
         __make_dir__(self.train_path + "/" + DEATH_DIR)
+
+        __make_dir__(self.test_path)
+        __make_dir__(self.test_path + "/" + ALIVE_DIR)
+        __make_dir__(self.test_path + "/" + DEATH_DIR)
 
     def __show_count(self):
         print("\n# of     total -", str(len(self.alive_list) + len(self.death_list)).rjust(4),
@@ -114,11 +123,9 @@ class ImageSplitter(DataHandler):
                 self.death_list.append(n)
 
         self.__show_count()
+
         # sampling alive using death ratio
         self.alive_list = sorted(random.sample(self.alive_list, len(self.death_list)))
-
-        # self.alive_list = sorted(random.sample(self.alive_list, 5))
-        # self.death_list = sorted(random.sample(self.death_list, 5))
 
         print("======== After applying the sampling! ========")
         self.__show_count()
@@ -128,6 +135,7 @@ class ImageSplitter(DataHandler):
             for _file_src, _file_dst in zip(_files_src, _files_dst):
                 shutil.copyfile(_path_src + _file_src, _path_dst + _file_dst)
 
+        # copy images for training
         for i, n in enumerate(self.ct_dict["train"]["alive"] + self.ct_dict["train"]["death"]):
             h = self.nh_dict[n]
             path_src = IMAGE_PATH + h + "/" + str(n) + "/"
@@ -137,25 +145,19 @@ class ImageSplitter(DataHandler):
             else:
                 path_dst = self.train_path + "/" + DEATH_DIR
 
-            print(i+1, h, n, path_dst)
-            # __copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
+            __copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
 
-        # for a, d in zip(self.alive_list, self.death_list):
-        #     h_alive = self.nh_dict[a]
-        #     h_death = self.nh_dict[d]
-        #
-        #     path_alive = IMAGE_PATH + h_alive + "/" + str(a) + "/"
-        #     path_death = IMAGE_PATH + h_death + "/" + str(d) + "/"
-        #
-        #     __copy_images(path_alive,
-        #                   self.train_path + ALIVE_DIR + "/",
-        #                   self.__get_path_of_images(h_alive, a),
-        #                   self.__get_new_name_of_image(h_alive, a))
-        #
-        #     __copy_images(path_death,
-        #                   self.train_path + DEATH_DIR + "/",
-        #                   self.__get_path_of_images(h_death, d),
-        #                   self.__get_new_name_of_image(h_death, d))
+        # copy images for test
+        for i, n in enumerate(self.ct_dict["test"]["alive"] + self.ct_dict["test"]["death"]):
+            h = self.nh_dict[n]
+            path_src = IMAGE_PATH + h + "/" + str(n) + "/"
+
+            if n in self.alive_list:
+                path_dst = self.test_path + "/" + ALIVE_DIR
+            else:
+                path_dst = self.test_path + "/" + DEATH_DIR
+
+            __copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
 
     def __set_ct_dict(self):
         def __is_choice(ratio=0.5):
@@ -187,14 +189,28 @@ class ImageSplitter(DataHandler):
                     self.ct_dict['train']['death'].append(n)
                     self.ct_dict['count_death_train'] += 1
 
+        # self.__sampling_ct_dict()
+
         print("======== After split train and test set! ========\n")
-        print("train set -", self.ct_dict['count_total_train'],
+        print("train set -", str(self.ct_dict['count_total_train']).rjust(3),
               '\t# of images -', self.__count_images(self.ct_dict['train']['alive']) +
               self.__count_images(self.ct_dict['train']['death']))
-        print("test  set -", self.ct_dict['count_total_test'],
-              '\t\t# of images -', self.__count_images(self.ct_dict['test']['alive']) +
+        print("test  set -", str(self.ct_dict['count_total_test']).rjust(3),
+              '\t# of images -', self.__count_images(self.ct_dict['test']['alive']) +
               self.__count_images(self.ct_dict['test']['death']))
         print("\n\n")
+
+    def __sampling_ct_dict(self, n=5):
+        self.ct_dict["train"]["alive"] = sorted(random.sample(self.ct_dict["train"]["alive"], n))
+        self.ct_dict["train"]["death"] = sorted(random.sample(self.ct_dict["train"]["death"], n))
+        self.ct_dict["test"]["alive"] = sorted(random.sample(self.ct_dict["test"]["alive"], n))
+        self.ct_dict["test"]["death"] = sorted(random.sample(self.ct_dict["test"]["death"], n))
+        self.ct_dict["count_total_train"] = 2 * n
+        self.ct_dict["count_alive_train"] = n
+        self.ct_dict["count_death_train"] = n
+        self.ct_dict["count_total_test"] = 2 * n
+        self.ct_dict["count_alive_test"] = n
+        self.ct_dict["count_death_test"] = n
 
     def save_ct_dict2log(self):
         log_file = IMAGE_PATH + NAME_LOG
@@ -221,5 +237,4 @@ class ImageSplitter(DataHandler):
             return list()
 
     def __get_new_name_of_image(self, h, n):
-        # IMAGE_PATH + h + "/" + str(n)
         return [h + "_" + str(n) + "_" + name for name in self.__get_path_of_images(h, n)]
