@@ -31,9 +31,8 @@ class ImageSplitter(DataHandler):
         self.__death_list = list()
         self.__set_alive_death_list()
 
+        # set images for training and test
         self.__set_ct_dict()
-
-        self.except_list = list()
 
     @property
     def ct_dict(self):
