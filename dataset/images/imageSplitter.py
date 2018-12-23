@@ -192,13 +192,20 @@ class ImageSplitter(DataHandler):
         # self.__sampling_ct_dict()
 
         print("======== After split train and test set! ========\n")
-        print("train set -", str(self.ct_dict['count_total_train']).rjust(3),
+        print("# of train set -", str(self.ct_dict['count_total_train']).rjust(3),
               '\t# of images -', self.__count_images(self.ct_dict['train']['alive']) +
               self.__count_images(self.ct_dict['train']['death']))
-        print("test  set -", str(self.ct_dict['count_total_test']).rjust(3),
+        print("    # of alive -", str(self.ct_dict['count_alive_train']).rjust(3),
+              '\t# of images -', self.__count_images(self.ct_dict['train']['alive']))
+        print("    # of death -", str(self.ct_dict['count_death_train']).rjust(3),
+              '\t# of images -', self.__count_images(self.ct_dict['train']['death']))
+        print("\n# of test  set -", str(self.ct_dict['count_total_test']).rjust(3),
               '\t# of images -', self.__count_images(self.ct_dict['test']['alive']) +
               self.__count_images(self.ct_dict['test']['death']))
-        print("\n\n")
+        print("    # of alive -", str(self.ct_dict['count_alive_test']).rjust(3),
+              '\t# of images -', self.__count_images(self.ct_dict['test']['alive']))
+        print("    # of death -", str(self.ct_dict['count_death_test']).rjust(3),
+              '\t# of images -', self.__count_images(self.ct_dict['test']['death']), "\n")
 
     def __sampling_ct_dict(self, n=5):
         self.ct_dict["train"]["alive"] = sorted(random.sample(self.ct_dict["train"]["alive"], n))
@@ -217,8 +224,8 @@ class ImageSplitter(DataHandler):
 
         with open(log_file, 'w') as outfile:
             json.dump(self.ct_dict, outfile, indent=4)
-            print("\n=========================================================\n\n")
-            print("success make dump file! - file name is", log_file)
+            print("\n=========================================================")
+            print("\nsuccess make dump file! - file name is", log_file, "\n\n")
 
     def __count_images(self, number_list):
         count = 0
