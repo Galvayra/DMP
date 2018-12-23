@@ -176,15 +176,15 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
     if not category_list:
         tf.logging.fatal('Label %s has no images in the category %s.', label_name, category)
 
-    print('image_lists -', image_lists)
-    print('label_name -', label_name)
-    print('label_lists -', label_lists)
-    print('index -', index)
-    print('image_dir -', image_dir)
-    print('category -', category)
-    print('category list -', category_list)
-
-    print("\n\n\n\n\n-----------------------------------------")
+    # print('image_lists -', image_lists)
+    # print('label_name -', label_name)
+    # print('label_lists -', label_lists)
+    # print('index -', index)
+    # print('image_dir -', image_dir)
+    # print('category -', category)
+    # print('category list -', category_list)
+    #
+    # print("\n\n\n\n\n-----------------------------------------")
     mod_index = index % len(category_list)
     base_name = category_list[mod_index]
     sub_dir = label_lists['dir']
@@ -751,8 +751,7 @@ def main(_):
                                                 bottleneck_tensor)
 
         # 우리의 새로운 layer의 정확도를 평가(evalute)하기 위한 새로운 operation들을 생성한다.
-        evaluation_step, prediction = add_evaluation_step(
-            final_tensor, ground_truth_input)
+        evaluation_step, prediction = add_evaluation_step(final_tensor, ground_truth_input)
 
         # 모든 summaries를 합치고(merge) summaries_dir에 쓴다.(write)
         merged = tf.summary.merge_all()
