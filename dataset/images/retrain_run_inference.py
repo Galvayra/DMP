@@ -4,8 +4,12 @@
 
 import numpy as np
 import tensorflow as tf
+import argparse
+import sys
 
-imagePath = '/tmp/test_chartreux.jpg'                                      # 추론을 진행할 이미지 경로
+FLAGS = None
+
+imagePath = '/home/nlp207/Project/DMP/dataset/images/dataset/test/alive/1_104_001.jpg'           # 추론을 진행할 이미지 경로
 modelFullPath = '/tmp/output_graph.pb'                                      # 읽어들일 graph 파일 경로
 labelsFullPath = '/tmp/output_labels.txt'                                   # 읽어들일 labels 파일 경로
 
@@ -19,14 +23,22 @@ def create_graph():
         _ = tf.import_graph_def(graph_def, name='')
 
 
-def run_inference_on_image():
+def run_inference_on_image(_):
     answer = None
 
-    if not tf.gfile.Exists(imagePath):
-        tf.logging.fatal('File does not exist %s', imagePath)
+    # FLAGS.image_dir = '/home/nlp207/Project/DMP/dataset/images/dataset/test/alive/1_104_001.jpg'
+
+    if not tf.gfile.Exists(FLAGS.image_dir):
+        tf.logging.fatal('File does not exist %s', FLAGS.image_dir)
         return answer
 
-    image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
+    image_data = tf.gfile.FastGFile(FLAGS.image_dir, 'rb').read()
+
+    # if not tf.gfile.Exists(imagePath):
+    #     tf.logging.fatal('File does not exist %s', imagePath)
+    #     return answer
+    #
+    # image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
 
     # 저장된(saved) GraphDef 파일로부터 graph를 생성한다.
     create_graph()
@@ -34,8 +46,7 @@ def run_inference_on_image():
     with tf.Session() as sess:
 
         softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-        predictions = sess.run(softmax_tensor,
-                               {'DecodeJpeg/contents:0': image_data})
+        predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
         predictions = np.squeeze(predictions)
 
         top_k = predictions.argsort()[-5:][::-1]  # 가장 높은 확률을 가진 5개(top 5)의 예측값(predictions)을 얻는다.
@@ -51,5 +62,17 @@ def run_inference_on_image():
         return answer
 
 
+# if __name__ == '__main__':
+#     run_inference_on_image()
+
 if __name__ == '__main__':
-    run_inference_on_image()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--image_dir',
+        type=str,
+        default='',
+        help='Path to folders of labeled images.'
+    )
+    FLAGS, unparsed = parser.parse_known_args()
+    tf.app.run(main=run_inference_on_image, argv=[sys.argv[0]] + unparsed)
+    tf.app.run(main=run_inference_on_image, argv=[sys.argv[0]] + unparsed)
