@@ -6,12 +6,51 @@ import numpy as np
 import tensorflow as tf
 import argparse
 import sys
+import os
+import shutil
+import json
 
 FLAGS = None
 
-imagePath = '/home/nlp207/Project/DMP/dataset/images/dataset/test/alive/1_104_001.jpg'           # 추론을 진행할 이미지 경로
-modelFullPath = '/tmp/output_graph.pb'                                      # 읽어들일 graph 파일 경로
-labelsFullPath = '/tmp/output_labels.txt'                                   # 읽어들일 labels 파일 경로
+imagePath = 'dataset/test/'                                 # 추론을 진행할 이미지 경로
+resultPath = 'dataset/result/'
+alivePath = 'alive/'
+deathPath = 'death/'
+tpPath = 'tp/'
+fpPath = 'fp/'
+tnPath = 'tn/'
+fnPath = 'fn/'
+modelFullPath = 'save/output_graph.pb'                      # 읽어들일 graph 파일 경로
+labelsFullPath = 'save/output_labels.txt'                   # 읽어들일 labels 파일 경로
+logFullPath = 'save/inference.txt'
+
+count_positive = int()
+count_negative = int()
+count_tp = int()
+count_fp = int()
+count_tn = int()
+count_fn = int()
+
+log_dict = {
+    tpPath: list(),
+    fpPath: list(),
+    tnPath: list(),
+    fnPath: list(),
+}
+
+
+def make_result_dir(path):
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    os.mkdir(path)
+
+
+def get_images(path):
+    if os.path.isdir(path):
+        if os.path.isdir(path + alivePath) and os.path.isdir(path + deathPath):
+            return [sorted(os.listdir(path + alivePath)), sorted(os.listdir(path + deathPath))]
+
+    return False
 
 
 def create_graph():
@@ -23,56 +62,94 @@ def create_graph():
         _ = tf.import_graph_def(graph_def, name='')
 
 
-def run_inference_on_image(_):
+def inference_image(images, label_dir):
+    global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
+    global log_dict
+
+    create_graph()
+    with tf.Session() as sess:
+        for image in images[:50]:
+            image_data = tf.gfile.FastGFile(imagePath + label_dir + image, 'rb').read()
+            softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
+            predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+            predictions = np.squeeze(predictions)
+
+            if predictions[0] > predictions[1]:
+                count_positive += 1
+
+                if label_dir == alivePath:
+                    log_dict[fpPath].append(image)
+                    count_fp += 1
+                else:
+                    log_dict[tpPath].append(image)
+                    count_tp += 1
+            else:
+                count_negative += 1
+
+                if label_dir == alivePath:
+                    log_dict[tnPath].append(image)
+                    count_tn += 1
+                else:
+                    log_dict[fnPath].append(image)
+                    count_fn += 1
+
+
+def run_inference_on_images(_):
     answer = None
 
-    # FLAGS.image_dir = '/home/nlp207/Project/DMP/dataset/images/dataset/test/alive/1_104_001.jpg'
+    images = get_images(imagePath)
 
-    if not tf.gfile.Exists(FLAGS.image_dir):
-        tf.logging.fatal('File does not exist %s', FLAGS.image_dir)
+    if not images:
+        tf.logging.fatal("File does not exist in %s", FLAGS.image_dir)
         return answer
 
-    image_data = tf.gfile.FastGFile(FLAGS.image_dir, 'rb').read()
+    else:
+        if len(images[0]) < 1:
+            tf.logging.fatal('File does not exist %s', alivePath)
+            return answer
+        elif len(images[1]) < 1:
+            tf.logging.fatal('File does not exist %s', deathPath)
+            return answer
 
-    # if not tf.gfile.Exists(imagePath):
-    #     tf.logging.fatal('File does not exist %s', imagePath)
-    #     return answer
-    #
-    # image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
+    inference_image(images[0], alivePath)
+    inference_image(images[1], deathPath)
 
-    # 저장된(saved) GraphDef 파일로부터 graph를 생성한다.
-    create_graph()
+    print("count positive -", count_positive)
+    print("count negative -", count_negative)
+    print("count tp -", count_tp)
+    print("count fp -", count_fp)
+    print("count tn -", count_tn)
+    print("count fn -", count_fn)
 
-    with tf.Session() as sess:
+    print("Precision -", float(count_tp) / (count_tp + count_fp))
+    print("Recall -", float(count_tp) / (count_tp + count_fn))
 
-        softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-        predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
-        predictions = np.squeeze(predictions)
+    dump_log_dict()
 
-        top_k = predictions.argsort()[-5:][::-1]  # 가장 높은 확률을 가진 5개(top 5)의 예측값(predictions)을 얻는다.
-        f = open(labelsFullPath, 'rb')
-        lines = f.readlines()
-        labels = [str(w).replace("\n", "") for w in lines]
-        for node_id in top_k:
-            human_string = labels[node_id]
-            score = predictions[node_id]
-            print('%s (score = %.5f)' % (human_string, score))
 
-        answer = labels[top_k[0]]
-        return answer
-
+def dump_log_dict():
+    with open(logFullPath, 'w') as outfile:
+        json.dump(log_dict, outfile, indent=4)
+        print("\n=========================================================")
+        print("\nsuccess make dump file! - file name is", logFullPath, "\n\n")
 
 # if __name__ == '__main__':
 #     run_inference_on_image()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--image_dir',
-        type=str,
-        default='',
-        help='Path to folders of labeled images.'
-    )
+    # parser.add_argument(
+    #     '--image_dir',
+    #     type=str,
+    #     default='',
+    #     help='Path to folders of labeled images.'
+    # )
+
+    # make result directory
+    make_result_dir(resultPath + tpPath)
+    make_result_dir(resultPath + fpPath)
+    make_result_dir(resultPath + tnPath)
+    make_result_dir(resultPath + fnPath)
+
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=run_inference_on_image, argv=[sys.argv[0]] + unparsed)
-    tf.app.run(main=run_inference_on_image, argv=[sys.argv[0]] + unparsed)
+    tf.app.run(main=run_inference_on_images, argv=[sys.argv[0]] + unparsed)
