@@ -7,7 +7,6 @@ import tensorflow as tf
 import argparse
 import sys
 import os
-import shutil
 import json
 
 FLAGS = None
@@ -39,12 +38,6 @@ log_dict = {
 }
 
 
-def make_result_dir(path):
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    os.mkdir(path)
-
-
 def get_images(path):
     if os.path.isdir(path):
         if os.path.isdir(path + alivePath) and os.path.isdir(path + deathPath):
@@ -68,7 +61,7 @@ def inference_image(images, label_dir):
 
     create_graph()
     with tf.Session() as sess:
-        for image in images[:50]:
+        for image in images:
             image_data = tf.gfile.FastGFile(imagePath + label_dir + image, 'rb').read()
             softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
             predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
@@ -114,15 +107,21 @@ def run_inference_on_images(_):
     inference_image(images[0], alivePath)
     inference_image(images[1], deathPath)
 
-    print("count positive -", count_positive)
+    print("\n\n\ncount positive -", count_positive)
     print("count negative -", count_negative)
     print("count tp -", count_tp)
     print("count fp -", count_fp)
     print("count tn -", count_tn)
     print("count fn -", count_fn)
 
-    print("Precision -", float(count_tp) / (count_tp + count_fp))
-    print("Recall -", float(count_tp) / (count_tp + count_fn))
+    precision = float(count_tp) / (count_tp + count_fp)
+    recall = float(count_tp) / (count_tp + count_fn)
+    accuracy = float(count_tp + count_tn) / (count_tp + count_tn + count_fp + count_fn)
+
+    print("Precision - %.2f" % (precision * 100))
+    print("Recall    - %.2f" % (recall * 100))
+    print("F1 score  - %.2f" % ((2 * ((precision * recall) / (precision + recall))) * 100))
+    print("Accuracy  - %.2f" % (accuracy * 100))
 
     dump_log_dict()
 
@@ -136,6 +135,7 @@ def dump_log_dict():
 # if __name__ == '__main__':
 #     run_inference_on_image()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument(
@@ -146,10 +146,5 @@ if __name__ == '__main__':
     # )
 
     # make result directory
-    make_result_dir(resultPath + tpPath)
-    make_result_dir(resultPath + fpPath)
-    make_result_dir(resultPath + tnPath)
-    make_result_dir(resultPath + fnPath)
-
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=run_inference_on_images, argv=[sys.argv[0]] + unparsed)
