@@ -10,10 +10,12 @@ if current_script == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
-else:
+elif current_script == "extract_feature.py":
     from DMP.utils.arg_extract_feature import *
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
+elif current_script == "convert_images.py":
+    from DMP.utils.arg_convert_images import *
 
 
 class DataHandler:
@@ -108,21 +110,6 @@ class DataHandler:
         self.count_alive = [self.count_all[i] - self.count_mortality[i] for i in range(3)]
 
         if DO_SHOW:
-            # print("\n\n\n======== DataSet Count ========")
-            # print("dims - ", len(self.x_train[0]))
-            #
-            # print("Training   Count -", str(len(self.y_train)).rjust(4),
-            #       "\t Mortality Count -", str(__count_mortality(self.y_train)).rjust(3),
-            #       "\t Immortality Count -", str(len(self.y_train) - __count_mortality(self.y_train)).rjust(4))
-            #
-            # print("Validation Count -", str(len(self.y_valid)).rjust(4),
-            #       "\t Mortality Count -", str(__count_mortality(self.y_valid)).rjust(3),
-            #       "\t Immortality Count -", str(len(self.y_valid) - __count_mortality(self.y_valid)).rjust(4))
-            #
-            # print("Test       Count -", str(len(self.y_test)).rjust(4),
-            #       "\t Mortality Count -", str(__count_mortality(self.y_test)).rjust(3),
-            #       "\t Immortality Count -", str(len(self.y_test) - __count_mortality(self.y_test)).rjust(4))
-
             print("\n\n\n======== DataSet Count ========")
             print("dims - ", len(self.x_train[0]))
 
@@ -166,29 +153,6 @@ class DataHandler:
                     vector.append(0.0)
 
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
-
-    # def vector2txt(self):
-    #     def __write_vector(_w_file):
-    #         for dimension, v in enumerate(x):
-    #             if v != 0:
-    #                 _w_file.write(str(dimension + 1) + ":" + str(v) + token)
-    #         _w_file.write("\n")
-    #
-    #     token = " "
-    #     train_file_name = "train_" + READ_VECTOR.split('/')[-1]
-    #     valid_file_name = "test_" + READ_VECTOR.split('/')[-1]
-    #     test_file_name = "test_" + READ_VECTOR.split('/')[-1]
-    #
-    #     for file_name, data in zip(
-    #             (train_file_name, valid_file_name, test_file_name),
-    #             ((self.x_train, self.y_train), (self.x_valid, self.y_valid), (self.x_test, self.y_test))):
-    #         with open("make/" + file_name + ".txt", 'w') as train_file:
-    #             for x, y in zip(data[0], data[1]):
-    #                 if y[0] == 1:
-    #                     train_file.write(str(1) + token)
-    #                 else:
-    #                     train_file.write(str(-1) + token)
-    #             __write_vector(train_file)
 
     @staticmethod
     def get_importance_features(x_train, y_train, feature):
