@@ -8,7 +8,6 @@ SAVE_DIR = "ct_images/"
 TRAIN_DIR = "train"
 VALID_DIR = "valid"
 TEST_DIR = "test"
-IMAGE_DIR = "ct_images"
 ALIVE_DIR = "alive/"
 DEATH_DIR = "death/"
 
