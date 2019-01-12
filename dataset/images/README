@@ -4,3 +4,16 @@
 4 = 빈센트
 5 = 대전
 
+
+
+1) renaming.sh : renaming image files for security of patient information
+
+
+2) ../../build_images.py : make train, valid, test set for training using inception v3
+
+
+3) inceptionv3_retrain.py : retrain a neural network which is inception v3
+
+4) retrain_run_inference.py : get performance using retrained inception v3 networks
+
+5) split_images.py : copy images using performance log file after testing
