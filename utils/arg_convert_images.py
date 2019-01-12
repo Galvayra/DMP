@@ -11,6 +11,8 @@ def get_arguments():
     parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
                                                     "\n(default is 'vector'+'_new')"
                                                     "\nUseAge : python convert_images.py -output 'O'\n\n")
+    parser.add_argument("-log", "--log", help="set name of log file (default is 'output option')"
+                                              "\nUseAge : python convert_images.py -log 'L'\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -25,6 +27,10 @@ DUMP_IMAGE = "dataset/images/dataset/"
 DUMP_TRAIN = "train/"
 DUMP_VALID = "valid/"
 DUMP_TEST = "test/"
+ALIVE_DIR = "alive/"
+DEATH_DIR = "death/"
+LOG_PATH = "dataset/images/log/"
+
 READ_VECTOR = DUMP_PATH + DUMP_FILE
 SAVE_VECTOR = DUMP_FILE + "_new"
 
@@ -38,6 +44,11 @@ if args.vector:
 
 if args.output:
     SAVE_VECTOR = args.output
+
+if args.log:
+    LOG_NAME = args.log
+else:
+    LOG_NAME = SAVE_VECTOR
 
 
 def show_options():
