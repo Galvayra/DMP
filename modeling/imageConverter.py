@@ -12,10 +12,6 @@ class ImageConverter:
         self.dataHandler = DataHandler()
         self.dataHandler.show_info()
 
-        # make directory
-        if not os.path.isdir(DUMP_IMAGE):
-            os.mkdir(DUMP_IMAGE)
-
         self.__make_dir(DUMP_IMAGE + SAVE_VECTOR + "/")
         self.__make_dir(DUMP_IMAGE + SAVE_VECTOR + "/" + DUMP_TRAIN)
         self.__make_dir(DUMP_IMAGE + SAVE_VECTOR + "/" + DUMP_VALID)

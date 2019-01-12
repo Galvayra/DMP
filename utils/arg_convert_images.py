@@ -7,10 +7,10 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 def get_arguments():
     parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
                                                     "\n(default is 'model')"
-                                                    "\nUseAge : python extract_feature.py -vector 'V'\n\n")
+                                                    "\nUseAge : python convert_images.py -vector 'V'\n\n")
     parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
                                                     "\n(default is 'vector'+'_new')"
-                                                    "\nUseAge : python extract_feature.py -output 'O'\n\n")
+                                                    "\nUseAge : python convert_images.py -output 'O'\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -18,10 +18,10 @@ def get_arguments():
 
 args = get_arguments()
 
-# LOAD options #
+# PATH options #
 DUMP_PATH = "modeling/vectors/"
 DUMP_FILE = "model"
-DUMP_IMAGE = "dataset/images/vectors/"
+DUMP_IMAGE = "dataset/images/dataset/"
 DUMP_TRAIN = "train/"
 DUMP_VALID = "valid/"
 DUMP_TEST = "test/"
