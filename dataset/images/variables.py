@@ -5,9 +5,6 @@ CSV_PATH = "dataset/"
 READ_CSV = "dataset_images.csv"
 
 SAVE_DIR = "ct_images/"
-TRAIN_DIR = "train"
-VALID_DIR = "valid"
-TEST_DIR = "test"
 ALIVE_DIR = "alive/"
 DEATH_DIR = "death/"
 
