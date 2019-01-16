@@ -9,7 +9,7 @@ def get_arguments():
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python convert_images.py -vector 'V'\n\n")
     parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
-                                                    "\n(default is 'vector'+'_new')"
+                                                    "\n(default is 'vector option')"
                                                     "\nUseAge : python convert_images.py -output 'O'\n\n")
     parser.add_argument("-log", "--log", help="set name of log file (default is 'output option')"
                                               "\nUseAge : python convert_images.py -log 'L'\n\n")
@@ -44,6 +44,8 @@ if args.vector:
 
 if args.output:
     SAVE_VECTOR = args.output
+else:
+    SAVE_VECTOR = READ_VECTOR
 
 if args.log:
     LOG_NAME = args.log
