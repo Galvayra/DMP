@@ -54,6 +54,8 @@ import re
 import struct
 import sys
 import tarfile
+import json
+import shutil
 
 import numpy as np
 from six.moves import urllib
@@ -63,6 +65,14 @@ from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import gfile
 from tensorflow.python.util import compat
+
+try:
+    import images
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+from DMP.dataset.images.learning.score import MyScore
+from DMP.dataset.images.learning.variables import *
 
 FLAGS = None
 
@@ -81,7 +91,7 @@ RESIZED_INPUT_TENSOR_NAME = 'ResizeBilinear:0'
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
 
 
-def create_image_lists(image_dir, testing_percentage, validation_percentage):
+def create_image_lists(image_dir, log_path, testing_percentage, validation_percentage):
     """file system으로부터 training 이미지들의 list를 만든다.
     이미지 디렉토리로부터 sub folder들을 분석하고, 그들을 training, testing, validation sets으로 나눈다.
     그리고 각각의 label을 위한 이미지 list와 그들의 경로(path)를 나타내는 자료구조(data structure)를 반환한다.
@@ -93,11 +103,19 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
         각각의 label subfolder를 위한 enrtry를 포함한 dictionary A dictionary
         (각각의 label에서 이미지드릉ㄴ training, testing, validation sets으로 나뉘어져 있다.)
     """
+    log_info = dict()
+    if log_path:
+        with open(log_path, 'r') as infile:
+            print("\n=========================================================")
+            print("\nsuccess make dump file! - file name is", log_path, "\n\n")
+            log_info = json.load(infile)
+
     if not gfile.Exists(image_dir):
         print("Image directory '" + image_dir + "' not found.")
         return None
     result = {}
     sub_dirs = [x[0] for x in gfile.Walk(image_dir)]
+
     # root directory는 처음에 온다. 따라서 이를 skip한다.
     is_root_dir = True
     for sub_dir in sub_dirs:
@@ -122,28 +140,36 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
             print('WARNING: Folder {} has more than {} images. Some images will '
                   'never be selected.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
         label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
+
         training_images = []
         testing_images = []
         validation_images = []
-        for file_name in file_list:
-            base_name = os.path.basename(file_name)
-            # 어떤 이미지로 리스트를 만들지 결정할때 파일 이름에 "_nohash_"가 포함되어 있으면 이를 무시할 수 있다.
-            # 이를 이용해서, 데이터셋을 만드는 사람은 서로 비슷한 사진들을 grouping할 수있다.
-            # 예를 들어, plant disease를 데이터셋을 만들기 위해서, 여러 장의 같은 잎사귀(leaf)를 grouping할 수 있다.
-            hash_name = re.sub(r'_nohash_.*$', '', file_name)
-            # 이는 일종의 마법처럼 보일 수 있다. 하지만, 우리는 이 파일이 training sets로 갈지, testing sets로 갈지, validation sets로 갈지 결정해야만 한다.
-            # 그리고 우리는 더많은 파일들이 추가되더라도, 같은 set에 이미 존재하는 파일들이 유지되길 원한다.
-            # 그렇게 하기 위해서는, 우리는 파일 이름 그자체로부터 결정하는 안정적인 방법이 있어야만 한다.
-            # 따라서, 우리는 파일 이름을 hash하고, 이를 이를 할당하는데 사용하는 확률을 결정하는데 사용한다.
-            hash_name_hashed = hashlib.sha1(compat.as_bytes(hash_name)).hexdigest()
-            percentage_hash = ((int(hash_name_hashed, 16) % (MAX_NUM_IMAGES_PER_CLASS + 1)) *
-                               (100.0 / MAX_NUM_IMAGES_PER_CLASS))
-            if percentage_hash < validation_percentage:
-                validation_images.append(base_name)
-            elif percentage_hash < (testing_percentage + validation_percentage):
-                testing_images.append(base_name)
-            else:
-                training_images.append(base_name)
+
+        if log_info:
+            training_images.extend(log_info["train"][label_name])
+            testing_images.extend(log_info["test"][label_name])
+            validation_images.extend(log_info["valid"][label_name])
+        else:
+
+            for file_name in file_list:
+                base_name = os.path.basename(file_name)
+                # 어떤 이미지로 리스트를 만들지 결정할때 파일 이름에 "_nohash_"가 포함되어 있으면 이를 무시할 수 있다.
+                # 이를 이용해서, 데이터셋을 만드는 사람은 서로 비슷한 사진들을 grouping할 수있다.
+                # 예를 들어, plant disease를 데이터셋을 만들기 위해서, 여러 장의 같은 잎사귀(leaf)를 grouping할 수 있다.
+                hash_name = re.sub(r'_nohash_.*$', '', file_name)
+                # 이는 일종의 마법처럼 보일 수 있다. 하지만, 우리는 이 파일이 training sets로 갈지, testing sets로 갈지, validation sets로 갈지 결정해야만 한다.
+                # 그리고 우리는 더많은 파일들이 추가되더라도, 같은 set에 이미 존재하는 파일들이 유지되길 원한다.
+                # 그렇게 하기 위해서는, 우리는 파일 이름 그자체로부터 결정하는 안정적인 방법이 있어야만 한다.
+                # 따라서, 우리는 파일 이름을 hash하고, 이를 이를 할당하는데 사용하는 확률을 결정하는데 사용한다.
+                hash_name_hashed = hashlib.sha1(compat.as_bytes(hash_name)).hexdigest()
+                percentage_hash = ((int(hash_name_hashed, 16) % (MAX_NUM_IMAGES_PER_CLASS + 1)) *
+                                   (100.0 / MAX_NUM_IMAGES_PER_CLASS))
+                if percentage_hash < validation_percentage:
+                    validation_images.append(base_name)
+                elif percentage_hash < (testing_percentage + validation_percentage):
+                    testing_images.append(base_name)
+                else:
+                    training_images.append(base_name)
         result[label_name] = {
             'dir': dir_name,
             'training': training_images,
@@ -176,15 +202,6 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
     if not category_list:
         tf.logging.fatal('Label %s has no images in the category %s.', label_name, category)
 
-    # print('image_lists -', image_lists)
-    # print('label_name -', label_name)
-    # print('label_lists -', label_lists)
-    # print('index -', index)
-    # print('image_dir -', image_dir)
-    # print('category -', category)
-    # print('category list -', category_list)
-    #
-    # print("\n\n\n\n\n-----------------------------------------")
     mod_index = index % len(category_list)
     base_name = category_list[mod_index]
     sub_dir = label_lists['dir']
@@ -681,7 +698,7 @@ def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
         optimizer = tf.train.GradientDescentOptimizer(FLAGS.learning_rate)
         train_step = optimizer.minimize(cross_entropy_mean)
 
-    return (train_step, cross_entropy_mean, bottleneck_input, ground_truth_input, final_tensor)
+    return (train_step, cross_entropy, cross_entropy_mean, bottleneck_input, ground_truth_input, final_tensor)
 
 
 def add_evaluation_step(result_tensor, ground_truth_tensor):
@@ -703,6 +720,64 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
     return evaluation_step, prediction
 
 
+def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labels, summaries_dir):
+    if log_path:
+        log_name = log_path.split('/')[-1]
+
+        bottleneck_dir = bottleneck_dir.split('/')
+        output_graph = output_graph.split('/')
+        output_labels = output_labels.split('/')
+        summaries_dir = summaries_dir.split('/')
+
+        bottleneck_dir.insert(len(bottleneck_dir) - 1, log_name)
+        output_graph.insert(len(output_graph) - 1, log_name)
+        output_labels.insert(len(output_labels) - 1, log_name)
+        summaries_dir.insert(len(summaries_dir) - 1, log_name)
+
+        if save_path:
+            output_graph.insert(len(output_graph) - 1, save_path)
+            output_labels.insert(len(output_labels) - 1, save_path)
+            summaries_dir.insert(len(summaries_dir) - 1, save_path)
+
+            save_path = summaries_dir[:-1]
+            save_path = '/'.join(save_path)
+
+            if not os.path.isdir(save_path):
+                os.mkdir(save_path)
+
+        bottleneck_dir = '/'.join(bottleneck_dir)
+        output_graph = '/'.join(output_graph)
+        output_labels = '/'.join(output_labels)
+        summaries_dir = '/'.join(summaries_dir)
+
+    if os.path.isdir(summaries_dir):
+        shutil.rmtree(summaries_dir)
+
+    return bottleneck_dir, output_graph, output_labels, summaries_dir
+
+
+def show_scores(y_test, y_prob, y_predict):
+    def __get_reverse(_y_labels):
+        return np.array([1 - v for v in _y_labels])
+
+    score = MyScore()
+
+    # set score of immortality
+    score.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(y_prob))
+    score.set_score(target=KEY_IMMORTALITY)
+    score.show_score(target=KEY_IMMORTALITY)
+    score.set_plot(target=KEY_IMMORTALITY)
+
+    score.compute_score(y_predict, y_test, y_prob)
+    score.set_score(target=KEY_MORTALITY)
+    score.show_score(target=KEY_MORTALITY)
+    score.set_plot(target=KEY_MORTALITY)
+
+    # set total score of immortality and mortality
+    score.set_total_score()
+    score.show_score(target=KEY_TOTAL)
+
+
 def main(_):
     # TensorBoard의 summaries를 write할 directory를 설정한다.
     if tf.gfile.Exists(FLAGS.summaries_dir):
@@ -714,7 +789,10 @@ def main(_):
     graph, bottleneck_tensor, jpeg_data_tensor, resized_image_tensor = (create_inception_graph())
 
     # 폴더 구조를 살펴보고, 모든 이미지에 대한 lists를 생성한다.
-    image_lists = create_image_lists(FLAGS.image_dir, FLAGS.testing_percentage, FLAGS.validation_percentage)
+    image_lists = create_image_lists(FLAGS.image_dir,
+                                     FLAGS.log_path,
+                                     FLAGS.testing_percentage,
+                                     FLAGS.validation_percentage)
     class_count = len(image_lists.keys())
     if class_count == 0:
         print('No valid folders of images found at ' + FLAGS.image_dir)
@@ -723,6 +801,28 @@ def main(_):
         print('Only one valid folder of images found at ' + FLAGS.image_dir +
               ' - multiple classes are needed for classification.')
         return -1
+
+    show_dict = {
+        "training": int(),
+        "testing": int(),
+        "validation": int()
+    }
+
+    for key in image_lists:
+        for set_key, v in image_lists[key].items():
+            if set_key in show_dict:
+                show_dict[set_key] += len(v)
+    print("\n")
+    for set_key, v in show_dict.items():
+        print("# of " + set_key.rjust(15), v)
+    print("\n\n\n")
+
+    bottleneck_dir, output_graph, output_labels, summaries_dir = set_new_flags(FLAGS.log_path,
+                                                                               FLAGS.save_path,
+                                                                               FLAGS.bottleneck_dir,
+                                                                               FLAGS.output_graph,
+                                                                               FLAGS.output_labels,
+                                                                               FLAGS.summaries_dir)
 
     # 커맨드라인 flag에 distortion에 관련된 설정이 있으면 distortion들을 적용한다.
     do_distort_images = should_distort_images(FLAGS.flip_left_right,
@@ -741,11 +841,11 @@ def main(_):
             # 우리는 계산된 'bottleneck' 이미지 summaries를 가지고 있다.
             # 이를 disk에 캐싱(caching)할 것이다.
             cache_bottlenecks(sess, image_lists,
-                              FLAGS.image_dir, FLAGS.bottleneck_dir,
+                              FLAGS.image_dir, bottleneck_dir,
                               jpeg_data_tensor, bottleneck_tensor)
 
         # 우리가 학습시킬(training) 새로운 layer를 추가한다.
-        (train_step, cross_entropy, bottleneck_input, ground_truth_input,
+        (train_step, cross_entropy_logits, cross_entropy, bottleneck_input, ground_truth_input,
          final_tensor) = add_final_training_ops(len(image_lists.keys()),
                                                 FLAGS.final_tensor_name,
                                                 bottleneck_tensor)
@@ -755,31 +855,50 @@ def main(_):
 
         # 모든 summaries를 합치고(merge) summaries_dir에 쓴다.(write)
         merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/train', sess.graph)
+        train_writer = tf.summary.FileWriter(summaries_dir + '/train', sess.graph)
 
-        validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation')
+        validation_writer = tf.summary.FileWriter(summaries_dir + '/validation')
 
         # 우리의 모든 가중치들(weights)과 그들의 초기값들을 설정한다.
         init = tf.global_variables_initializer()
         sess.run(init)
 
+        # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
+        # disk에 저장된 chache로부터 얻을 수 있다.
+        if do_distort_images:
+            (train_bottlenecks,
+             train_ground_truth) = get_random_distorted_bottlenecks(
+                sess, image_lists, FLAGS.train_batch_size, 'training',
+                FLAGS.image_dir, distorted_jpeg_data_tensor,
+                distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
+        else:
+            (train_bottlenecks,
+             train_ground_truth, _) = get_random_cached_bottlenecks(
+                sess, image_lists, FLAGS.train_batch_size, 'training',
+                bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
+                bottleneck_tensor)
+
         # 커맨드 라인에서 지정한 횟수만큼 학습을 진행한다.
         for i in range(FLAGS.how_many_training_steps):
-            # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
-            # disk에 저장된 chache로부터 얻을 수 있다.
-            if do_distort_images:
-                (train_bottlenecks,
-                 train_ground_truth) = get_random_distorted_bottlenecks(
-                     sess, image_lists, FLAGS.train_batch_size, 'training',
-                     FLAGS.image_dir, distorted_jpeg_data_tensor,
-                     distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
-            else:
-                (train_bottlenecks,
-                 train_ground_truth, _) = get_random_cached_bottlenecks(
-                     sess, image_lists, FLAGS.train_batch_size, 'training',
-                     FLAGS.bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
-                     bottleneck_tensor)
-            # grpah에 bottleneck과 ground truth를 feed하고, training step을 진행한다.
+
+            if FLAGS.train_batch_size == -1:
+                # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
+                # disk에 저장된 chache로부터 얻을 수 있다.
+                if do_distort_images:
+                    (train_bottlenecks,
+                     train_ground_truth) = get_random_distorted_bottlenecks(
+                         sess, image_lists, FLAGS.train_batch_size, 'training',
+                         FLAGS.image_dir, distorted_jpeg_data_tensor,
+                         distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
+                else:
+                    (train_bottlenecks,
+                     train_ground_truth, _) = get_random_cached_bottlenecks(
+                         sess, image_lists, FLAGS.train_batch_size, 'training',
+                         bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
+                         bottleneck_tensor)
+
+
+            # graph에 bottleneck과 ground truth를 feed하고, training step을 진행한다.
             # TensorBoard를 위한 'merged' op을 이용해서 training summaries을 capture한다.
 
             train_summary, _ = sess.run([merged, train_step], feed_dict={
@@ -802,7 +921,7 @@ def main(_):
                 validation_bottlenecks, validation_ground_truth, _ = (
                     get_random_cached_bottlenecks(
                         sess, image_lists, FLAGS.validation_batch_size, 'validation',
-                        FLAGS.bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
+                        bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
                         bottleneck_tensor))
                 # validation step을 진행한다.
                 # TensorBoard를 위한 'merged' op을 이용해서 training summaries을 capture한다.
@@ -819,14 +938,24 @@ def main(_):
         # 따라서 이전에 보지 못했던 이미지를 통해 마지막 test 평가(evalution)을 진행한다.
         test_bottlenecks, test_ground_truth, test_filenames = (
             get_random_cached_bottlenecks(sess, image_lists, FLAGS.test_batch_size,
-                                          'testing', FLAGS.bottleneck_dir,
+                                          'testing', bottleneck_dir,
                                           FLAGS.image_dir, jpeg_data_tensor,
                                           bottleneck_tensor))
-        test_accuracy, predictions = sess.run([evaluation_step, prediction],
-                                              feed_dict={
-                                                  bottleneck_input: test_bottlenecks,
-                                                  ground_truth_input: test_ground_truth
-                                              })
+        test_accuracy, predictions, f = sess.run([evaluation_step, prediction, final_tensor],
+                                                 feed_dict={
+                                                     bottleneck_input: test_bottlenecks,
+                                                     ground_truth_input: test_ground_truth
+                                                 })
+
+        print('\n\n# of traning batch =', len(train_bottlenecks))
+        print('# of validation batch =', len(validation_bottlenecks))
+        print('# of test batch =', len(test_bottlenecks), "\n")
+
+        y_test = np.array([t.argmax() for t in test_ground_truth])
+        y_prob = np.array(f)[:, 1]
+
+        show_scores(y_test, y_prob, predictions)
+
         print('Final test accuracy = %.1f%% (N=%d)' % (test_accuracy * 100, len(test_bottlenecks)))
 
         if FLAGS.print_misclassified_test_images:
@@ -839,9 +968,9 @@ def main(_):
         output_graph_def = graph_util.convert_variables_to_constants(sess,
                                                                      graph.as_graph_def(),
                                                                      [FLAGS.final_tensor_name])
-        with gfile.FastGFile(FLAGS.output_graph, 'wb') as f:
+        with gfile.FastGFile(output_graph, 'wb') as f:
             f.write(output_graph_def.SerializeToString())
-        with gfile.FastGFile(FLAGS.output_labels, 'w') as f:
+        with gfile.FastGFile(output_labels, 'w') as f:
             f.write('\n'.join(image_lists.keys()) + '\n')
 
 
@@ -852,6 +981,18 @@ if __name__ == '__main__':
         type=str,
         default='',
         help='Path to folders of labeled images.'
+    )
+    parser.add_argument(
+        '--log_path',
+        type=str,
+        default='',
+        help='Path to log file which has information of train, validation, test rate.'
+    )
+    parser.add_argument(
+        '--save_path',
+        type=str,
+        default='',
+        help='Path to save directory name.'
     )
     parser.add_argument(
         '--output_graph',
