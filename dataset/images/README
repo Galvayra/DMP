@@ -9,11 +9,11 @@
 1) renaming.sh : renaming image files for security of patient information
 
 
-2) ../../build_images.py : make train, valid, test set for training using inception v3
+2) ../../build_ct_images.sh : make train, valid, test ct_images(using json) for inception v3
 
 
 3) inceptionv3_retrain.py : retrain a neural network which is inception v3
 
 4) retrain_run_inference.py : get performance using retrained inception v3 networks
 
-5) split_images.py : copy images using performance log file after testing
+5) copy_images_to_result.py : copy images using performance log file after testing
