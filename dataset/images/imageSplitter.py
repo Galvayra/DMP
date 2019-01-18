@@ -93,6 +93,7 @@ class ImageSplitter(DataHandler):
     @property
     def save_path(self):
         return self.__save_path
+
     @property
     def log_path(self):
         return self.__log_path
