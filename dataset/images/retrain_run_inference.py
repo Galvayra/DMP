@@ -132,18 +132,15 @@ def dump_log_dict():
         print("\n=========================================================")
         print("\nsuccess make dump file! - file name is", logFullPath, "\n\n")
 
-# if __name__ == '__main__':
-#     run_inference_on_image()
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     '--image_dir',
-    #     type=str,
-    #     default='',
-    #     help='Path to folders of labeled images.'
-    # )
+    parser.add_argument(
+        '--image_dir',
+        type=str,
+        default='',
+        help='Path to folders of labeled images.'
+    )
 
     # make result directory
     FLAGS, unparsed = parser.parse_known_args()
