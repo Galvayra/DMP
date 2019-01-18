@@ -25,8 +25,6 @@ def make_result_dir(path):
 def read_log(_path):
     try:
         with open(_path, 'r') as r_file:
-            # print("\nsuccess read file! - file name is", _path)
-            # print("\n=========================================================\n\n")
             return json.load(r_file)
     except FileNotFoundError:
         print("\nFile Not Found Error -", _path)
