@@ -8,7 +8,7 @@ try:
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DMP.modeling.imageConverter import ImageConverter
+from DMP.dataset.images.imageConverter import ImageConverter
 
 if __name__ == '__main__':
     imageConverter = ImageConverter()

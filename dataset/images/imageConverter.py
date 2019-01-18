@@ -15,14 +15,7 @@ class ImageConverter:
 
         self.__log_path = LOG_PATH + LOG_NAME
         self.__save_path = DUMP_IMAGE + SAVE_VECTOR + "/"
-        # self.__train_path = DUMP_IMAGE + SAVE_VECTOR + "/" + DUMP_TRAIN
-        # self.__valid_path = DUMP_IMAGE + SAVE_VECTOR + "/" + DUMP_VALID
-        # self.__test_path = DUMP_IMAGE + SAVE_VECTOR + "/" + DUMP_TEST
-
         self.__make_dir(self.save_path, have_to_make_labels=True)
-        # self.__make_dir(self.train_path, have_to_make_labels=True)
-        # self.__make_dir(self.valid_path, have_to_make_labels=True)
-        # self.__make_dir(self.test_path, have_to_make_labels=True)
 
         self.__vector_dict = {
             'train': {
@@ -69,7 +62,6 @@ class ImageConverter:
             'num_death_test': int()
         }
 
-
     @property
     def log_path(self):
         return self.__log_path
@@ -77,18 +69,6 @@ class ImageConverter:
     @property
     def save_path(self):
         return self.__save_path
-
-    # @property
-    # def train_path(self):
-    #     return self.__train_path
-    #
-    # @property
-    # def valid_path(self):
-    #     return self.__valid_path
-    #
-    # @property
-    # def test_path(self):
-    #     return self.__test_path
 
     @property
     def vector_dict(self):

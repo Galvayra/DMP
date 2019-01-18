@@ -45,7 +45,7 @@ if args.vector:
 if args.output:
     SAVE_VECTOR = args.output
 else:
-    SAVE_VECTOR = READ_VECTOR
+    SAVE_VECTOR = READ_VECTOR.split('/')[-1]
 
 if args.log:
     LOG_NAME = args.log
