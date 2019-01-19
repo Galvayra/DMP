@@ -3,6 +3,7 @@ from pandas import DataFrame
 from .variables import *
 from .plot import MyPlot
 import copy
+import numpy as np
 import sys
 #
 # if sys.argv[0].split('/')[-1] == "training.py":
@@ -13,6 +14,28 @@ import sys
 
 DO_SHOW = True
 SAVE_DIR_NAME = "save"
+
+
+def show_scores(y_test, y_prob, y_predict):
+    def __get_reverse(_y_labels):
+        return np.array([1 - v for v in _y_labels])
+
+    score = MyScore()
+
+    # set score of immortality
+    score.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(y_prob))
+    score.set_score(target=KEY_IMMORTALITY)
+    score.show_score(target=KEY_IMMORTALITY)
+    score.set_plot(target=KEY_IMMORTALITY)
+
+    score.compute_score(y_predict, y_test, y_prob)
+    score.set_score(target=KEY_MORTALITY)
+    score.show_score(target=KEY_MORTALITY)
+    score.set_plot(target=KEY_MORTALITY)
+
+    # set total score of immortality and mortality
+    score.set_total_score()
+    score.show_score(target=KEY_TOTAL)
 
 
 class MyScore(MyPlot):

@@ -56,6 +56,7 @@ import sys
 import tarfile
 import json
 import shutil
+import time
 
 import numpy as np
 from six.moves import urllib
@@ -71,8 +72,7 @@ try:
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from DMP.dataset.images.learning.score import MyScore
-from DMP.dataset.images.learning.variables import *
+from DMP.dataset.images.learning.score import show_scores
 
 FLAGS = None
 
@@ -756,28 +756,6 @@ def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labe
     return bottleneck_dir, output_graph, output_labels, summaries_dir
 
 
-def show_scores(y_test, y_prob, y_predict):
-    def __get_reverse(_y_labels):
-        return np.array([1 - v for v in _y_labels])
-
-    score = MyScore()
-
-    # set score of immortality
-    score.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(y_prob))
-    score.set_score(target=KEY_IMMORTALITY)
-    score.show_score(target=KEY_IMMORTALITY)
-    score.set_plot(target=KEY_IMMORTALITY)
-
-    score.compute_score(y_predict, y_test, y_prob)
-    score.set_score(target=KEY_MORTALITY)
-    score.show_score(target=KEY_MORTALITY)
-    score.set_plot(target=KEY_MORTALITY)
-
-    # set total score of immortality and mortality
-    score.set_total_score()
-    score.show_score(target=KEY_TOTAL)
-
-
 def main(_):
     # TensorBoard의 summaries를 write할 directory를 설정한다.
     if tf.gfile.Exists(FLAGS.summaries_dir):
@@ -830,6 +808,7 @@ def main(_):
                                               FLAGS.random_scale,
                                               FLAGS.random_brightness)
 
+    start_time = time.time()
     with tf.Session(graph=graph) as sess:
         if do_distort_images:
             # 우리는 distortion들을 적용할것이다. 따라서 필요한 연산들(operations)을 설정한다.
@@ -954,9 +933,10 @@ def main(_):
         y_test = np.array([t.argmax() for t in test_ground_truth])
         y_prob = np.array(f)[:, 1]
 
+        exit(-1)
         show_scores(y_test, y_prob, predictions)
 
-        print('Final test accuracy = %.1f%% (N=%d)' % (test_accuracy * 100, len(test_bottlenecks)))
+        # print('Final test accuracy = %.1f%% (N=%d)' % (test_accuracy * 100, len(test_bottlenecks)))
 
         if FLAGS.print_misclassified_test_images:
             print('=== MISCLASSIFIED TEST IMAGES ===')
@@ -972,6 +952,8 @@ def main(_):
             f.write(output_graph_def.SerializeToString())
         with gfile.FastGFile(output_labels, 'w') as f:
             f.write('\n'.join(image_lists.keys()) + '\n')
+
+    print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
 
 
 if __name__ == '__main__':

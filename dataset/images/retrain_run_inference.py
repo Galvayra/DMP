@@ -9,6 +9,13 @@ import sys
 import os
 import json
 
+try:
+    import images
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+from DMP.dataset.images.learning.score import show_scores
+
 FLAGS = None
 
 imagePath = 'dataset/test/'                                 # 추론을 진행할 이미지 경로
@@ -39,62 +46,77 @@ log_dict = {
 
 
 def get_images(path, data_dict):
-    image_list = list()
+    image_dict = dict()
 
     if os.path.isdir(path):
         if os.path.isdir(path + alivePath) and os.path.isdir(path + deathPath):
             # append alive test image file
             for image_file_name in sorted(os.listdir(path + alivePath)):
                 if image_file_name in data_dict[alivePath[:-1]]:
-                    image_list.append(image_file_name)
+                    image_dict[image_file_name] = path + alivePath
 
             # append death test image file
             for image_file_name in sorted(os.listdir(path + deathPath)):
                 if image_file_name in data_dict[deathPath[:-1]]:
-                    image_list.append(image_file_name)
+                    image_dict[image_file_name] = path + deathPath
 
-    return image_list
+    return image_dict
 
 
-def create_graph():
+def create_graph(model_path):
     """저장된(saved) GraphDef 파일로부터 graph를 생성하고 saver를 반환한다."""
     # 저장된(saved) graph_def.pb로부터 graph를 생성한다.
-    with tf.gfile.FastGFile(modelFullPath, 'rb') as f:
+    with tf.gfile.FastGFile(model_path, 'rb') as f:
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(f.read())
         _ = tf.import_graph_def(graph_def, name='')
 
 
-def inference_image(images, label_dir):
+def inference_image(model_path, image_dict):
     global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
     global log_dict
 
-    create_graph()
-    with tf.Session() as sess:
-        for image in images:
-            image_data = tf.gfile.FastGFile(imagePath + label_dir + image, 'rb').read()
-            softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-            predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
-            predictions = np.squeeze(predictions)
+    y_test = list()
+    y_prob = list()
+    predictions = list()
 
-            if predictions[0] > predictions[1]:
+    create_graph(model_path)
+    with tf.Session() as sess:
+        for image, path in image_dict.items():
+            image_data = tf.gfile.FastGFile(path + image, 'rb').read()
+            is_alive = path.endswith(alivePath)
+            softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
+            prediction = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+            prediction = list(np.squeeze(prediction))
+            y_prob.append(prediction[-1])
+
+            if is_alive:
+                y_test.append(0)
+            else:
+                y_test.append(1)
+
+            if prediction[0] > prediction[1]:
+                predictions.append(0)
                 count_positive += 1
 
-                if label_dir == alivePath:
+                if is_alive:
                     log_dict[fpPath].append(image)
                     count_fp += 1
                 else:
                     log_dict[tpPath].append(image)
                     count_tp += 1
             else:
+                predictions.append(1)
                 count_negative += 1
 
-                if label_dir == alivePath:
+                if is_alive:
                     log_dict[tnPath].append(image)
                     count_tn += 1
                 else:
                     log_dict[fnPath].append(image)
                     count_fn += 1
+
+        show_scores(np.array(y_test), np.array(y_prob), np.array(predictions))
 
 
 def set_new_paths(tensor_path):
@@ -134,29 +156,13 @@ def run_inference_on_images(_):
     #     print("\nThere is no labels for testing!\n")
     #     return -1
 
-    # print(model_path)
-    # print(labels_path)
-    # print(save_path)
-
-    # print(data_dict)
-
-    answer = None
-    images = get_images(FLAGS.image_dir, data_dict["test"])
-
-    if not images:
+    image_dict = get_images(FLAGS.image_dir, data_dict["test"])
+    if not image_dict:
         tf.logging.fatal("File does not exist in %s", FLAGS.image_dir)
-        return answer
+        return -1
 
-    else:
-        if len(images[0]) < 1:
-            tf.logging.fatal('File does not exist %s', alivePath)
-            return answer
-        elif len(images[1]) < 1:
-            tf.logging.fatal('File does not exist %s', deathPath)
-            return answer
+    inference_image(model_path, image_dict)
 
-    # inference_image(images[0], alivePath)
-    # inference_image(images[1], deathPath)
     #
     # print("\n\n\ncount positive -", count_positive)
     # print("count negative -", count_negative)
