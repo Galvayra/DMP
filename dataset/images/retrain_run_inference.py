@@ -19,9 +19,9 @@ tpPath = 'tp/'
 fpPath = 'fp/'
 tnPath = 'tn/'
 fnPath = 'fn/'
-modelFullPath = 'save/output_graph.pb'                      # 읽어들일 graph 파일 경로
-labelsFullPath = 'save/output_labels.txt'                   # 읽어들일 labels 파일 경로
-logFullPath = 'save/inference.txt'
+model_name = 'output_graph.pb'                      # 읽어들일 graph 파일 경로
+labels_name = 'output_labels.txt'                   # 읽어들일 labels 파일 경로
+save_name = 'inference.txt'
 
 count_positive = int()
 count_negative = int()
@@ -38,12 +38,22 @@ log_dict = {
 }
 
 
-def get_images(path):
+def get_images(path, data_dict):
+    image_list = list()
+
     if os.path.isdir(path):
         if os.path.isdir(path + alivePath) and os.path.isdir(path + deathPath):
-            return [sorted(os.listdir(path + alivePath)), sorted(os.listdir(path + deathPath))]
+            # append alive test image file
+            for image_file_name in sorted(os.listdir(path + alivePath)):
+                if image_file_name in data_dict[alivePath[:-1]]:
+                    image_list.append(image_file_name)
 
-    return False
+            # append death test image file
+            for image_file_name in sorted(os.listdir(path + deathPath)):
+                if image_file_name in data_dict[deathPath[:-1]]:
+                    image_list.append(image_file_name)
+
+    return image_list
 
 
 def create_graph():
@@ -87,10 +97,51 @@ def inference_image(images, label_dir):
                     count_fn += 1
 
 
-def run_inference_on_images(_):
-    answer = None
+def set_new_paths(tensor_path):
+    model_path = tensor_path + model_name
+    labels_path = tensor_path + labels_name
+    save_path = tensor_path + save_name
 
-    images = get_images(imagePath)
+    return model_path, labels_path, save_path
+
+
+def load_log(log_path):
+    try:
+        with open(log_path, 'r') as read_file:
+            return json.load(read_file)
+    except FileNotFoundError:
+        return None
+
+
+# def load_labels(labels_path):
+#     try:
+#         with open(labels_path, 'r') as read_file:
+#             return [line.strip() for line in read_file]
+#     except FileNotFoundError:
+#         return None
+
+
+def run_inference_on_images(_):
+    model_path, labels_path, save_path = set_new_paths(FLAGS.tensor_path)
+    data_dict = load_log(FLAGS.log_path)
+    # labels = load_labels(labels_path)
+
+    if not data_dict:
+        print("\nThere is no log file for testing!\n")
+        return -1
+
+    # if not labels:
+    #     print("\nThere is no labels for testing!\n")
+    #     return -1
+
+    # print(model_path)
+    # print(labels_path)
+    # print(save_path)
+
+    # print(data_dict)
+
+    answer = None
+    images = get_images(FLAGS.image_dir, data_dict["test"])
 
     if not images:
         tf.logging.fatal("File does not exist in %s", FLAGS.image_dir)
@@ -104,26 +155,26 @@ def run_inference_on_images(_):
             tf.logging.fatal('File does not exist %s', deathPath)
             return answer
 
-    inference_image(images[0], alivePath)
-    inference_image(images[1], deathPath)
+    # inference_image(images[0], alivePath)
+    # inference_image(images[1], deathPath)
+    #
+    # print("\n\n\ncount positive -", count_positive)
+    # print("count negative -", count_negative)
+    # print("count tp -", count_tp)
+    # print("count fp -", count_fp)
+    # print("count tn -", count_tn)
+    # print("count fn -", count_fn)
+    #
+    # precision = float(count_tp) / (count_tp + count_fp)
+    # recall = float(count_tp) / (count_tp + count_fn)
+    # accuracy = float(count_tp + count_tn) / (count_tp + count_tn + count_fp + count_fn)
+    #
+    # print("Precision - %.2f" % (precision * 100))
+    # print("Recall    - %.2f" % (recall * 100))
+    # print("F1 score  - %.2f" % ((2 * ((precision * recall) / (precision + recall))) * 100))
+    # print("Accuracy  - %.2f" % (accuracy * 100))
 
-    print("\n\n\ncount positive -", count_positive)
-    print("count negative -", count_negative)
-    print("count tp -", count_tp)
-    print("count fp -", count_fp)
-    print("count tn -", count_tn)
-    print("count fn -", count_fn)
-
-    precision = float(count_tp) / (count_tp + count_fp)
-    recall = float(count_tp) / (count_tp + count_fn)
-    accuracy = float(count_tp + count_tn) / (count_tp + count_tn + count_fp + count_fn)
-
-    print("Precision - %.2f" % (precision * 100))
-    print("Recall    - %.2f" % (recall * 100))
-    print("F1 score  - %.2f" % ((2 * ((precision * recall) / (precision + recall))) * 100))
-    print("Accuracy  - %.2f" % (accuracy * 100))
-
-    dump_log_dict()
+    # dump_log_dict()
 
 
 def dump_log_dict():
@@ -140,6 +191,18 @@ if __name__ == '__main__':
         type=str,
         default='',
         help='Path to folders of labeled images.'
+    )
+    parser.add_argument(
+        '--log_path',
+        type=str,
+        default='',
+        help='Path to log file which has information of train, validation, test rate.'
+    )
+    parser.add_argument(
+        '--tensor_path',
+        type=str,
+        default='',
+        help='Path to load tensor directory name.'
     )
 
     # make result directory
