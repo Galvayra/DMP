@@ -107,7 +107,7 @@ def create_image_lists(image_dir, log_path, testing_percentage, validation_perce
     if log_path:
         with open(log_path, 'r') as infile:
             print("\n=========================================================")
-            print("\nsuccess make dump file! - file name is", log_path, "\n\n")
+            print("\nsuccess load a log file! - file name is", log_path, "\n\n")
             log_info = json.load(infile)
 
     if not gfile.Exists(image_dir):
@@ -455,7 +455,7 @@ def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
         # Retrieve a random sample of bottlenecks.
         for unused_i in range(how_many):
             label_index = random.randrange(class_count)
-            label_name = list(image_lists.keys())[label_index]
+            label_name = list(sorted(image_lists.keys()))[label_index]
             image_index = random.randrange(MAX_NUM_IMAGES_PER_CLASS + 1)
             image_name = get_image_path(image_lists, label_name, image_index,
                                       image_dir, category)
@@ -470,7 +470,7 @@ def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
             filenames.append(image_name)
     else:
         # Retrieve all bottlenecks.
-        for label_index, label_name in enumerate(image_lists.keys()):
+        for label_index, label_name in enumerate(sorted(image_lists.keys())):
             for image_index, image_name in enumerate(image_lists[label_name][category]):
                 image_name = get_image_path(image_lists, label_name, image_index,
                                             image_dir, category)
@@ -757,10 +757,6 @@ def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labe
 
 
 def main(_):
-    # TensorBoard의 summaries를 write할 directory를 설정한다.
-    if tf.gfile.Exists(FLAGS.summaries_dir):
-        tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
-    tf.gfile.MakeDirs(FLAGS.summaries_dir)
 
     # pre-trained graph를 생성한다.
     maybe_download_and_extract()
@@ -801,6 +797,11 @@ def main(_):
                                                                                FLAGS.output_graph,
                                                                                FLAGS.output_labels,
                                                                                FLAGS.summaries_dir)
+
+    # TensorBoard의 summaries를 write할 directory를 설정한다.
+    if tf.gfile.Exists(summaries_dir):
+        tf.gfile.DeleteRecursively(summaries_dir)
+    tf.gfile.MakeDirs(summaries_dir)
 
     # 커맨드라인 flag에 distortion에 관련된 설정이 있으면 distortion들을 적용한다.
     do_distort_images = should_distort_images(FLAGS.flip_left_right,
@@ -933,10 +934,7 @@ def main(_):
         y_test = np.array([t.argmax() for t in test_ground_truth])
         y_prob = np.array(f)[:, 1]
 
-        exit(-1)
         show_scores(y_test, y_prob, predictions)
-
-        # print('Final test accuracy = %.1f%% (N=%d)' % (test_accuracy * 100, len(test_bottlenecks)))
 
         if FLAGS.print_misclassified_test_images:
             print('=== MISCLASSIFIED TEST IMAGES ===')
@@ -968,7 +966,7 @@ if __name__ == '__main__':
         '--log_path',
         type=str,
         default='',
-        help='Path to log file which has information of train, validation, test rate.'
+        help='Path to load a log file which has information of train, validation, test rate.'
     )
     parser.add_argument(
         '--save_path',
