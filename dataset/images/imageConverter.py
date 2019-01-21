@@ -30,18 +30,6 @@ class ImageConverter:
                 'alive': list(),
                 'death': list()
             },
-            'num_train': {
-                'alive': list(),
-                'death': list()
-            },
-            'num_valid': {
-                'alive': list(),
-                'death': list()
-            },
-            'num_test': {
-                'alive': list(),
-                'death': list()
-            },
             'count_total_train': int(),
             'count_alive_train': int(),
             'count_death_train': int(),
@@ -50,16 +38,7 @@ class ImageConverter:
             'count_death_valid': int(),
             'count_total_test': int(),
             'count_alive_test': int(),
-            'count_death_test': int(),
-            'num_total_train': int(),
-            'num_alive_train': int(),
-            'num_death_train': int(),
-            'num_total_valid': int(),
-            'num_alive_valid': int(),
-            'num_death_valid': int(),
-            'num_total_test': int(),
-            'num_alive_test': int(),
-            'num_death_test': int()
+            'count_death_test': int()
         }
 
     @property

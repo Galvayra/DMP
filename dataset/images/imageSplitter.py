@@ -53,17 +53,17 @@ class ImageSplitter(DataHandler):
                     'alive': list(),
                     'death': list()
                 },
-                'num_train': {
-                    'alive': list(),
-                    'death': list()
+                'train_dict': {
+                    'alive': dict(),
+                    'death': dict()
                 },
-                'num_valid': {
-                    'alive': list(),
-                    'death': list()
+                'valid_dict': {
+                    'alive': dict(),
+                    'death': dict()
                 },
-                'num_test': {
-                    'alive': list(),
-                    'death': list()
+                'test_dict': {
+                    'alive': dict(),
+                    'death': dict()
                 },
                 'count_total_train': int(),
                 'count_alive_train': int(),
@@ -146,15 +146,15 @@ class ImageSplitter(DataHandler):
 
     def __set_nh_dict(self):
         for h, n in zip(self.patient_hospital, self.patient_number):
-            self.nh_dict[n] = h
+            self.nh_dict[str(n)] = h
 
     def __set_alive_death_list(self):
         for n, y in zip(self.patient_number, self.y_data):
 
             if y == [0]:
-                self.alive_list.append(n)
+                self.alive_list.append(str(n))
             else:
-                self.death_list.append(n)
+                self.death_list.append(str(n))
 
         self.__show_count()
 
@@ -188,12 +188,12 @@ class ImageSplitter(DataHandler):
                 self.ct_dict['count_total_train'] += len(new_image_list)
 
                 if n in self.alive_list:
-                    self.ct_dict['num_train']['alive'].append(n)
+                    self.ct_dict['train_dict']['alive'][n] = new_image_list
                     self.ct_dict['train']['alive'].extend(new_image_list)
                     self.ct_dict['num_alive_train'] += 1
                     self.ct_dict['count_alive_train'] += len(new_image_list)
                 else:
-                    self.ct_dict['num_train']['death'].append(n)
+                    self.ct_dict['train_dict']['death'][n] = new_image_list
                     self.ct_dict['train']['death'].extend(new_image_list)
                     self.ct_dict['num_death_train'] += 1
                     self.ct_dict['count_death_train'] += len(new_image_list)
@@ -202,12 +202,12 @@ class ImageSplitter(DataHandler):
                 self.ct_dict['count_total_valid'] += len(new_image_list)
 
                 if n in self.alive_list:
-                    self.ct_dict['num_valid']['alive'].append(n)
+                    self.ct_dict['valid_dict']['alive'][n] = new_image_list
                     self.ct_dict['valid']['alive'].extend(new_image_list)
                     self.ct_dict['num_alive_valid'] += 1
                     self.ct_dict['count_alive_valid'] += len(new_image_list)
                 else:
-                    self.ct_dict['num_valid']['death'].append(n)
+                    self.ct_dict['valid_dict']['death'][n] = new_image_list
                     self.ct_dict['valid']['death'].extend(new_image_list)
                     self.ct_dict['num_death_valid'] += 1
                     self.ct_dict['count_death_valid'] += len(new_image_list)
@@ -216,12 +216,12 @@ class ImageSplitter(DataHandler):
                 self.ct_dict['count_total_test'] += len(new_image_list)
 
                 if n in self.alive_list:
-                    self.ct_dict['num_test']['alive'].append(n)
+                    self.ct_dict['test_dict']['alive'][n] = new_image_list
                     self.ct_dict['test']['alive'].extend(new_image_list)
                     self.ct_dict['num_alive_test'] += 1
                     self.ct_dict['count_alive_test'] += len(new_image_list)
                 else:
-                    self.ct_dict['num_test']['death'].append(n)
+                    self.ct_dict['test_dict']['death'][n] = new_image_list
                     self.ct_dict['test']['death'].extend(new_image_list)
                     self.ct_dict['num_death_test'] += 1
                     self.ct_dict['count_death_test'] += len(new_image_list)
@@ -230,48 +230,48 @@ class ImageSplitter(DataHandler):
         print("# of total set -", str(self.ct_dict['num_total_train'] +
                                       self.ct_dict['num_total_valid'] +
                                       self.ct_dict['num_total_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['alive']) +
-              self.__count_images(self.ct_dict['num_valid']['alive']) +
-              self.__count_images(self.ct_dict['num_test']['alive']) +
-              self.__count_images(self.ct_dict['num_train']['death']) +
-              self.__count_images(self.ct_dict['num_valid']['death']) +
-              self.__count_images(self.ct_dict['num_test']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['alive']) +
+              self.__count_images(self.ct_dict['valid_dict']['alive']) +
+              self.__count_images(self.ct_dict['test_dict']['alive']) +
+              self.__count_images(self.ct_dict['train_dict']['death']) +
+              self.__count_images(self.ct_dict['valid_dict']['death']) +
+              self.__count_images(self.ct_dict['test_dict']['death']))
         print("    # of alive -", str(self.ct_dict['num_alive_train'] +
                                       self.ct_dict['num_alive_valid'] +
                                       self.ct_dict['num_alive_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['alive']) +
-              self.__count_images(self.ct_dict['num_valid']['alive']) +
-              self.__count_images(self.ct_dict['num_test']['alive']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['alive']) +
+              self.__count_images(self.ct_dict['valid_dict']['alive']) +
+              self.__count_images(self.ct_dict['test_dict']['alive']))
         print("    # of death -", str(self.ct_dict['num_death_train'] +
                                       self.ct_dict['num_death_valid'] +
                                       self.ct_dict['num_death_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['death']) +
-              self.__count_images(self.ct_dict['num_valid']['death']) +
-              self.__count_images(self.ct_dict['num_test']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['death']) +
+              self.__count_images(self.ct_dict['valid_dict']['death']) +
+              self.__count_images(self.ct_dict['test_dict']['death']))
 
         print("\n\n# of train set -", str(self.ct_dict['num_total_train']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['alive']) +
-              self.__count_images(self.ct_dict['num_train']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['alive']) +
+              self.__count_images(self.ct_dict['train_dict']['death']))
         print("    # of alive -", str(self.ct_dict['num_alive_train']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['alive']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['alive']))
         print("    # of death -", str(self.ct_dict['num_death_train']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_train']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['train_dict']['death']))
 
         print("\n# of valid set -", str(self.ct_dict['num_total_valid']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_valid']['alive']) +
-              self.__count_images(self.ct_dict['num_valid']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['valid_dict']['alive']) +
+              self.__count_images(self.ct_dict['valid_dict']['death']))
         print("    # of alive -", str(self.ct_dict['num_alive_valid']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_valid']['alive']))
+              '\t# of images -', self.__count_images(self.ct_dict['valid_dict']['alive']))
         print("    # of death -", str(self.ct_dict['num_death_valid']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_valid']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['valid_dict']['death']))
 
         print("\n# of test  set -", str(self.ct_dict['num_total_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_test']['alive']) +
-              self.__count_images(self.ct_dict['num_test']['death']))
+              '\t# of images -', self.__count_images(self.ct_dict['test_dict']['alive']) +
+              self.__count_images(self.ct_dict['test_dict']['death']))
         print("    # of alive -", str(self.ct_dict['num_alive_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_test']['alive']))
+              '\t# of images -', self.__count_images(self.ct_dict['test_dict']['alive']))
         print("    # of death -", str(self.ct_dict['num_death_test']).rjust(3),
-              '\t# of images -', self.__count_images(self.ct_dict['num_test']['death']), "\n")
+              '\t# of images -', self.__count_images(self.ct_dict['test_dict']['death']), "\n")
 
     def save_ct_dict2log(self):
         with open(self.log_path, 'w') as outfile:
@@ -305,22 +305,25 @@ class ImageSplitter(DataHandler):
         return [h + "_" + str(n) + "_" + name for name in self.__get_path_of_images(h, n)]
 
     def copy_images(self):
-        def __copy_images(_path_src, _path_dst, _files_src, _files_dst):
-            for _file_src, _file_dst in zip(_files_src, _files_dst):
-                shutil.copyfile(_path_src + _file_src, _path_dst + _file_dst)
+        self.__copy(self.ct_dict["train_dict"]["alive"])
+        self.__copy(self.ct_dict["valid_dict"]["alive"])
+        self.__copy(self.ct_dict["test_dict"]["alive"])
+        self.__copy(self.ct_dict["train_dict"]["death"], is_alive=False)
+        self.__copy(self.ct_dict["valid_dict"]["death"], is_alive=False)
+        self.__copy(self.ct_dict["test_dict"]["death"], is_alive=False)
 
-        # copy images for training
-        for i, n in enumerate(self.ct_dict["num_train"]["alive"] + self.ct_dict["num_train"]["death"] +
-                              self.ct_dict["num_valid"]["alive"] + self.ct_dict["num_valid"]["death"] +
-                              self.ct_dict["num_test"]["alive"] + self.ct_dict["num_test"]["death"]):
+    def __copy(self, target, is_alive=True):
+        if is_alive:
+            path_dst = self.save_path + "/" + ALIVE_DIR
+        else:
+            path_dst = self.save_path + "/" + DEATH_DIR
+
+        for i, n in enumerate(target):
             h = self.nh_dict[n]
             path_src = IMAGE_PATH + h + "/" + str(n) + "/"
+            self.__copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
 
-            if n in (self.ct_dict["num_train"]["alive"] +
-                     self.ct_dict["num_valid"]["alive"] +
-                     self.ct_dict["num_test"]["alive"]):
-                path_dst = self.save_path + "/" + ALIVE_DIR
-            else:
-                path_dst = self.save_path + "/" + DEATH_DIR
-
-            __copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
+    @staticmethod
+    def __copy_images(_path_src, _path_dst, _files_src, _files_dst):
+        for _file_src, _file_dst in zip(_files_src, _files_dst):
+            shutil.copyfile(_path_src + _file_src, _path_dst + _file_dst)
