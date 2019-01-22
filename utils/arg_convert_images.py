@@ -13,6 +13,9 @@ def get_arguments():
                                                     "\nUseAge : python convert_images.py -output 'O'\n\n")
     parser.add_argument("-log", "--log", help="set name of log file (default is 'output option')"
                                               "\nUseAge : python convert_images.py -log 'L'\n\n")
+    parser.add_argument("-resize", "--resize", help="set a image size X (X by X fixel)"
+                                                    "\n(default is 'None')"
+                                                    "\nUseAge : python convert_images.py -resize 'X'\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -52,6 +55,18 @@ if args.log:
 else:
     LOG_NAME = SAVE_VECTOR
 
+if args.resize:
+    try:
+        IMAGE_SIZE = int(args.resize)
+    except ValueError:
+        print("\nValue Error of resize option!\n")
+        exit(-1)
+    else:
+        if IMAGE_SIZE < 10 and IMAGE_SIZE > 4096:
+            print("\nBoundary Error of resize option!\n")
+            exit(-1)
+else:
+    IMAGE_SIZE = 0
 
 def show_options():
     pass

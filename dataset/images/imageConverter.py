@@ -75,11 +75,18 @@ class ImageConverter:
 
         # expand 1d to 2d which is a square matrix
         self.dataHandler.expand4square_matrix(*[x_train, x_valid, x_test])
+        self.show_img_size(int(math.sqrt(len(x_train[0]))))
 
         # save images
         self.__save_img(x_train, y_train, key="train")
         self.__save_img(x_valid, y_valid, key="valid")
         self.__save_img(x_test, y_test, key="test")
+
+    @staticmethod
+    def show_img_size(img_size):
+        print("\n\nImage   size -", img_size)
+        if IMAGE_SIZE:
+            print("Image resize -", IMAGE_SIZE, "\n\n")
 
     def __save_img(self, x_data, y_data, key):
         size = int(math.sqrt(len(x_data[0])))
@@ -106,6 +113,8 @@ class ImageConverter:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
 
+            if IMAGE_SIZE:
+                img = img.resize((IMAGE_SIZE, IMAGE_SIZE))
             img.save(save_path + file_name)
 
     def save_log(self):
