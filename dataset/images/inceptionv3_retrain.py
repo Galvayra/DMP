@@ -734,6 +734,9 @@ def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labe
         output_labels.insert(len(output_labels) - 1, log_name)
         summaries_dir.insert(len(summaries_dir) - 1, log_name)
 
+        if not os.path.isdir('save/' + log_name):
+            os.mkdir('save/' + log_name)
+
         if save_path:
             output_graph.insert(len(output_graph) - 1, save_path)
             output_labels.insert(len(output_labels) - 1, save_path)
@@ -746,14 +749,21 @@ def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labe
                 os.mkdir(save_path)
 
         bottleneck_dir = '/'.join(bottleneck_dir)
+        chk_point_dir = '/'.join(output_graph[:-1]) + "/checkpoints/"
         output_graph = '/'.join(output_graph)
         output_labels = '/'.join(output_labels)
         summaries_dir = '/'.join(summaries_dir)
+    else:
+        chk_point_dir = "checkpoints/"
+
+    if os.path.isdir(chk_point_dir):
+        shutil.rmtree(chk_point_dir)
+    os.mkdir(chk_point_dir)
 
     if os.path.isdir(summaries_dir):
         shutil.rmtree(summaries_dir)
 
-    return bottleneck_dir, output_graph, output_labels, summaries_dir
+    return bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir
 
 
 def main(_):
@@ -791,12 +801,12 @@ def main(_):
         print("# of " + set_key.rjust(15), v)
     print("\n\n\n")
 
-    bottleneck_dir, output_graph, output_labels, summaries_dir = set_new_flags(FLAGS.log_path,
-                                                                               FLAGS.save_path,
-                                                                               FLAGS.bottleneck_dir,
-                                                                               FLAGS.output_graph,
-                                                                               FLAGS.output_labels,
-                                                                               FLAGS.summaries_dir)
+    bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir = set_new_flags(FLAGS.log_path,
+                                                                                              FLAGS.save_path,
+                                                                                              FLAGS.bottleneck_dir,
+                                                                                              FLAGS.output_graph,
+                                                                                              FLAGS.output_labels,
+                                                                                              FLAGS.summaries_dir)
 
     # TensorBoard의 summaries를 write할 directory를 설정한다.
     if tf.gfile.Exists(summaries_dir):
@@ -843,27 +853,36 @@ def main(_):
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
-        # disk에 저장된 chache로부터 얻을 수 있다.
-        if do_distort_images:
-            (train_bottlenecks,
-             train_ground_truth) = get_random_distorted_bottlenecks(
-                sess, image_lists, FLAGS.train_batch_size, 'training',
-                FLAGS.image_dir, distorted_jpeg_data_tensor,
-                distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
+        if FLAGS.train_batch_size == -1:
+            # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
+            # disk에 저장된 chache로부터 얻을 수 있다.
+            if do_distort_images:
+                (train_bottlenecks,
+                 train_ground_truth) = get_random_distorted_bottlenecks(
+                    sess, image_lists, FLAGS.train_batch_size, 'training',
+                    FLAGS.image_dir, distorted_jpeg_data_tensor,
+                    distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
+            else:
+                (train_bottlenecks,
+                 train_ground_truth, _) = get_random_cached_bottlenecks(
+                    sess, image_lists, FLAGS.train_batch_size, 'training',
+                    bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
+                    bottleneck_tensor)
+
+            iteration = 1
+            how_many_steps = FLAGS.epoch
         else:
-            (train_bottlenecks,
-             train_ground_truth, _) = get_random_cached_bottlenecks(
-                sess, image_lists, FLAGS.train_batch_size, 'training',
-                bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
-                bottleneck_tensor)
+            iteration = int(show_dict["training"] / FLAGS.train_batch_size)
+            how_many_steps = FLAGS.epoch * iteration
+
+        print("\n\nHow many steps -", how_many_steps, "\n\n")
+
+        saver = tf.train.Saver(max_to_keep=50)
 
         # 커맨드 라인에서 지정한 횟수만큼 학습을 진행한다.
-        for i in range(FLAGS.how_many_training_steps):
+        for i in range(how_many_steps):
 
-            if FLAGS.train_batch_size == -1:
-                # bottleneck 값들의 batch를 얻는다. 이는 매번 distortion을 적용하고 계산하거나,
-                # disk에 저장된 chache로부터 얻을 수 있다.
+            if FLAGS.train_batch_size != -1:
                 if do_distort_images:
                     (train_bottlenecks,
                      train_ground_truth) = get_random_distorted_bottlenecks(
@@ -877,10 +896,8 @@ def main(_):
                          bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
                          bottleneck_tensor)
 
-
             # graph에 bottleneck과 ground truth를 feed하고, training step을 진행한다.
             # TensorBoard를 위한 'merged' op을 이용해서 training summaries을 capture한다.
-
             train_summary, _ = sess.run([merged, train_step], feed_dict={
                 bottleneck_input: train_bottlenecks,
                 ground_truth_input: train_ground_truth
@@ -888,8 +905,8 @@ def main(_):
             train_writer.add_summary(train_summary, i)
 
             # 일정 step마다 graph의 training이 얼마나 잘 되고 있는지 출력한다.
-            is_last_step = (i + 1 == FLAGS.how_many_training_steps)
-            if (i % FLAGS.eval_step_interval) == 0 or is_last_step:
+            is_last_step = (i + 1 == how_many_steps)
+            if (i % (iteration * FLAGS.eval_step_interval)) == 0 or is_last_step:
                 train_accuracy, cross_entropy_value = sess.run([evaluation_step, cross_entropy], feed_dict={
                     bottleneck_input: train_bottlenecks,
                     ground_truth_input: train_ground_truth
@@ -914,6 +931,14 @@ def main(_):
                       (datetime.now(), i, validation_accuracy * 100,
                        len(validation_bottlenecks)))
 
+            if i > 0 and ((i % (iteration * FLAGS.save_step_interval)) == 0 or is_last_step):
+                step = i
+
+                if is_last_step:
+                    step = i + 1
+
+                saver.save(sess, chk_point_dir + "model", global_step=step)
+
         # 트레이닝 과정이 모두 끝났다.
         # 따라서 이전에 보지 못했던 이미지를 통해 마지막 test 평가(evalution)을 진행한다.
         test_bottlenecks, test_ground_truth, test_filenames = (
@@ -927,7 +952,7 @@ def main(_):
                                                      ground_truth_input: test_ground_truth
                                                  })
 
-        print('\n\n# of traning batch =', len(train_bottlenecks))
+        print('\n\n# of training batch =', len(train_bottlenecks))
         print('# of validation batch =', len(validation_bottlenecks))
         print('# of test batch =', len(test_bottlenecks), "\n")
 
@@ -993,10 +1018,10 @@ if __name__ == '__main__':
         help='Where to save summary logs for TensorBoard.'
     )
     parser.add_argument(
-        '--how_many_training_steps',
+        '--epoch',
         type=int,
         default=1000,
-        help='How many training steps to run before ending.'
+        help='Set a epoch to training.'
     )
     parser.add_argument(
         '--learning_rate',
@@ -1019,8 +1044,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '--eval_step_interval',
         type=int,
-        default=10,
+        default=100,
         help='How often to evaluate the training results.'
+    )
+    parser.add_argument(
+        '--save_step_interval',
+        type=int,
+        default=100,
+        help='How often to save a tensor.'
     )
     parser.add_argument(
         '--train_batch_size',
