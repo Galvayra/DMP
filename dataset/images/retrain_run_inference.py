@@ -27,8 +27,7 @@ fpPath = 'fp/'
 tnPath = 'tn/'
 fnPath = 'fn/'
 model_name = 'output_graph.pb'                      # 읽어들일 graph 파일 경로
-labels_name = 'output_labels.txt'                   # 읽어들일 labels 파일 경로
-save_name = 'inference.txt'
+check_name = 'model-'
 
 count_positive = int()
 count_negative = int()
@@ -38,10 +37,10 @@ count_tn = int()
 count_fn = int()
 
 log_dict = {
-    tpPath: list(),
-    fpPath: list(),
-    tnPath: list(),
-    fnPath: list(),
+    tpPath: dict(),
+    fpPath: dict(),
+    tnPath: dict(),
+    fnPath: dict(),
 }
 
 
@@ -63,16 +62,29 @@ def get_images(path, data_dict):
     return image_dict
 
 
-def create_graph(model_path):
+def create_graph(model_path, chk_point_path, load_step):
     """저장된(saved) GraphDef 파일로부터 graph를 생성하고 saver를 반환한다."""
-    # 저장된(saved) graph_def.pb로부터 graph를 생성한다.
-    with tf.gfile.FastGFile(model_path, 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-        _ = tf.import_graph_def(graph_def, name='')
+    if not load_step:
+        # 저장된(saved) graph_def.pb로부터 graph를 생성한다.
+        with tf.gfile.FastGFile(model_path, 'rb') as f:
+            graph_def = tf.GraphDef()
+            graph_def.ParseFromString(f.read())
+            _ = tf.import_graph_def(graph_def, name='')
+
+        return False, False
+    else:
+        checkpoint = tf.train.get_checkpoint_state(chk_point_path)
+        paths = checkpoint.all_model_checkpoint_paths
+        index = [path.split(check_name)[-1] for path in paths].index(load_step)
+
+        if index >= 0:
+            print("\n\nCheck Point -", check_name + load_step, "\n\n")
+            return checkpoint, paths[index]
+        else:
+            return False, False
 
 
-def inference_image(model_path, image_dict):
+def inference_image(model_path, chk_point_path, image_dict, is_pooling=False):
     global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
     global log_dict
 
@@ -80,51 +92,71 @@ def inference_image(model_path, image_dict):
     y_prob = list()
     predictions = list()
 
-    create_graph(model_path)
+    checkpoint, load_step = create_graph(model_path, chk_point_path, FLAGS.load_step)
+
     with tf.Session() as sess:
-        for image, path in image_dict.items():
-            image_data = tf.gfile.FastGFile(path + image, 'rb').read()
-            is_alive = path.endswith(alivePath)
-            softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
-            prediction = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
-            prediction = list(np.squeeze(prediction))
-            y_prob.append(prediction[-1])
 
-            if is_alive:
-                y_test.append(0)
-            else:
-                y_test.append(1)
+        # using check point for loading graph where specific epoch
+        if checkpoint:
+            saver = tf.train.import_meta_graph(load_step + '.meta')
+            saver.restore(sess, checkpoint.model_checkpoint_path)
+            graph = tf.get_default_graph()
 
-            if prediction[0] > prediction[1]:
-                predictions.append(0)
-                count_positive += 1
+        # using pb file for loading graph (It is last step)
+        else:
+            graph = sess.graph
+
+        if is_pooling:
+            for patient_number, image_list in image_dict["alive"].items():
+                print(patient_number, len(image_list))
+            # for image, path in image_dict.items():
+            #     if image == "alive"
+
+            exit(-1)
+        else:
+            for image, path in image_dict.items():
+                image_data = tf.gfile.FastGFile(path + image, 'rb').read()
+                is_alive = path.endswith(alivePath)
+                softmax_tensor = graph.get_tensor_by_name('final_result:0')
+                prediction = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+                prediction = list(np.squeeze(prediction))
+                y_prob.append(prediction[-1])
 
                 if is_alive:
-                    log_dict[fpPath].append(image)
-                    count_fp += 1
+                    y_test.append(0)
                 else:
-                    log_dict[tpPath].append(image)
-                    count_tp += 1
-            else:
-                predictions.append(1)
-                count_negative += 1
+                    y_test.append(1)
 
-                if is_alive:
-                    log_dict[tnPath].append(image)
-                    count_tn += 1
+                if prediction[0] > prediction[1]:
+                    predictions.append(0)
+                    count_positive += 1
+
+                    if is_alive:
+                        log_dict[fpPath][image] = path
+                        count_fp += 1
+                    else:
+                        log_dict[tpPath][image] = path
+                        count_tp += 1
                 else:
-                    log_dict[fnPath].append(image)
-                    count_fn += 1
+                    predictions.append(1)
+                    count_negative += 1
+
+                    if is_alive:
+                        log_dict[tnPath][image] = path
+                        count_tn += 1
+                    else:
+                        log_dict[fnPath][image] = path
+                        count_fn += 1
 
         show_scores(np.array(y_test), np.array(y_prob), np.array(predictions))
 
 
 def set_new_paths(tensor_path):
     model_path = tensor_path + model_name
-    labels_path = tensor_path + labels_name
-    save_path = tensor_path + save_name
+    save_path = tensor_path + FLAGS.save_name
+    chk_point_path = tensor_path + 'checkpoints/'
 
-    return model_path, labels_path, save_path
+    return model_path, save_path, chk_point_path
 
 
 def load_log(log_path):
@@ -135,59 +167,34 @@ def load_log(log_path):
         return None
 
 
-# def load_labels(labels_path):
-#     try:
-#         with open(labels_path, 'r') as read_file:
-#             return [line.strip() for line in read_file]
-#     except FileNotFoundError:
-#         return None
-
-
 def run_inference_on_images(_):
-    model_path, labels_path, save_path = set_new_paths(FLAGS.tensor_path)
+    model_path, save_log_path, chk_point_path = set_new_paths(FLAGS.save_path)
     data_dict = load_log(FLAGS.log_path)
-    # labels = load_labels(labels_path)
 
     if not data_dict:
         print("\nThere is no log file for testing!\n")
         return -1
 
-    # if not labels:
-    #     print("\nThere is no labels for testing!\n")
-    #     return -1
-
     image_dict = get_images(FLAGS.image_dir, data_dict["test"])
-    if not image_dict:
-        tf.logging.fatal("File does not exist in %s", FLAGS.image_dir)
-        return -1
 
-    inference_image(model_path, image_dict)
+    if FLAGS.pooling and data_dict["num_total_train"] != 0:
+        print("\nPooling test!\n")
+        image_dict.update(data_dict["test_dict"])
+        inference_image(model_path, chk_point_path, image_dict, is_pooling=True)
+    else:
+        if not image_dict:
+            tf.logging.fatal("File does not exist in %s", FLAGS.image_dir)
+            return -1
 
-    #
-    # print("\n\n\ncount positive -", count_positive)
-    # print("count negative -", count_negative)
-    # print("count tp -", count_tp)
-    # print("count fp -", count_fp)
-    # print("count tn -", count_tn)
-    # print("count fn -", count_fn)
-    #
-    # precision = float(count_tp) / (count_tp + count_fp)
-    # recall = float(count_tp) / (count_tp + count_fn)
-    # accuracy = float(count_tp + count_tn) / (count_tp + count_tn + count_fp + count_fn)
-    #
-    # print("Precision - %.2f" % (precision * 100))
-    # print("Recall    - %.2f" % (recall * 100))
-    # print("F1 score  - %.2f" % ((2 * ((precision * recall) / (precision + recall))) * 100))
-    # print("Accuracy  - %.2f" % (accuracy * 100))
-
-    # dump_log_dict()
+        inference_image(model_path, chk_point_path, image_dict)
+        dump_log_dict(save_log_path)
 
 
-def dump_log_dict():
-    with open(logFullPath, 'w') as outfile:
+def dump_log_dict(save_log_path):
+    with open(save_log_path, 'w') as outfile:
         json.dump(log_dict, outfile, indent=4)
         print("\n=========================================================")
-        print("\nsuccess make dump file! - file name is", logFullPath, "\n\n")
+        print("\nsuccess make dump file! - file name is", save_log_path, "\n\n")
 
 
 if __name__ == '__main__':
@@ -205,10 +212,28 @@ if __name__ == '__main__':
         help='Path to log file which has information of train, validation, test rate.'
     )
     parser.add_argument(
-        '--tensor_path',
+        '--save_path',
         type=str,
         default='',
-        help='Path to load tensor directory name.'
+        help='Path to saved tensor directory name.'
+    )
+    parser.add_argument(
+        '--save_name',
+        type=str,
+        default='inference.txt',
+        help='Path to saved inference result file name.'
+    )
+    parser.add_argument(
+        '--load_step',
+        type=str,
+        default='',
+        help='Set a step to load trained inception v3 graph.'
+    )
+    parser.add_argument(
+        '--pooling',
+        type=int,
+        default=0,
+        help='Set a pooling method.'
     )
 
     # make result directory
