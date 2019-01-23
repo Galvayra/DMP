@@ -90,6 +90,18 @@ JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'
 RESIZED_INPUT_TENSOR_NAME = 'ResizeBilinear:0'
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
 
+NUM_HIDDEN_LAYER = 2
+NUM_HIDDEN_DIMENSION = 0
+RATIO_HIDDEN = 2
+KEEP_PROB = 0.7
+
+# name of tensor
+NAME_HYPO = "hypothesis"
+NAME_PREDICT = "predict"
+NAME_X = "tf_x"
+NAME_Y = "tf_y"
+NAME_PROB = "keep_prob"
+
 
 def create_image_lists(image_dir, log_path, testing_percentage, validation_percentage):
     """file system으로부터 training 이미지들의 list를 만든다.
@@ -670,6 +682,7 @@ def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
     # Organizing the following ops as `final_training_ops` so they're easier
     # to see in TensorBoard
     layer_name = 'final_training_ops'
+
     with tf.name_scope(layer_name):
         with tf.name_scope('weights'):
             initial_value = tf.truncated_normal([BOTTLENECK_TENSOR_SIZE, class_count],
@@ -760,7 +773,7 @@ def set_new_flags(image_path, save_path, bottleneck_dir, output_graph, output_la
         shutil.rmtree(chk_point_dir)
     os.mkdir(chk_point_dir)
 
-    if os.path.isdir(summaries_dir)
+    if os.path.isdir(summaries_dir):
         shutil.rmtree(summaries_dir)
 
     return bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir
