@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-IMAGE_PATH = "dataset/images/"
-CSV_PATH = "dataset/"
+PARENT_PATH = "dataset/images/"
+CSV_PATH = "csv_data/"
+IMAGE_PATH = "image_data/"
 READ_CSV = "dataset_images.csv"
 
 SAVE_DIR = "ct_images/"

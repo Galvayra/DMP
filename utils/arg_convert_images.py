@@ -26,7 +26,7 @@ args = get_arguments()
 # PATH options #
 DUMP_PATH = "modeling/vectors/"
 DUMP_FILE = "model"
-DUMP_IMAGE = "dataset/images/dataset/"
+DUMP_IMAGE = "dataset/images/image_data/"
 DUMP_TRAIN = "train/"
 DUMP_VALID = "valid/"
 DUMP_TEST = "test/"

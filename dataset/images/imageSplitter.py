@@ -9,10 +9,10 @@ import json
 
 class ImageSplitter(DataHandler):
     def __init__(self, has_ct_log=False):
-        super().__init__(read_csv=READ_CSV, data_path=IMAGE_PATH + CSV_PATH, do_what="splitting")
+        super().__init__(read_csv=READ_CSV, data_path=PARENT_PATH + CSV_PATH, do_what="splitting")
 
         # log path
-        self.__log_path = IMAGE_PATH + NAME_LOG
+        self.__log_path = PARENT_PATH + NAME_LOG
 
         # set patient info from csv file
         self.__patient_number = [int(n) for n in self.x_data_dict[COLUMN_NUMBER].values()]
@@ -26,7 +26,7 @@ class ImageSplitter(DataHandler):
         # set dictionary of ct images
         if has_ct_log:
             # initialize train test directory
-            self.__save_path = IMAGE_PATH + CSV_PATH + SAVE_DIR
+            self.__save_path = PARENT_PATH + IMAGE_PATH + SAVE_DIR
             self.__init_directories()
 
             # load ct dictionary
@@ -296,9 +296,9 @@ class ImageSplitter(DataHandler):
     @staticmethod
     def __get_path_of_images(h, n):
         try:
-            return sorted(os.listdir(IMAGE_PATH + h + "/" + str(n) + "/"))
+            return sorted(os.listdir(PARENT_PATH + h + "/" + str(n) + "/"))
         except FileNotFoundError:
-            print("FileNotFoundError: No such file or directory -", IMAGE_PATH + h + "/" + str(n) + "/")
+            print("FileNotFoundError: No such file or directory -", PARENT_PATH + h + "/" + str(n) + "/")
             return list()
 
     def __get_new_name_of_image(self, h, n):
@@ -320,7 +320,7 @@ class ImageSplitter(DataHandler):
 
         for i, n in enumerate(target):
             h = self.nh_dict[n]
-            path_src = IMAGE_PATH + h + "/" + str(n) + "/"
+            path_src = PARENT_PATH + h + "/" + str(n) + "/"
             self.__copy_images(path_src, path_dst, self.__get_path_of_images(h, n), self.__get_new_name_of_image(h, n))
 
     @staticmethod
