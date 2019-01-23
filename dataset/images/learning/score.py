@@ -5,12 +5,6 @@ from .plot import MyPlot
 import copy
 import numpy as np
 import sys
-#
-# if sys.argv[0].split('/')[-1] == "training.py":
-#     from DMP.utils.arg_training import DO_SHOW
-# elif sys.argv[0].split('/')[-1] == "predict.py":
-#     from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
-#
 
 DO_SHOW = True
 SAVE_DIR_NAME = "save"
@@ -36,6 +30,7 @@ def show_scores(y_test, y_prob, y_predict):
     # set total score of immortality and mortality
     score.set_total_score()
     score.show_score(target=KEY_TOTAL)
+    print("\n\n\n")
 
 
 class MyScore(MyPlot):

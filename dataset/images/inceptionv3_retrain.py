@@ -720,47 +720,47 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
     return evaluation_step, prediction
 
 
-def set_new_flags(log_path, save_path, bottleneck_dir, output_graph, output_labels, summaries_dir):
-    if log_path:
-        log_name = log_path.split('/')[-1]
+def set_new_flags(image_path, save_path, bottleneck_dir, output_graph, output_labels, summaries_dir):
+    save_dir_name = image_path.split('/')[-2]
 
-        bottleneck_dir = bottleneck_dir.split('/')
-        output_graph = output_graph.split('/')
-        output_labels = output_labels.split('/')
-        summaries_dir = summaries_dir.split('/')
+    bottleneck_dir = bottleneck_dir.split('/')
+    output_graph = output_graph.split('/')
+    output_labels = output_labels.split('/')
+    summaries_dir = summaries_dir.split('/')
 
-        bottleneck_dir.insert(len(bottleneck_dir) - 1, log_name)
-        output_graph.insert(len(output_graph) - 1, log_name)
-        output_labels.insert(len(output_labels) - 1, log_name)
-        summaries_dir.insert(len(summaries_dir) - 1, log_name)
+    bottleneck_dir.insert(len(bottleneck_dir) - 1, save_dir_name)
+    output_graph.insert(len(output_graph) - 1, save_dir_name)
+    output_labels.insert(len(output_labels) - 1, save_dir_name)
+    summaries_dir.insert(len(summaries_dir) - 1, save_dir_name)
 
-        if not os.path.isdir('save/' + log_name):
-            os.mkdir('save/' + log_name)
+    if not os.path.isdir('save/' + save_dir_name):
+        os.mkdir('save/' + save_dir_name)
 
-        if save_path:
-            output_graph.insert(len(output_graph) - 1, save_path)
-            output_labels.insert(len(output_labels) - 1, save_path)
-            summaries_dir.insert(len(summaries_dir) - 1, save_path)
+    if save_path:
+        output_graph.insert(len(output_graph) - 1, save_path)
+        output_labels.insert(len(output_labels) - 1, save_path)
+        summaries_dir.insert(len(summaries_dir) - 1, save_path)
 
-            save_path = summaries_dir[:-1]
-            save_path = '/'.join(save_path)
+        save_path = summaries_dir[:-1]
+        save_path = '/'.join(save_path)
 
-            if not os.path.isdir(save_path):
-                os.mkdir(save_path)
+        if not os.path.isdir(save_path):
+            os.mkdir(save_path)
 
-        bottleneck_dir = '/'.join(bottleneck_dir)
-        chk_point_dir = '/'.join(output_graph[:-1]) + "/checkpoints/"
-        output_graph = '/'.join(output_graph)
-        output_labels = '/'.join(output_labels)
-        summaries_dir = '/'.join(summaries_dir)
-    else:
-        chk_point_dir = "checkpoints/"
+    save_path = '/'.join(output_graph[:-1])
+    print("\nSave Result - save/" + save_dir_name, "\n\n")
+
+    bottleneck_dir = '/'.join(bottleneck_dir)
+    chk_point_dir = save_path + "/checkpoints/"
+    output_graph = '/'.join(output_graph)
+    output_labels = '/'.join(output_labels)
+    summaries_dir = '/'.join(summaries_dir)
 
     if os.path.isdir(chk_point_dir):
         shutil.rmtree(chk_point_dir)
     os.mkdir(chk_point_dir)
 
-    if os.path.isdir(summaries_dir):
+    if os.path.isdir(summaries_dir)
         shutil.rmtree(summaries_dir)
 
     return bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir
@@ -801,7 +801,7 @@ def main(_):
         print("# of " + set_key.rjust(15), v)
     print("\n\n\n")
 
-    bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir = set_new_flags(FLAGS.log_path,
+    bottleneck_dir, output_graph, output_labels, summaries_dir, chk_point_dir = set_new_flags(FLAGS.image_dir,
                                                                                               FLAGS.save_path,
                                                                                               FLAGS.bottleneck_dir,
                                                                                               FLAGS.output_graph,

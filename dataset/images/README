@@ -8,12 +8,16 @@
 
 1) renaming.sh : renaming image files for security of patient information
 
+2) ../../build_ct_images.sh : build a json file(in log/) for split train, valid, test set
 
-2) ../../build_ct_images.sh : make train, valid, test ct_images(using json) for inception v3
+3) inceptionv3_retrain.py : retrain a neural network which is inception v3. having a json file(in log/), you can use --log_path option
 
-
-3) inceptionv3_retrain.py : retrain a neural network which is inception v3
+    useage) python inceptionv3_retrain.py --image_dir dataset/ct_image/ --log_path log/ct_image --save_path "S"
 
 4) retrain_run_inference.py : get performance using retrained inception v3 networks
 
-5) copy_images_to_result.py : copy images using performance log file after testing
+    useage) python retrain_run_inference.py --image_dir dataset/ct_image/ --log_path log/ct_image --save_path "S"
+
+5) copy_images_to_result.py : copy images using performance file(inference.txt) after 4)
+
+    useage) python copy_images_to_result.py --save_path "S"

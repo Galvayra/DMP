@@ -85,8 +85,35 @@ def create_graph(model_path, chk_point_path, load_step):
 
 
 def inference_image(model_path, chk_point_path, image_dict, is_pooling=False):
-    global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
-    global log_dict
+    def counting(prediction, is_alive):
+        global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
+        global log_dict
+
+        if is_alive:
+            y_test.append(0)
+        else:
+            y_test.append(1)
+
+        if prediction[0] > prediction[1]:
+            predictions.append(0)
+            count_positive += 1
+
+            if is_alive:
+                log_dict[fpPath][image] = path
+                count_fp += 1
+            else:
+                log_dict[tpPath][image] = path
+                count_tp += 1
+        else:
+            predictions.append(1)
+            count_negative += 1
+
+            if is_alive:
+                log_dict[tnPath][image] = path
+                count_tn += 1
+            else:
+                log_dict[fnPath][image] = path
+                count_fn += 1
 
     y_test = list()
     y_prob = list()
@@ -107,48 +134,64 @@ def inference_image(model_path, chk_point_path, image_dict, is_pooling=False):
             graph = sess.graph
 
         if is_pooling:
+            # infer a patient of alive
             for patient_number, image_list in image_dict["alive"].items():
-                print(patient_number, len(image_list))
-            # for image, path in image_dict.items():
-            #     if image == "alive"
+                prob_alive = float()
+                prob_death = float()
+                count_alive = int()
+                count_death = int()
 
-            exit(-1)
+                for image in image_list:
+                    path = image_dict[image]
+                    prediction = get_prediction(sess, graph, path, image)
+
+                    prob_alive += prediction[0]
+                    prob_death += prediction[1]
+
+                    if prediction[0] > prediction[1]:
+                        count_alive += 1
+                    else:
+                        count_death += 1
+
+                y_prob.append(prob_death / (count_alive + count_death))
+                counting([count_alive, count_death], is_alive=True)
+            # infer a patient of death
+            for patient_number, image_list in image_dict["death"].items():
+                prob_alive = float()
+                prob_death = float()
+                count_alive = int()
+                count_death = int()
+
+                for image in image_list:
+                    path = image_dict[image]
+                    prediction = get_prediction(sess, graph, path, image)
+
+                    prob_alive += prediction[0]
+                    prob_death += prediction[1]
+
+                    if prediction[0] > prediction[1]:
+                        count_alive += 1
+                    else:
+                        count_death += 1
+
+                y_prob.append(prob_death / (count_alive + count_death))
+                counting([count_alive, count_death], is_alive=False)
         else:
             for image, path in image_dict.items():
-                image_data = tf.gfile.FastGFile(path + image, 'rb').read()
-                is_alive = path.endswith(alivePath)
-                softmax_tensor = graph.get_tensor_by_name('final_result:0')
-                prediction = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
-                prediction = list(np.squeeze(prediction))
+                prediction = get_prediction(sess, graph, path, image)
+
                 y_prob.append(prediction[-1])
-
-                if is_alive:
-                    y_test.append(0)
-                else:
-                    y_test.append(1)
-
-                if prediction[0] > prediction[1]:
-                    predictions.append(0)
-                    count_positive += 1
-
-                    if is_alive:
-                        log_dict[fpPath][image] = path
-                        count_fp += 1
-                    else:
-                        log_dict[tpPath][image] = path
-                        count_tp += 1
-                else:
-                    predictions.append(1)
-                    count_negative += 1
-
-                    if is_alive:
-                        log_dict[tnPath][image] = path
-                        count_tn += 1
-                    else:
-                        log_dict[fnPath][image] = path
-                        count_fn += 1
+                counting(prediction, is_alive=path.endswith(alivePath))
 
         show_scores(np.array(y_test), np.array(y_prob), np.array(predictions))
+
+
+def get_prediction(sess, graph, path, image):
+    image_data = tf.gfile.FastGFile(path + image, 'rb').read()
+    softmax_tensor = graph.get_tensor_by_name('final_result:0')
+    prediction = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+
+    return list(np.squeeze(prediction))
 
 
 def set_new_paths(tensor_path):
@@ -165,6 +208,13 @@ def load_log(log_path):
             return json.load(read_file)
     except FileNotFoundError:
         return None
+
+
+def dump_log_dict(save_log_path):
+    with open(save_log_path, 'w') as outfile:
+        json.dump(log_dict, outfile, indent=4)
+        print("\n=========================================================")
+        print("\nsuccess make dump file! - file name is", save_log_path, "\n\n")
 
 
 def run_inference_on_images(_):
@@ -188,13 +238,6 @@ def run_inference_on_images(_):
 
         inference_image(model_path, chk_point_path, image_dict)
         dump_log_dict(save_log_path)
-
-
-def dump_log_dict(save_log_path):
-    with open(save_log_path, 'w') as outfile:
-        json.dump(log_dict, outfile, indent=4)
-        print("\n=========================================================")
-        print("\nsuccess make dump file! - file name is", save_log_path, "\n\n")
 
 
 if __name__ == '__main__':

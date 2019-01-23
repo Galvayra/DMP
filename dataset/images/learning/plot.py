@@ -1,11 +1,6 @@
 import matplotlib.pyplot as plt
 import sys
-#
-# if sys.argv[0].split('/')[-1] == "training.py":
-#     from DMP.utils.arg_training import TYPE_OF_MODEL
-# elif sys.argv[0].split('/')[-1] == "predict.py":
-#     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
-#
+
 DO_SHOW_PLOT = False
 
 
@@ -33,8 +28,6 @@ class MyPlot:
 
     def set_plot(self, target):
         if DO_SHOW_PLOT:
-            # self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
-            #                   label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
             self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC of %s' % target)
             self.tpr, self.fpr = self.__init_plot()
 
