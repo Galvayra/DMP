@@ -10,6 +10,7 @@ vector=""
 save=""
 feature=""
 target=""
+image_dir=""
 
 . utils/parse_options.sh || echo "Can't find parse_options.sh" | exit 1
 
@@ -19,8 +20,8 @@ if [ "$vector" == "" ]; then
 	echo
 else
     if [ "$save" == "" ]; then
-        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$log" -plot "$plot" -feature "$feature" -target "$target"
+        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$log" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir"
     else
-        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$save" -plot "$plot" -feature "$feature" -target "$target"
+        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$save" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir"
     fi
 fi
