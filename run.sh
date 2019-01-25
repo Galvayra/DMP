@@ -20,7 +20,7 @@ image_dir=""
 echo
 echo "################# Training !! #################"
 echo
-./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --result "$result" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir"
+./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --result "$log" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir"
 
 echo
 echo "################# Test !! #################"
