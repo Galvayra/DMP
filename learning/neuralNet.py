@@ -265,7 +265,7 @@ class MyNeuralNetwork(MyScore):
             train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
             val_writer = tf.summary.FileWriter(self.name_of_log + "/val", sess.graph)
 
-            saver = tf.train.Saver(max_to_keep=NUM_OF_LOSS_OVER_FIT)
+            saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -338,9 +338,9 @@ class MyNeuralNetwork(MyScore):
 
         with tf.Session() as sess:
             saver = tf.train.import_meta_graph(path + '.meta')
-            saver.restore(sess, checkpoint.model_checkpoint_path)
+            saver.restore(sess, path)
 
-            print("\n\n\nRead Neural Network -", self.name_of_tensor, "\n")
+            print("\n\n\ncheckpoint -", path, "\nBest Epoch  -", self.best_epoch, "\n")
 
             # load tensor
             graph = tf.get_default_graph()
