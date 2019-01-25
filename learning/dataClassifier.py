@@ -8,9 +8,9 @@ import time
 current_script = sys.argv[0].split('/')[-1]
 
 if current_script == "training.py":
-    from DMP.utils.arg_training import TYPE_OF_MODEL
+    from DMP.utils.arg_training import TYPE_OF_MODEL, IMAGE_PATH
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import TYPE_OF_MODEL
+    from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH
 
 
 class DataClassifier:
@@ -34,7 +34,11 @@ class DataClassifier:
         if TYPE_OF_MODEL == "ffnn":
             nn.feed_forward(x_train, y_train, x_valid, y_valid)
         elif TYPE_OF_MODEL == "cnn":
-            self.dataHandler.expand4square_matrix(*[x_train, x_valid])
+            if IMAGE_PATH:
+                self.dataHandler.set_image_path([x_train, x_valid], [y_train, y_valid], key_list=["train", "valid"])
+            else:
+                self.dataHandler.expand4square_matrix(*[x_train, x_valid])
+
             nn.convolution(x_train, y_train, x_valid, y_valid)
 
         print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
@@ -57,7 +61,10 @@ class DataClassifier:
             ocf.show_plot()
         else:
             if TYPE_OF_MODEL == "cnn":
-                self.dataHandler.expand4square_matrix(*[x_test])
+                if IMAGE_PATH:
+                    self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
+                else:
+                    self.dataHandler.expand4square_matrix(*[x_test])
 
             # initialize Neural Network
             nn = MyNeuralNetwork()

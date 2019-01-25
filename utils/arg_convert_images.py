@@ -62,11 +62,12 @@ if args.resize:
         print("\nValue Error of resize option!\n")
         exit(-1)
     else:
-        if IMAGE_SIZE < 10 and IMAGE_SIZE > 4096:
+        if IMAGE_SIZE < 10 & IMAGE_SIZE > 4096:
             print("\nBoundary Error of resize option!\n")
             exit(-1)
 else:
     IMAGE_SIZE = 0
+
 
 def show_options():
     pass

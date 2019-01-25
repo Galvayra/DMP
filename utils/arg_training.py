@@ -1,6 +1,7 @@
 from DMP.dataset.variables import columns_dict
 from DMP.modeling.variables import KEY_NAME_OF_MERGE_VECTOR
 import argparse
+import os
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -9,8 +10,11 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
-    parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
+    parser.add_argument("-model", "--model", help="set a model type of neural net (default is ffnn)"
                                                   "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
+    parser.add_argument("-image_dir", "--image_dir", help="set a path of image directory (default is None)"
+                                                          "It is only apply to use cnn model"
+                                                          "\nUseAge : python training.py -image_dir 'path'\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to train (default is merge(all))"
                                                       "\nUseAge : python training.py -feature 'TYPE_OF_FEATURE'\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom"
@@ -54,6 +58,7 @@ USE_W2V = False
 TYPE_OF_MODEL = "ffnn"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
+IMAGE_PATH = str()
 
 # Target options #
 COLUMN_TARGET = False
@@ -72,11 +77,16 @@ DO_SHOW = False
 LOG_DIR_NAME = str()
 DO_DELETE = False
 
-
 if args.model:
     TYPE_OF_MODEL = args.model
     if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn":
         print("\nInput Error model option! (You must input - ['ffnn', 'cnn'])\n")
+        exit(-1)
+
+if args.image_dir:
+    IMAGE_PATH = args.image_dir
+    if not os.path.isdir(IMAGE_PATH):
+        print("\nFileNotFoundError image_dir option!\n")
         exit(-1)
 
 if args.feature:

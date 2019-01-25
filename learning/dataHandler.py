@@ -1,4 +1,5 @@
-from .variables import GRAY_SCALE
+from .variables import GRAY_SCALE, INITIAL_IMAGE_SIZE
+from PIL import Image
 import numpy as np
 import json
 import math
@@ -7,15 +8,18 @@ import sys
 current_script = sys.argv[0].split('/')[-1]
 
 if current_script == "training.py":
-    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
+    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET
+    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
 elif current_script == "extract_feature.py":
     from DMP.utils.arg_extract_feature import *
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
+
+alivePath = 'alive/'
+deathPath = 'death/'
 
 
 class DataHandler:
@@ -138,15 +142,43 @@ class DataHandler:
             x_test_np = np.array([np.array(j) for j in self.x_test])
             print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
 
+    def set_image_path(self, vector_set_list, y_set_list, key_list):
+        print("Success to read image files -", IMAGE_PATH, '\n\n')
+
+        for key, vector_set, y_list in zip(key_list, vector_set_list, y_set_list):
+            for i, d in enumerate(zip(vector_set, y_list)):
+                x_data, y_label = d[0], d[1]
+                img_name = key + "_" + str(i + 1) + '.jpg'
+
+                if y_label == [1]:
+                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
+                else:
+                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
+
+    @staticmethod
+    def __set_image_from_path(path):
+        img = Image.open(path)
+        img.load()
+        new_img = np.asarray(img, dtype='int32')
+        new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
+
+        return new_img[0]
+
     @staticmethod
     def expand4square_matrix(*vector_set_list):
         # origin data set       = [ [ v_1,      v_2, ... ,      v_d ],                       .... , [ ... ] ]
         # expand data set       = [ [ v_1,      v_2, ... ,      v_d,        0.0, ..., 0.0 ], .... , [ ... ] ]
         # gray scale data set   = [ [ v_1*255,  v_2*255, ... ,  v_d*255,    0.0, ..., 0.0 ], .... , [ ... ] ]
-        for vector_set in vector_set_list:
-            size_of_1d = len(vector_set[0])
+        size_of_1d = len(vector_set_list[0][0])
+
+        if INITIAL_IMAGE_SIZE:
+            size_of_2d = INITIAL_IMAGE_SIZE ** 2
+        else:
             size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)
 
+        print("\n\nThe matrix size of vector - %d by %d" % (math.sqrt(size_of_2d), math.sqrt(size_of_2d)))
+
+        for vector_set in vector_set_list:
             for i, vector in enumerate(vector_set):
                 # expand data for 2d matrix
                 for _ in range(size_of_1d, size_of_2d):
