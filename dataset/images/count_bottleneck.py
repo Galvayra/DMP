@@ -15,7 +15,7 @@ if __name__ == '__main__':
     try:
         with open(args.input, 'r') as r_file:
             bottleneck = r_file.read()
-    except:
+    except FileNotFoundError:
         print("File Not Found!\n\n")
         exit(-1)
     else:

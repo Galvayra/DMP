@@ -1,8 +1,5 @@
 import json
-import shutil
-import os
 import argparse
-from collections import OrderedDict
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -24,7 +21,6 @@ BOTTLENECK_PATH = 'bottleneck/'
 alivePath = 'alive/'
 deathPath = 'death/'
 
-vector_matrix = OrderedDict()
 vector_matrix = {
     "feature": dict(),
     "x_train": {
@@ -61,12 +57,12 @@ else:
 
 
 def vectorization():
-    vectorize(key="train")
-    vectorize(key="valid")
-    vectorize(key="test")
+    __vectorize(key="train")
+    __vectorize(key="valid")
+    __vectorize(key="test")
 
 
-def vectorize(key):
+def __vectorize(key):
     alive_bottleneck_list = get_bottleneck_list(key, alivePath[:-1])
     death_bottleneck_list = get_bottleneck_list(key, deathPath[:-1])
 

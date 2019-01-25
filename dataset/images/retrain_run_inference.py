@@ -85,7 +85,7 @@ def create_graph(model_path, chk_point_path, load_step):
 
 
 def inference_image(model_path, chk_point_path, image_dict, is_pooling=False):
-    def counting(prediction, is_alive):
+    def counting(_prediction, is_alive):
         global count_positive, count_negative, count_tp, count_fp, count_tn, count_fn
         global log_dict
 
@@ -94,7 +94,7 @@ def inference_image(model_path, chk_point_path, image_dict, is_pooling=False):
         else:
             y_test.append(1)
 
-        if prediction[0] > prediction[1]:
+        if _prediction[0] > _prediction[1]:
             predictions.append(0)
             count_positive += 1
 
