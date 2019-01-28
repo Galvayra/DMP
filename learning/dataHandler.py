@@ -165,13 +165,13 @@ class DataHandler:
         return new_img[0]
 
     @staticmethod
-    def expand4square_matrix(*vector_set_list):
+    def expand4square_matrix(*vector_set_list, use_origin=False):
         # origin data set       = [ [ v_1,      v_2, ... ,      v_d ],                       .... , [ ... ] ]
         # expand data set       = [ [ v_1,      v_2, ... ,      v_d,        0.0, ..., 0.0 ], .... , [ ... ] ]
         # gray scale data set   = [ [ v_1*255,  v_2*255, ... ,  v_d*255,    0.0, ..., 0.0 ], .... , [ ... ] ]
         size_of_1d = len(vector_set_list[0][0])
 
-        if INITIAL_IMAGE_SIZE:
+        if INITIAL_IMAGE_SIZE and not use_origin:
             size_of_2d = INITIAL_IMAGE_SIZE ** 2
         else:
             size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)

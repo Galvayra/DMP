@@ -74,7 +74,7 @@ class ImageConverter:
         y_test = self.dataHandler.y_test
 
         # expand 1d to 2d which is a square matrix
-        self.dataHandler.expand4square_matrix(*[x_train, x_valid, x_test])
+        self.dataHandler.expand4square_matrix(*[x_train, x_valid, x_test], use_origin=True)
         self.show_img_size(int(math.sqrt(len(x_train[0]))))
 
         # save images
