@@ -2,6 +2,7 @@ import json
 import shutil
 import os
 import argparse
+import random
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -24,6 +25,8 @@ TN_PATH = SAVE_DIR_NAME + 'tn/'
 FN_PATH = SAVE_DIR_NAME + 'fn/'
 
 log_name = 'inference.txt'
+
+NUM_OF_COPY = 100
 
 if args.save_path:
     savePath = args.save_path
@@ -51,7 +54,11 @@ def read_log(_path):
 
 def copy_images(log_dict):
     for resultPath, result_dict in log_dict.items():
-        for img_name, src_path in result_dict.items():
+        # for img_name, src_path in result_dict.items():
+        #     shutil.copyfile(src_path + img_name, savePath + SAVE_DIR_NAME + resultPath + img_name)
+
+        for img_name in random.sample(result_dict.keys(), NUM_OF_COPY):
+            src_path = result_dict[img_name]
             shutil.copyfile(src_path + img_name, savePath + SAVE_DIR_NAME + resultPath + img_name)
 
 
