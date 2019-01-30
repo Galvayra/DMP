@@ -114,7 +114,7 @@ class ImageConverter:
                 img = img.convert('RGB')
 
             if IMAGE_SIZE:
-                img = img.resize((IMAGE_SIZE, IMAGE_SIZE))
+                img = img.resize((IMAGE_SIZE, IMAGE_SIZE), resample=Image.BILINEAR)
             img.save(save_path + file_name)
 
     def save_log(self):
