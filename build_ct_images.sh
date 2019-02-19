@@ -1,4 +1,4 @@
 #/bin/bash
 
-python build_images.py
-python copy_images.py
+python build_ct_images.py
+python copy_ct_images.py
