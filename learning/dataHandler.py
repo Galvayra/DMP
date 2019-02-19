@@ -20,6 +20,7 @@ elif current_script == "convert_images.py":
 
 alivePath = 'alive/'
 deathPath = 'death/'
+EXTENSION_OF_IMAGE = '.jpg'
 
 
 class DataHandler:
@@ -145,15 +146,32 @@ class DataHandler:
     def set_image_path(self, vector_set_list, y_set_list, key_list):
         print("Success to read image files -", IMAGE_PATH, '\n\n')
 
+        ### transform으로 인한 새로운 벡터들을 만들어야 함 (학습용도로)
+        ###
+
         for key, vector_set, y_list in zip(key_list, vector_set_list, y_set_list):
             for i, d in enumerate(zip(vector_set, y_list)):
                 x_data, y_label = d[0], d[1]
-                img_name = key + "_" + str(i + 1) + '.jpg'
 
-                if y_label == [1]:
-                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
-                else:
-                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
+                img_name = key + "_" + str(i + 1)
+                img_name_list = [
+                    img_name + EXTENSION_OF_IMAGE,
+                    img_name + '_FLIP_LR' + EXTENSION_OF_IMAGE,
+                    img_name + '_FLIP_TB' + EXTENSION_OF_IMAGE,
+                    img_name + '_FLIP_LR_TB' + EXTENSION_OF_IMAGE,
+                    img_name + '_ROTATE' + EXTENSION_OF_IMAGE,
+                    img_name + '_ROTATE_FLIP_LR' + EXTENSION_OF_IMAGE,
+                    img_name + '_ROTATE_FLIP_TB' + EXTENSION_OF_IMAGE,
+                    img_name + '_ROTATE_FLIP_LR_TB' + EXTENSION_OF_IMAGE
+                ]
+
+                for img_name in img_name_list:
+                    if y_label == [1]:
+                        vector_set[i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
+                    else:
+                        vector_set[i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
+
+        exit(-1)
 
     @staticmethod
     def __set_image_from_path(path):
