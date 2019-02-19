@@ -7,6 +7,8 @@ import os
 import shutil
 import json
 
+EXTENSION_OF_IMAGE = '.jpg'
+
 
 class ImageConverter:
     def __init__(self):
@@ -89,18 +91,34 @@ class ImageConverter:
             print("Image resize -", IMAGE_SIZE, "\n\n")
 
     def __save_img(self, x_data, y_data, key):
+        def __save(_img, _name):
+            _img.save(save_path + _name + EXTENSION_OF_IMAGE)
+
+            if DO_TRANSFORM:
+                _img.transpose(Image.FLIP_LEFT_RIGHT).save(
+                    save_path + _name + '_FLIP_LR' + EXTENSION_OF_IMAGE
+                )
+
+                _img.transpose(Image.FLIP_TOP_BOTTOM).save(
+                    save_path + _name + '_FLIP_TB' + EXTENSION_OF_IMAGE
+                )
+
+                _img.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM).save(
+                    save_path + _name + '_FLIP_LR_TB' + EXTENSION_OF_IMAGE
+                )
+
         size = int(math.sqrt(len(x_data[0])))
 
         for i, data in enumerate(zip(x_data, y_data)):
             x, y = data[0], data[1]
-            file_name = key + '_' + str(i + 1) + '.jpg'
+            file_name = key + '_' + str(i + 1)
 
             if y == [1]:
-                self.vector_dict[key]["death"].append(file_name)
+                self.vector_dict[key]["death"].append(file_name + EXTENSION_OF_IMAGE)
                 self.vector_dict['count_death_' + key] += 1
                 save_path = self.save_path + DEATH_DIR
             else:
-                self.vector_dict[key]["alive"].append(file_name)
+                self.vector_dict[key]["alive"].append(file_name + EXTENSION_OF_IMAGE)
                 self.vector_dict['count_alive_' + key] += 1
                 save_path = self.save_path + ALIVE_DIR
 
@@ -115,7 +133,11 @@ class ImageConverter:
 
             if IMAGE_SIZE:
                 img = img.resize((IMAGE_SIZE, IMAGE_SIZE), resample=Image.BILINEAR)
-            img.save(save_path + file_name)
+
+            __save(img, file_name)
+
+            if DO_TRANSFORM:
+                __save(img.rotate(90), file_name + '_ROTATE')
 
     def save_log(self):
         with open(self.log_path, 'w') as outfile:
