@@ -10,6 +10,7 @@ dataset/images/csv_data/
 dataset/images/log/
 dataset/images/cs/
 dataset/images/save/
+learning/model/
 modeling/vectors/
 modeling/save/
 modeling/embedding/
