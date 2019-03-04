@@ -13,4 +13,4 @@ from DMP.dataset.images.imageConverter import ImageConverter
 if __name__ == '__main__':
     imageConverter = ImageConverter()
     imageConverter.convert()
-    # imageConverter.save_log()
+    imageConverter.save_log()

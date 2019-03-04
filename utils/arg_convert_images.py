@@ -5,6 +5,10 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
 def get_arguments():
+    parser.add_argument("-version", "--version", help="set a convert version to save image files"
+                                                      "\nversion 1 or 2 (default is '2')"
+                                                      "\nUseAge : python convert_images.py -version 1\n\n",
+                        default=2, type=int)
     parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python convert_images.py -vector 'V'\n\n")
@@ -17,7 +21,7 @@ def get_arguments():
                                                     "\n(default is 'None')"
                                                     "\nUseAge : python convert_images.py -resize 'X'\n\n")
     parser.add_argument("-transform", "--transform", help="build a image using transform like flip, rotate"
-                                                          "\n(default is '1')"
+                                                          "\n(default is '0')"
                                                           "\nUseAge : python convert_images.py -transform 1\n\n")
     _args = parser.parse_args()
 
@@ -41,9 +45,10 @@ READ_VECTOR = DUMP_PATH + DUMP_FILE
 SAVE_VECTOR = DUMP_FILE + "_new"
 
 DO_SHOW = True
-DO_TRANSFORM = True
+DO_TRANSFORM = False
 
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
+CONVERT_VERSION = args.version
 
 
 if args.vector:
