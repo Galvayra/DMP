@@ -11,7 +11,7 @@ if current_script == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
-elif current_script == "extract_feature.py":
+elif current_script == "extract_feature.py" or current_script == "print_feature.py":
     from DMP.utils.arg_extract_feature import *
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
@@ -219,6 +219,10 @@ class DataHandler:
 
         for new_key, key in enumerate(sorted(feature_importance_index)):
             self.vector_matrix['feature'][str(new_key)] = self.feature[str(key)]
+
+    def print_feature(self):
+        for k, v in self.feature.items():
+            print(k, v)
 
     def __set_vector_matrix(self, feature_importance_index, target, _key, _type=False):
         if _type:
