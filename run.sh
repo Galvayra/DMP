@@ -4,7 +4,7 @@ epoch=2000
 learn=0.00001
 hidden=2
 show=1
-delete=0
+delete=1
 log=""
 model=ffnn
 vector=""
@@ -20,7 +20,7 @@ image_dir=""
 echo
 echo "################# Training !! #################"
 echo
-./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --result "$log" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir"
+./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir"
 
 echo
 echo "################# Test !! #################"
