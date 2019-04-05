@@ -14,5 +14,5 @@ from DMP.learning.dataHandler import DataHandler
 
 if __name__ == '__main__':
     dataHandler = DataHandler()
-    dataHandler.extract_feature()
-    dataHandler.dump()
+    dataHandler.show_importance_feature()
+    # dataHandler.dump()
