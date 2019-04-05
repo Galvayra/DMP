@@ -6,6 +6,7 @@ import math
 
 DIMENSION_W2V = 300
 SCALAR_DEFAULT_WEIGHT = 0.1
+EXTENDED_WORD_VECTOR = True
 
 
 # initial information & Past history 만을 이용하여 학습
@@ -81,7 +82,7 @@ class MyOneHotEncoder(W2vReader):
                         else:
                             one_hot_dict[token] += 1
 
-            # print(header.ljust(30), len(one_hot_dict))
+            # print(column.ljust(30), len(one_hot_dict))
             # print("-----------------------------------------------------------")
             #
             # for token in sorted(one_hot_dict.items(), key=lambda x: x[1], reverse=True):
@@ -142,11 +143,18 @@ class MyOneHotEncoder(W2vReader):
             # type of column is "symptom" or "mal_type" or "diagnosis"
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
                 if self.w2v_dict:
-                    self.vector_dict[column] = __set_embedded_dict(self.x_data_dict[column])
+                    self.vector_w2v_dict[column] = __set_embedded_dict(self.x_data_dict[column])
 
                     for _ in range(self.dimension):
                         feature_dict[dimensionality] = column_info
                         dimensionality += 1
+
+                    if EXTENDED_WORD_VECTOR:
+                        self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
+
+                        for _ in range(len(self.vector_dict[column])):
+                            feature_dict[dimensionality] = column_info
+                            dimensionality += 1
                 else:
                     self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
 
@@ -219,7 +227,7 @@ class MyOneHotEncoder(W2vReader):
 
         def __set_embedded_vector():
             for index, value in enumerate(target_data_dict[column]):
-                __set_vector(index, self.get_w2v_vector(value.split('_'), self.vector_dict[column]))
+                __set_vector(index, self.get_w2v_vector(value.split('_'), column))
 
         def __set_one_hot_vector():
             for index, value in enumerate(target_data_dict[column]):
@@ -257,9 +265,12 @@ class MyOneHotEncoder(W2vReader):
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
                 if self.w2v_dict:
                     __set_embedded_vector()
+
+                    if EXTENDED_WORD_VECTOR:
+                        __set_one_hot_vector()
                 else:
                     __set_one_hot_vector()
-            else:
+            elif type_of_column == "word":
                 __set_one_hot_vector()
 
         return vector_matrix

@@ -7,7 +7,12 @@ class W2vReader:
         self.w2v_dict = dict()
         self.dimension = 300
         self.__load_model()
+        self.__vector_w2v_dict = dict()
         self.__pos_tag = "_noun"
+
+    @property
+    def vector_w2v_dict(self):
+        return self.__vector_w2v_dict
 
     @property
     def pos_tag(self):
@@ -38,13 +43,13 @@ class W2vReader:
         else:
             return False
 
-    def get_w2v_vector(self, word, vector_dict):
+    def get_w2v_vector(self, word, column):
         w2v_vector = [float(0) for _ in range(self.dimension)]
         cnt = 0
 
         # sum into w2v vector
         for w in word:
-            if w in vector_dict:
+            if w in self.vector_w2v_dict[column]:
                 for i, v in enumerate(self.w2v_dict[w + self.pos_tag]):
                     w2v_vector[i] += v
                 cnt += 1
