@@ -199,14 +199,21 @@ class DataHandler:
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
 
     @staticmethod
-    def get_importance_features(x_train, y_train, feature):
-        rf = RandomForestClassifier(n_estimators=400, n_jobs=4)
+    def get_importance_features(x_train, y_train, feature, reverse=False):
+        rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features=None, random_state=0)
         model = rf.fit(x_train, y_train)
 
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
-        return [(f[0], feature[f[0]], f[1]) for f in values if f[1] > 0]
+        if reverse:
+            return [(f[0], feature[f[0]], f[1]) for f in values if f[1] <= 0]
+        else:
+            return [(f[0], feature[f[0]], f[1]) for f in values if f[1] > 0]
 
+    """
+    Fail function!
+    Don't use this function    
+    """
     def extract_feature(self):
         feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature)
         feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
@@ -219,6 +226,18 @@ class DataHandler:
 
         for new_key, key in enumerate(sorted(feature_importance_index)):
             self.vector_matrix['feature'][str(new_key)] = self.feature[str(key)]
+
+    def show_importance_feature(self):
+
+        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature, reverse=True)
+
+        print("\n\nThere is not important feature")
+        print("# of count -", len(feature_importance), "\n\n\n")
+
+        for f in feature_importance:
+            print(f[0].ljust(4), f[1])
+            # print(f[2])
+            # print()
 
     def print_feature(self):
         for k, v in self.feature.items():

@@ -56,6 +56,12 @@ class MyScore(MyPlot):
             recall = recall_score(y, y_predict)
             f1 = f1_score(y, y_predict)
 
+            # # show how match y and prediction of y
+            # print("\n y  y_predict")
+            # for i, j in zip(y, y_predict):
+            #     print(i, j)
+            # print("\n\n")
+
             if not accuracy:
                 accuracy = accuracy_score(y, y_predict)
 
