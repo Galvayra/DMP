@@ -14,9 +14,10 @@ RR_COLUMN = "K"
 TEMP_COLUMN = "L"
 Y_COLUMN = "DA"
 
-USE_SELECTED_FEATURES = False
+USE_FINAL_DIAGNOSIS = False
+USE_ORIGINAL_FEATURES = False
 
-if not USE_SELECTED_FEATURES:
+if USE_ORIGINAL_FEATURES:
     # All of features
     default_info_columns = {
         "scalar": ['E'],
@@ -63,13 +64,20 @@ if not USE_SELECTED_FEATURES:
         "class": ['CP', 'CQ']
     }
 
-    final_diagnosis_columns = {
-        "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
-        # vector_origin is not using diagnosis (this is a paper option)
-        # vector is using diagnosis
-        # "diagnosis": ['CZ']
-    }
+    # vector_origin is not using diagnosis (this is a paper option)
+    # vector is using diagnosis
+    if USE_FINAL_DIAGNOSIS:
+        final_diagnosis_columns = {
+            "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY'],
+            "diagnosis": ['CZ']
+        }
+    else:
+        final_diagnosis_columns = {
+            "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
+        }
+
 else:
+    # # 2018 12 06 baseline feature selection
     # # feature selection using vector_one_hot
     # default_info_columns = {
     #     "class": ['F'],
@@ -114,14 +122,20 @@ else:
     #     "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
     # }
 
-    # feature selection using vector_origin_one_hot
+    # 2019 04 11 feature selection using vector_for_paper_fs
+    # numeric encoding == only use 1 dimension (not 2 dimension for smoothing)
+    # word encoding == only use one hot
+    # max features == k
+    # # of tree == 400
     default_info_columns = {
+        "scalar": ['E'],
         "class": ['F'],
         "id": [ID_COLUMN]
     }
 
     initial_info_columns = {
-        "class": ['R', 'S', 'T', 'U']
+        "scalar": ["H", 'I', 'J', RR_COLUMN, TEMP_COLUMN, 'M', 'N', 'O', 'P'],
+        "class": ['R', 'S', 'T']
     }
 
     past_history_columns = {
@@ -129,11 +143,11 @@ else:
     }
 
     blood_count_columns = {
-        "scalar": ['AG', 'AH', 'AI', 'AK', 'AL', 'AM']
+        "scalar": ['AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO']
     }
 
     blood_chemistry_columns = {
-        "scalar": ['AP', 'AQ', 'AR', 'AS', 'AV', 'AW', 'AY',
+        "scalar": ['AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
                    'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK',
                    'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR', 'BS', 'BT']
     }
@@ -143,7 +157,7 @@ else:
     }
 
     culture_columns = {
-        "class": ['CE', 'CF', 'CI', 'CK', 'CL']
+        "class": ['CE', 'CF', 'CH', 'CI', 'CK', 'CL']
     }
 
     influenza_columns = {

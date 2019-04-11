@@ -5,6 +5,7 @@ from DMP.modeling.w2vReader import W2vReader
 import math
 
 DIMENSION_W2V = 300
+SCALAR_VECTOR = [0.0, 0.0]
 SCALAR_DEFAULT_WEIGHT = 0.1
 EXTENDED_WORD_VECTOR = True
 
@@ -130,7 +131,7 @@ class MyOneHotEncoder(W2vReader):
             elif type_of_column == "scalar":
                 self.vector_dict[column] = __set_scalar_dict(self.x_data_dict[column])
 
-                for _ in range(2):
+                for _ in range(len(SCALAR_VECTOR)):
                     feature_dict[dimensionality] = column_info
                     dimensionality += 1
             # type of column is "class"
@@ -212,12 +213,14 @@ class MyOneHotEncoder(W2vReader):
                 #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
                 else:
                     for index, value in enumerate(target_data_dict[column]):
-
-                        values = [0.0, 0.0]
+                        values = SCALAR_VECTOR[:]
 
                         if not math.isnan(value):
-                            values[0] = SCALAR_DEFAULT_WEIGHT
-                            values[1] = (value - minimum) / differ
+                            if len(values) == 2:
+                                values[0] = SCALAR_DEFAULT_WEIGHT
+                                values[1] = (value - minimum) / differ
+                            else:
+                                values[0] = (value - minimum) / differ
 
                         __set_vector(index, values)
 
