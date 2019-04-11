@@ -21,3 +21,4 @@ make/
 logs/
 analysis/
 experiments/
+*.txt
