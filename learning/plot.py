@@ -6,6 +6,8 @@ if sys.argv[0].split('/')[-1] == "training.py":
 elif sys.argv[0].split('/')[-1] == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
 
+TOP_N = 10
+
 
 class MyPlot:
     def __init__(self):
@@ -46,3 +48,19 @@ class MyPlot:
         if DO_SHOW_PLOT:
             self.my_plot.legend(loc="lower right")
             plt.show()
+
+    @staticmethod
+    def show_importance(feature_importance):
+        top_features = feature_importance[:TOP_N]
+
+        x = ['\n'.join(f[1][1].split()) for f in top_features]
+        y = [f[2] for f in top_features]
+
+        ax = plt.subplot(111, xlabel='features', ylabel='importance', title='Top 10 high importance features')
+
+        # [ax.title, ax.xaxis.label, ax.yaxis.label] +
+        for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(7)
+
+        plt.bar(x, y)
+        plt.show()

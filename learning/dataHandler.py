@@ -13,8 +13,10 @@ elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
 elif current_script == "extract_feature.py" or current_script == "print_feature.py":
     from DMP.utils.arg_extract_feature import *
+    from DMP.learning.plot import MyPlot
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
+
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 
@@ -228,16 +230,17 @@ class DataHandler:
             self.vector_matrix['feature'][str(new_key)] = self.feature[str(key)]
 
     def show_importance_feature(self):
-
-        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature, reverse=True)
+        # feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature, reverse=True)
+        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature)
 
         print("\n\nThere is not important feature")
         print("# of count -", len(feature_importance), "\n\n\n")
 
-        for f in feature_importance:
-            print(f[0].ljust(4), f[1])
-            # print(f[2])
-            # print()
+        plot = MyPlot()
+        plot.show_importance(feature_importance)
+
+        # for f in feature_importance:
+        #     print(f[0].ljust(4), f[1], f[2])
 
     def print_feature(self):
         for k, v in self.feature.items():
