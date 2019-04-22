@@ -16,7 +16,7 @@ elif current_script == "extract_feature.py" or current_script == "print_feature.
     from DMP.learning.plot import MyPlot
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
-
+    from sklearn.feature_selection import SelectFromModel
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 
@@ -200,11 +200,12 @@ class DataHandler:
 
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
 
-    @staticmethod
-    def get_importance_features(x_train, y_train, feature, reverse=False):
+    def __random_forest(self):
         rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features=None, random_state=0)
-        model = rf.fit(x_train, y_train)
+        return rf.fit(self.x_train, self.y_train)
 
+    def get_importance_features(self, feature, reverse=False):
+        model = self.__random_forest()
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
         if reverse:
@@ -217,7 +218,7 @@ class DataHandler:
     Don't use this function    
     """
     def extract_feature(self):
-        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature)
+        feature_importance = self.get_importance_features(self.feature)
         feature_importance_index = sorted([int(f[0]) for f in feature_importance], reverse=True)
         self.__set_vector_matrix(feature_importance_index, self.x_train, 'x_train', TYPE_OF_FEATURE)
         self.__set_vector_matrix(feature_importance_index, self.x_valid, 'x_valid', TYPE_OF_FEATURE)
@@ -231,7 +232,7 @@ class DataHandler:
 
     def show_importance_feature(self):
         # feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature, reverse=True)
-        feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature)
+        feature_importance = self.get_importance_features(self.feature)
 
         print("\n\nThere is not important feature")
         print("# of count -", len(feature_importance), "\n\n\n")
