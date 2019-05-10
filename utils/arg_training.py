@@ -75,7 +75,7 @@ DO_SHOW = False
 
 # SAVE options #
 LOG_DIR_NAME = str()
-DO_DELETE = False
+DO_DELETE = True
 
 if args.model:
     TYPE_OF_MODEL = args.model
