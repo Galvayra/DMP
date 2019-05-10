@@ -1,6 +1,6 @@
 #/bin/bash
 
-epoch=2000
+epoch=4000
 learn=0.00001
 hidden=2
 show=1
