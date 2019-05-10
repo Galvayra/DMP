@@ -19,27 +19,33 @@ USE_ORIGINAL_FEATURES = False
 
 if USE_ORIGINAL_FEATURES:
     # All of features
+
+    # 2
     default_info_columns = {
         "scalar": ['E'],
         "class": ['F'],
         "id": [ID_COLUMN]
     }
 
+    # 15
     initial_info_columns = {
         "scalar": ["H", 'I', 'J', RR_COLUMN, TEMP_COLUMN, 'M', 'N', 'O', 'P'],
         "class": ['Q', 'R', 'S', 'T', 'U'],
         "symptom": ['G']
     }
 
+    # 10
     past_history_columns = {
         "class": ['V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD'],
         "mal_type": ['AE']
     }
 
+    # 10
     blood_count_columns = {
         "scalar": ['AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO']
     }
 
+    # 34
     blood_chemistry_columns = {
         "scalar": ['AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
                    'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK',
@@ -47,19 +53,23 @@ if USE_ORIGINAL_FEATURES:
         "class": ['BU', 'BV', 'BW']
     }
 
+    # 7
     abga_columns = {
         "scalar": ['BX', 'BY', 'BZ', 'CA', 'CB', 'CC', 'CD']
     }
 
+    # 9
     culture_columns = {
         "class": ['CE', 'CF', 'CH', 'CI', 'CK', 'CL'],
         "word": ['CG', 'CJ', 'CM']
     }
 
+    # 2
     influenza_columns = {
         "class": ['CN', 'CO']
     }
 
+    # 2
     ct_columns = {
         "class": ['CP', 'CQ']
     }
@@ -72,6 +82,7 @@ if USE_ORIGINAL_FEATURES:
             "diagnosis": ['CZ']
         }
     else:
+        # 8
         final_diagnosis_columns = {
             "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
         }
