@@ -16,7 +16,6 @@ elif current_script == "extract_feature.py" or current_script == "print_feature.
     from DMP.learning.plot import MyPlot
     from collections import OrderedDict
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.feature_selection import SelectFromModel
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 

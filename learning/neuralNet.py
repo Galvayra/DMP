@@ -11,6 +11,8 @@ if sys.argv[0].split('/')[-1] == "training.py":
 else:
     from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, LOG_DIR_NAME
 
+BATCH_SIZE = 512
+
 
 class MyNeuralNetwork(MyScore):
     def __init__(self):
@@ -271,16 +273,57 @@ class MyNeuralNetwork(MyScore):
             sess.run(tf.local_variables_initializer())
             print("\n\n")
 
+            # for step in range(1, EPOCH + 1):
+            #     _, summary, tra_loss, tra_acc = sess.run(
+            #         [train_op, merged_summary, cost, _accuracy],
+            #         feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+            #     )
+            #
+            #     # training
+            #     if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
+            #         # write train curve on tensor board
+            #         train_writer.add_summary(summary, global_step=step)
+            #
+            #         val_summary, val_loss, val_acc = sess.run(
+            #             [merged_summary, cost, _accuracy],
+            #             feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
+            #         )
+            #
+            #         # write validation curve on tensor board
+            #         val_writer.add_summary(val_summary, global_step=step)
+            #
+            #         print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc*100.0))
+            #         print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
+            #
+            #         # save tensor every NUM_OF_SAVE_EPOCH
+            #         saver.save(sess, self.name_of_tensor + "model", global_step=step)
+            #
+            #         if self.__is_stopped_training(val_loss):
+            #             break
+
+            batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
+
             for step in range(1, EPOCH + 1):
-                _, summary, tra_loss, tra_acc = sess.run(
-                    [train_op, merged_summary, cost, _accuracy],
-                    feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                )
+                # mini-batch
+                for i in range(batch_iter):
+                    batch_x = x_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+                    batch_y = y_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+
+                    _, tra_loss = sess.run(
+                        [train_op, cost],
+                        feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
+                    )
 
                 # training
                 if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
                     # write train curve on tensor board
-                    train_writer.add_summary(summary, global_step=step)
+
+                    train_summary, tra_loss, tra_acc = sess.run(
+                        [merged_summary, cost, _accuracy],
+                        feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                    )
+
+                    train_writer.add_summary(train_summary, global_step=step)
 
                     val_summary, val_loss, val_acc = sess.run(
                         [merged_summary, cost, _accuracy],

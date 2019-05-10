@@ -43,7 +43,7 @@ INITIAL_IMAGE_SIZE = 50
 KEEP_PROB = 0.7
 
 # if valid loss increase X in a row
-NUM_OF_LOSS_OVER_FIT = 3
+NUM_OF_LOSS_OVER_FIT = 5
 
 # save every X epoch
-NUM_OF_SAVE_EPOCH = 50
+NUM_OF_SAVE_EPOCH = 100
