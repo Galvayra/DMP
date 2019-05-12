@@ -83,6 +83,7 @@ class MyScore(MyPlot):
             })
             self.tpr = tpr
             self.fpr = fpr
+            self.auc = (auc(fpr, tpr) / 100)
 
     def show_score(self, target):
         if DO_SHOW:

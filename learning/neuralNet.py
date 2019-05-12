@@ -420,13 +420,13 @@ class MyNeuralNetwork(MyScore):
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
         self.show_score(target=KEY_IMMORTALITY)
-        self.set_plot(target=KEY_IMMORTALITY)
+        # self.set_plot()
 
         # set score of mortality
         self.compute_score(y_predict, y_test, h)
         self.set_score(target=KEY_MORTALITY)
         self.show_score(target=KEY_MORTALITY)
-        self.set_plot(target=KEY_MORTALITY)
+        self.set_plot()
 
         # set total score of immortality and mortality
         self.set_total_score()

@@ -13,6 +13,7 @@ class MyPlot:
     def __init__(self):
         self.__my_plot = None
         self.tpr, self.fpr = self.__init_plot()
+        self.auc = float()
 
     @property
     def my_plot(self):
@@ -37,11 +38,9 @@ class MyPlot:
             elif TYPE_OF_MODEL == "cnn":
                 self.my_plot.set_title("Convolution Neural Network")
 
-    def set_plot(self, target):
+    def set_plot(self):
         if DO_SHOW_PLOT:
-            # self.my_plot.plot(self.fpr, self.tpr, alpha=0.3,
-            #                   label='%s AUC = %0.1f' % (target, self.score_dict[target][KEY_AUC]))
-            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC of %s' % target)
+            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC = %0.1f' % self.auc)
             self.tpr, self.fpr = self.__init_plot()
 
     def show_plot(self):
