@@ -14,12 +14,13 @@ elif current_script == "predict.py":
 
 
 class DataClassifier:
-    def __init__(self, data_handler):
-        self.dataHandler = data_handler
-        self.dataHandler.set_x_y_set(name_of_set="train")
-        self.dataHandler.set_x_y_set(name_of_set="valid")
-        self.dataHandler.set_x_y_set(name_of_set="test")
-        self.dataHandler.show_info()
+    def __init__(self, data_handler=None):
+        if data_handler:
+            self.dataHandler = data_handler
+            self.dataHandler.set_x_y_set(name_of_set="train")
+            self.dataHandler.set_x_y_set(name_of_set="valid")
+            self.dataHandler.set_x_y_set(name_of_set="test")
+            self.dataHandler.show_info()
 
     def training(self):
         start_time = time.time()
@@ -73,6 +74,13 @@ class DataClassifier:
             nn.predict(h, y_predict, y_test)
             nn.save(self.dataHandler)
             nn.show_plot()
+
+    def show_multi_plot(self):
+        # initialize Neural Network
+        nn = MyNeuralNetwork()
+        nn.init_plot()
+        nn.set_multi_plot()
+        nn.show_plot()
 
 
 class OlderClassifier(MyScore):

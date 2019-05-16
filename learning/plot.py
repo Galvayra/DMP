@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import sys
 
-if sys.argv[0].split('/')[-1] == "training.py":
+current_script = sys.argv[0].split('/')[-1]
+
+if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
-elif sys.argv[0].split('/')[-1] == "predict.py":
+elif current_script == "predict.py" or current_script == "show_multi_plot.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
 
 TOP_N = 10
@@ -38,9 +40,18 @@ class MyPlot:
             elif TYPE_OF_MODEL == "cnn":
                 self.my_plot.set_title("Convolution Neural Network")
 
-    def set_plot(self):
+    def set_plot(self, fpr=None, tpr=None, title=None):
         if DO_SHOW_PLOT:
-            self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC = %0.1f' % self.auc)
+            if fpr:
+                self.fpr = fpr
+            if tpr:
+                self.tpr = tpr
+            if not title:
+                title = "AUC"
+            # self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC = %0.1f' % self.auc)
+            self.my_plot.plot(self.fpr, self.tpr, alpha=0.5, label='%s' % title)
+            # print(self.fpr)
+            # print(self.tpr)
             self.tpr, self.fpr = self.__init_plot()
 
     def show_plot(self):
