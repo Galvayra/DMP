@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-from .variables import KEY_NAME_OF_MERGE_VECTOR
+from .variables import *
 from DMP.modeling.w2vReader import W2vReader
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import math
-
-DIMENSION_W2V = 300
-SCALAR_VECTOR = [0.0, 0.0]
-SCALAR_DEFAULT_WEIGHT = 0.1
-EXTENDED_WORD_VECTOR = True
 
 
 # initial information & Past history 만을 이용하여 학습
 class MyOneHotEncoder(W2vReader):
-    def __init__(self, data_handler):
+    def __init__(self, data_handler, ver):
         super().__init__()
         self.__vector = OrderedDict()
         self.__vector_dict = dict()
@@ -150,6 +146,7 @@ class MyOneHotEncoder(W2vReader):
                         feature_dict[dimensionality] = column_info
                         dimensionality += 1
 
+                    # Extended word vector = < w2v + one_hot >
                     if EXTENDED_WORD_VECTOR:
                         self.vector_dict[column] = __set_one_hot_dict(self.x_data_dict[column])
 
@@ -191,38 +188,94 @@ class MyOneHotEncoder(W2vReader):
         return vector_matrix
 
     def fit(self, data_handler):
-        def __set_scalar_vector():
+        def __set_scalar_vector(*scale):
             # If dict of scalar vector, make vector using dict
             # But, If not have it, do not make vector (we consider that the column will be noise)
             if self.vector_dict[column]:
-                differ = self.vector_dict[column]["dif"]
-                minimum = self.vector_dict[column]["min"]
 
-                # The differ is 0 == The scalar vector size is 1
-                # ex) vector size == 1
-                #     if value in vector_dict ? [1.0] : [0.0]
-                if not differ:
-                    for index, value in enumerate(target_data_dict[column]):
-                        values = [0.0]
+                # ##### using function scaling version
+                data_list = [[x] for x in target_data_dict[column]]
 
-                        if not math.isnan(value):
-                            values[0] = 1.0
+                # scaling
+                for i in range(len(scale)):
+                    scale[i].fit(data_list)
+                    data_list = scale[i].transform(data_list)
 
-                        __set_vector(index, values)
-                # ex) vector size > 1
-                #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
-                else:
-                    for index, value in enumerate(target_data_dict[column]):
-                        values = SCALAR_VECTOR[:]
+                # processing 'nan' value
+                values = list()
+                for x in data_list:
+                    if math.isnan(x):
+                        values.append([0.0])
+                    else:
+                        values.append(x)
 
-                        if not math.isnan(value):
-                            if len(values) == 2:
-                                values[0] = SCALAR_DEFAULT_WEIGHT
-                                values[1] = (value - minimum) / differ
-                            else:
-                                values[0] = (value - minimum) / differ
+                # copy values into the vector matrix
+                for index, value in enumerate(values):
+                    __set_vector(index, value)
 
-                        __set_vector(index, values)
+                # # ##### using function scaling version if exist feature has vector size == 1
+                # differ = self.vector_dict[column]["dif"]
+                #
+                # # The differ is 0 == The scalar vector size is 1
+                # # ex) vector size == 1
+                # #     if value in vector_dict ? [1.0] : [0.0]
+                # if not differ:
+                #     for index, value in enumerate(target_data_dict[column]):
+                #
+                #         if math.isnan(value):
+                #             values = [0.0]
+                #         else:
+                #             values = [1.0]
+                #
+                #         __set_vector(index, values)
+                # # ex) vector size > 1
+                # #     if value in vector_dict --> min max scaling
+                # else:
+                #     data_list = [[x] for x in target_data_dict[column]]
+                #
+                #     for i in range(len(scale)):
+                #         scale[i].fit(data_list)
+                #         data_list = scale[i].transform(data_list)
+                #
+                #     values = list()
+                #     for x in data_list:
+                #         if math.isnan(x):
+                #             values.append([0.0])
+                #         else:
+                #             values.append(x)
+                #
+                #     for index, value in enumerate(values):
+                #         __set_vector(index, value)
+
+                # # ##### original scaling version
+                # differ = self.vector_dict[column]["dif"]
+                # minimum = self.vector_dict[column]["min"]
+                #
+                # # The differ is 0 == The scalar vector size is 1
+                # # ex) vector size == 1
+                # #     if value in vector_dict ? [1.0] : [0.0]
+                # if not differ:
+                #     for index, value in enumerate(target_data_dict[column]):
+                #         values = [0.0]
+                #
+                #         if not math.isnan(value):
+                #             values[0] = 1.0
+                #
+                #         __set_vector(index, values)
+                # # ex) vector size > 1
+                # #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
+                # else:
+                #     for index, value in enumerate(target_data_dict[column]):
+                #         values = SCALAR_VECTOR[:]
+                #
+                #         if not math.isnan(value):
+                #             if len(values) == 2:
+                #                 values[0] = SCALAR_DEFAULT_WEIGHT
+                #                 values[1] = (value - minimum) / differ
+                #             else:
+                #                 values[0] = (value - minimum) / differ
+                #
+                #         __set_vector(index, values)
 
         def __set_class_vector():
             for index, value in enumerate(target_data_dict[column]):
@@ -262,7 +315,11 @@ class MyOneHotEncoder(W2vReader):
             if type_of_column == "id":
                 pass
             elif type_of_column == "scalar":
-                __set_scalar_vector()
+                # using standard scaling
+                if USE_STANDARD_SCALE:
+                    __set_scalar_vector(StandardScaler())
+                else:
+                    __set_scalar_vector(MinMaxScaler())
             elif type_of_column == "class":
                 __set_class_vector()
             elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":

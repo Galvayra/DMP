@@ -14,6 +14,10 @@ def get_arguments():
                                                     "\nUseAge : python encoding.py -target 'symptom'\n\n")
     parser.add_argument("-w2v", "--w2v", help="using word2vec or not (default is 1)"
                                               "\nUseAge : python encoding.py -w2v 1 (True)\n\n")
+    parser.add_argument("-ver", "--version", help="set a version for vectorization (Default is 1)"
+                                                  "\n1 - make vector for Training"
+                                                  "\n2 - make vector for Feature Selection"
+                                                  "\nUseAge : python encoding.py -ver 1\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -30,6 +34,7 @@ COLUMN_TARGET = str()
 FILE_VECTOR = "model"
 
 USE_W2V = True
+VERSION = 1
 
 if args.input:
     SAVE_FILE_TOTAL = args.input
@@ -77,3 +82,14 @@ if args.w2v:
             USE_W2V = True
         else:
             USE_W2V = False
+
+if args.version:
+    try:
+        VERSION = int(args.version)
+    except ValueError:
+        print("\nInput Error type of version option!\n")
+        exit(-1)
+    else:
+        if VERSION != 1 and VERSION != 2:
+            print("\nInput Error Boundary of version option!\n")
+            exit(-1)

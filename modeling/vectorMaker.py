@@ -47,9 +47,9 @@ class VectorMaker:
     def vector_matrix(self):
         return self.__vector_matrix
 
-    def encoding(self):
+    def encoding(self, ver):
         # init encoder and fit it
-        encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL])
+        encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL], ver=ver)
         feature_dict = encoder.encoding()
         self.__set_vector_matrix_feature(feature_dict)
 

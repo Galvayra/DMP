@@ -11,7 +11,7 @@ except ImportError:
 from DMP.modeling.vectorMaker import VectorMaker
 from DMP.modeling.variables import KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST
 from DMP.dataset.dataHandler import DataHandler
-from DMP.utils.arg_encoding import SAVE_FILE_TOTAL, SAVE_FILE_TRAIN, SAVE_FILE_VALID, SAVE_FILE_TEST, COLUMN_TARGET
+from DMP.utils.arg_encoding import *
 
 
 if __name__ == '__main__':
@@ -31,5 +31,5 @@ if __name__ == '__main__':
 
     # encoding data using dataHandler
     vectorMaker = VectorMaker(**dataHandler_dict)
-    vectorMaker.encoding()
+    vectorMaker.encoding(ver=VERSION)
     vectorMaker.dump()
