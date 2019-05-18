@@ -14,7 +14,7 @@ import json
 ###
 class VectorMaker:
     # must using DataParser or DataHandler
-    def __init__(self, **data_handler):
+    def __init__(self, data_handler, ver):
         # dataHandler_dict = { KEY : handler }
         self.dataHandler_dict = {key: handler for key, handler in data_handler.items()}
         self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
@@ -35,6 +35,13 @@ class VectorMaker:
             "y_test": list()
         }
 
+        self.__version = ver
+
+        if self.version == 1:
+            print("========= Version is Making vector for training!! =========\n\n")
+        elif self.version == 2:
+            print("========= Version is Making vector for Feature Selection!! =========\n\n")
+
     @property
     def y_data(self):
         return self.__y_data
@@ -47,19 +54,23 @@ class VectorMaker:
     def vector_matrix(self):
         return self.__vector_matrix
 
-    def encoding(self, ver):
+    @property
+    def version(self):
+        return self.__version
+
+    def encoding(self):
         # init encoder and fit it
-        encoder = MyOneHotEncoder(self.dataHandler_dict[KEY_TOTAL], ver=ver)
-        feature_dict = encoder.encoding()
-        self.__set_vector_matrix_feature(feature_dict)
+        encoder = MyOneHotEncoder(ver=self.version)
+        encoder.fit(self.dataHandler_dict[KEY_TOTAL])
 
         # initialize dictionary of matrix after encoding
         matrix_dict = {
-            ("x_train", "y_train", KEY_TRAIN): encoder.fit(self.dataHandler_dict[KEY_TRAIN]),
-            ("x_valid", "y_valid", KEY_VALID): encoder.fit(self.dataHandler_dict[KEY_VALID]),
-            ("x_test", "y_test", KEY_TEST): encoder.fit(self.dataHandler_dict[KEY_TEST])
+            ("x_train", "y_train", KEY_TRAIN): encoder.transform2matrix(self.dataHandler_dict[KEY_TRAIN]),
+            ("x_valid", "y_valid", KEY_VALID): encoder.transform2matrix(self.dataHandler_dict[KEY_VALID]),
+            ("x_test", "y_test", KEY_TEST): encoder.transform2matrix(self.dataHandler_dict[KEY_TEST])
         }
 
+        self.__set_vector_matrix_feature(encoder.get_feature_dict())
         self.__set_vector_matrix(matrix_dict)
 
         del self.dataHandler_dict
