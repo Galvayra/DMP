@@ -11,8 +11,11 @@ class MyOneHotEncoder(W2vReader):
     def __init__(self, ver):
         super().__init__()
         self.__vector = OrderedDict()
+
+        # a dictionary for encoder when 'fit' function called
         self.__vector_dict = dict()
 
+        # a encoded vector matrix to transform
         self.__vector_matrix = OrderedDict()
 
         # init handler for making dictionary
@@ -21,7 +24,7 @@ class MyOneHotEncoder(W2vReader):
         self.__version = ver
 
         # { 0: ["column", "header"], .... n: ["column", "header"] }
-        # n == dimensionality
+        # a dictionary to show how to match feature to dimensionality
         self.__feature_dict = dict()
         self.__num_of_dim = int()
 
@@ -55,7 +58,7 @@ class MyOneHotEncoder(W2vReader):
 
     @num_of_dim.setter
     def num_of_dim(self, num_of_dim):
-        self.__num_of_dim += num_of_dim
+        self.__num_of_dim = num_of_dim
 
     @property
     def version(self):
@@ -144,7 +147,7 @@ class MyOneHotEncoder(W2vReader):
         return embedded_dict
 
     def __set_feature_dict(self, column_info, length):
-        for _ in range(length):
+        for i in range(length):
             self.feature_dict[self.num_of_dim] = column_info
             self.num_of_dim += 1
 
@@ -201,6 +204,8 @@ class MyOneHotEncoder(W2vReader):
                     self.__set_feature_dict(column_info, len(self.vector_dict[column]))
                 elif self.version == 2:
                     self.__set_feature_dict(column_info, 1)
+
+        exit(-1)
 
     def get_feature_dict(self):
         return self.feature_dict
