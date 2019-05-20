@@ -15,6 +15,7 @@ W2V_FILE = "model.txt"
 KEY_NAME_OF_MERGE_VECTOR = "merge"
 
 DIMENSION_W2V = 300
+# Do not use  "[0.0, 0.0]" !!
 # SCALAR_VECTOR = [0.0, 0.0]
 SCALAR_VECTOR = [0.0]
 SCALAR_DEFAULT_WEIGHT = 0.1

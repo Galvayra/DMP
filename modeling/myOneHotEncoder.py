@@ -4,6 +4,7 @@ from .variables import *
 from DMP.modeling.w2vReader import W2vReader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import math
+import numpy as np
 
 
 # initial information & Past history 만을 이용하여 학습
@@ -65,7 +66,8 @@ class MyOneHotEncoder(W2vReader):
         return self.__version
 
     # scalar dictionary 생성을 위해 앞 뒤 예외처리를 해야하는지 각 column 마다 확인해주어야 한다
-    def __set_scalar_dict(self, value_list):
+    @staticmethod
+    def __set_scalar_dict(value_list):
         scalar_dict = dict()
         scalar_list = list()
 
@@ -87,7 +89,8 @@ class MyOneHotEncoder(W2vReader):
         return scalar_dict
 
     # 셀의 공백은 type is not str 으로 찾을 수 있으며, 공백(nan)을 하나의 차원으로 볼지에 대한 선택을 우선 해야한다
-    def __set_class_dict(self, value_list):
+    @staticmethod
+    def __set_class_dict(value_list):
         class_dict = dict()
 
         for v in value_list:
@@ -103,15 +106,24 @@ class MyOneHotEncoder(W2vReader):
     def __set_one_hot_dict(self, value_list):
         one_hot_dict = dict()
 
-        for v in value_list:
-            # key exception is nan
-            if v != "nan":
-                v = v.split('_')
-                for token in v:
-                    if token not in one_hot_dict:
-                        one_hot_dict[token] = 1
+        if self.version == 1:
+            for v in value_list:
+                # key exception is nan
+                if v != "nan":
+                    v = v.split('_')
+                    for token in v:
+                        if token not in one_hot_dict:
+                            one_hot_dict[token] = 1
+                        else:
+                            one_hot_dict[token] += 1
+        # for feature selection
+        elif self.version == 2:
+            for v in value_list:
+                if v != "nan":
+                    if v not in one_hot_dict:
+                        one_hot_dict[v] = 1
                     else:
-                        one_hot_dict[token] += 1
+                        one_hot_dict[v] += 1
 
         # print(column.ljust(30), len(one_hot_dict))
         # print("-----------------------------------------------------------")
@@ -164,11 +176,10 @@ class MyOneHotEncoder(W2vReader):
                 continue
             # type of column is "scalar"
             elif type_of_column == "scalar":
-                # version 1
+                self.vector_dict[column] = self.__set_scalar_dict(self.x_data_dict[column])
+
                 if self.version == 1:
-                    self.vector_dict[column] = self.__set_scalar_dict(self.x_data_dict[column])
                     self.__set_feature_dict(column_info, len(SCALAR_VECTOR))
-                # version 2
                 elif self.version == 2:
                     self.__set_feature_dict(column_info, 1)
             # type of column is "class"
@@ -195,6 +206,7 @@ class MyOneHotEncoder(W2vReader):
                         self.vector_dict[column] = self.__set_one_hot_dict(self.x_data_dict[column])
                         self.__set_feature_dict(column_info, len(self.vector_dict[column]))
                 elif self.version == 2:
+                    self.vector_dict[column] = self.__set_one_hot_dict(self.x_data_dict[column])
                     self.__set_feature_dict(column_info, 1)
             # type of column is "word"
             elif type_of_column == "word":
@@ -205,36 +217,59 @@ class MyOneHotEncoder(W2vReader):
                 elif self.version == 2:
                     self.__set_feature_dict(column_info, 1)
 
-        exit(-1)
-
     def get_feature_dict(self):
         return self.feature_dict
+
+    @staticmethod
+    def __get_data_list(target_list):
+        data_list = list()
+
+        for x in target_list:
+            if math.isnan(x):
+                data_list.append([0.0])
+            else:
+                data_list.append([x])
+
+        return data_list
 
     # make a generator for scalar vector
     def __set_scalar_vector(self, column, target_data_dict, *scale):
         # If dict of scalar vector, make vector using dict
         # But, If not have it, do not make vector (we consider that the column will be noise)
         if self.vector_dict[column]:
+            data_list = self.__get_data_list(target_data_dict[column])
+            vector_list = list()
 
-            # ##### using function scaling version
-            data_list = [[x] for x in target_data_dict[column]]
+            if self.version == 1:
+                # ##### using function scaling version
 
-            # scaling
-            for i in range(len(scale)):
-                scale[i].fit(data_list)
-                data_list = scale[i].transform(data_list)
+                # scaling
+                for i in range(len(scale)):
+                    scale[i].fit(data_list)
+                    data_list = scale[i].transform(data_list)
 
-            # processing 'nan' value
-            values = list()
-            for x in data_list:
-                if math.isnan(x):
-                    values.append([0.0])
-                else:
-                    values.append(x)
+                # processing 'nan' value after transform
+                for x in data_list:
+                    if math.isnan(x):
+                        vector_list.append([0.0])
+                    else:
+                        vector_list.append(x)
 
-            # copy values into the vector matrix
-            for index, vector in enumerate(values):
-                yield index, vector
+                # copy values into the vector matrix
+                for index, vector in enumerate(vector_list):
+                    yield index, vector
+
+            elif self.version == 2:
+                # processing 'nan' value after transform
+                for x in data_list:
+                    if math.isnan(x[0]):
+                        vector_list.append([0.0])
+                    else:
+                        vector_list.append(x)
+
+                # copy values into the vector matrix
+                for index, vector in enumerate(vector_list):
+                    yield index, vector
 
             # # ##### using function scaling version if exist feature has vector size == 1
             # differ = self.vector_dict[column]["dif"]
@@ -312,11 +347,14 @@ class MyOneHotEncoder(W2vReader):
 
     # make a generator for one-hot vector
     def __set_one_hot_vector(self, column, target_data_dict):
-        for index, value in enumerate(target_data_dict[column]):
-            yield index, self.__get_one_hot(value.split('_'), self.vector_dict[column])
+        if self.version == 1:
+            for index, value in enumerate(target_data_dict[column]):
+                yield index, self.__get_one_hot(value.split('_'), self.vector_dict[column])
+        elif self.version == 2:
+            for index, value in enumerate(target_data_dict[column]):
+                yield index, self.__get_one_hot([value], self.vector_dict[column])
 
-    @staticmethod
-    def __get_one_hot(word, vector_dict):
+    def __get_one_hot(self, word, vector_dict):
         one_hot_vector = list()
 
         for w in vector_dict:
@@ -325,7 +363,10 @@ class MyOneHotEncoder(W2vReader):
             else:
                 one_hot_vector.append(float(0))
 
-        return one_hot_vector
+        if self.version == 1:
+            return one_hot_vector
+        elif self.version == 2:
+            return [float(np.argmax(one_hot_vector))]
 
     # set vector into self.vector_matrix using generator
     def __set_vector(self, class_of_column, generator):
@@ -360,35 +401,59 @@ class MyOneHotEncoder(W2vReader):
     def __transform(self, data_handler):
         target_data_dict = data_handler.x_data_dict
 
-        for column in list(self.x_data_dict.keys()):
-            type_of_column = self.dataHandler.get_type_of_column(column)
-            class_of_column = self.dataHandler.get_class_of_column(column)
-            generator = False
+        if self.version == 1:
+            for column in list(self.x_data_dict.keys()):
+                type_of_column = self.dataHandler.get_type_of_column(column)
+                class_of_column = self.dataHandler.get_class_of_column(column)
+                generator = False
 
-            if type_of_column == "id":
-                pass
-            elif type_of_column == "scalar":
-                # using standard scaling
-                if USE_STANDARD_SCALE:
-                    generator = self.__set_scalar_vector(column, target_data_dict, StandardScaler())
-                # using min max scaling
-                else:
-                    generator = self.__set_scalar_vector(column, target_data_dict, MinMaxScaler())
-            elif type_of_column == "class":
-                generator = self.__set_class_vector(column, target_data_dict)
-            elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
-                if self.w2v_dict:
-                    generator = self.__set_embedded_vector(column, target_data_dict)
+                if type_of_column == "id":
+                    pass
+                elif type_of_column == "scalar":
+                    # using standard scaling
+                    if USE_STANDARD_SCALE:
+                        generator = self.__set_scalar_vector(column, target_data_dict, StandardScaler())
+                    # using min max scaling
+                    else:
+                        generator = self.__set_scalar_vector(column, target_data_dict, MinMaxScaler())
+                elif type_of_column == "class":
+                    generator = self.__set_class_vector(column, target_data_dict)
+                elif type_of_column == "symptom" or type_of_column == "mal_type" or type_of_column == "diagnosis":
+                    if self.w2v_dict:
+                        generator = self.__set_embedded_vector(column, target_data_dict)
 
-                    if EXTENDED_WORD_VECTOR:
-                        self.__set_vector(class_of_column, generator)
+                        if EXTENDED_WORD_VECTOR:
+                            self.__set_vector(class_of_column, generator)
+                            generator = self.__set_one_hot_vector(column, target_data_dict)
+                    else:
                         generator = self.__set_one_hot_vector(column, target_data_dict)
-                else:
+                elif type_of_column == "word":
                     generator = self.__set_one_hot_vector(column, target_data_dict)
-            elif type_of_column == "word":
-                generator = self.__set_one_hot_vector(column, target_data_dict)
 
-            self.__set_vector(class_of_column, generator)
+                self.__set_vector(class_of_column, generator)
+
+        elif self.version == 2:
+            for column in list(self.x_data_dict.keys()):
+                type_of_column = self.dataHandler.get_type_of_column(column)
+                class_of_column = self.dataHandler.get_class_of_column(column)
+                generator = False
+
+                if type_of_column == "id":
+                    pass
+                elif type_of_column == "scalar":
+                    if USE_STANDARD_SCALE:
+                        generator = self.__set_scalar_vector(column, target_data_dict, StandardScaler())
+                    else:
+                        generator = self.__set_scalar_vector(column, target_data_dict, MinMaxScaler())
+                elif type_of_column == "class":
+                    generator = self.__set_class_vector(column, target_data_dict)
+                elif type_of_column == "symptom" or \
+                        type_of_column == "mal_type" or \
+                        type_of_column == "diagnosis" or \
+                        type_of_column == "word":
+                    generator = self.__set_one_hot_vector(column, target_data_dict)
+
+                self.__set_vector(class_of_column, generator)
 
     def show_vectors(self, *columns):
         for i, column in enumerate(columns):
