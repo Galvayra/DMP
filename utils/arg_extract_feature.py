@@ -5,12 +5,13 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
 def get_arguments():
-    parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
-                                                    "\n(default is 'model')"
+    parser.add_argument("-vector", "--vector", help="set loading vector file name to get importance of features"
                                                     "\nUseAge : python extract_feature.py -vector 'V'\n\n")
-    parser.add_argument("-output", "--output", help="set saving vector file name to train or predict"
-                                                    "\n(default is 'vector'+'_new')"
+    parser.add_argument("-output", "--output", help="set saving a result of feature selection"
+                                                    "\n(default is 'fsResult_{n option}')"
                                                     "\nUseAge : python extract_feature.py -output 'O'\n\n")
+    parser.add_argument("-n", "--n_top", help="set a number of high importance of features(default is 10)"
+                                              "\nUseAge : python extract_feature.py -n 10\n\n")
     parser.add_argument("-ntree", "--ntree", help="set a number of tree in random forest (default is 400)"
                                                   "\nUseAge : python extract_feature.py -ntree 400\n\n")
     parser.add_argument("-show", "--show", help="show importance features (default is 0)"
@@ -25,21 +26,27 @@ args = get_arguments()
 # LOAD options #
 DUMP_PATH = "modeling/vectors/"
 DUMP_FILE = "model"
+SAVE_PATH = "modeling/fsResult/"
 READ_VECTOR = DUMP_PATH + DUMP_FILE
-SAVE_VECTOR = READ_VECTOR + "_new"
+SAVE_LOG_NAME = SAVE_PATH + "fsResult"
 
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 
 DO_SHOW = False
+NUM_OF_FEATURES = 99
+
+# set a number of high importance of features
+NUM_OF_IMPORTANCE = 10
 
 # Random Forest Option #
 NUM_OF_TREE = 400
 
+
 if args.vector:
     READ_VECTOR = args.vector
-
-if args.output:
-    SAVE_VECTOR = DUMP_PATH + args.output
+else:
+    print("\nPlease use vector option!\n")
+    exit(-1)
 
 if args.show:
     try:
@@ -62,6 +69,22 @@ if args.ntree:
         if NUM_OF_TREE < 10 or NUM_OF_TREE > 10000:
             print("\nInput Error ntree option!\n")
             exit(-1)
+
+if args.n_top:
+    try:
+        NUM_OF_IMPORTANCE = int(args.n_top)
+    except ValueError:
+        print("\nInput Error type of n option!\n")
+        exit(-1)
+    else:
+        if NUM_OF_IMPORTANCE < 1 or NUM_OF_IMPORTANCE > NUM_OF_FEATURES:
+            print("\nInput Error n option!\n")
+            exit(-1)
+
+if args.output:
+    SAVE_LOG_NAME = SAVE_PATH + args.output
+else:
+    SAVE_LOG_NAME += "_" + str(NUM_OF_IMPORTANCE)
 
 
 def show_options():

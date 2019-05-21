@@ -67,6 +67,12 @@ class DataHandler:
             self.count_mortality = list()
             self.count_alive = list()
 
+            self.__importance = dict()
+
+    @property
+    def importance(self):
+        return self.__importance
+
     def set_x_y_set(self, name_of_set="test"):
         if COLUMN_TARGET:
             if name_of_set == "train":
@@ -200,10 +206,12 @@ class DataHandler:
                 vector_set[i] = [v * GRAY_SCALE for v in vector]
 
     def __random_forest(self):
-        rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features=None, random_state=0)
+        rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features='auto', random_state=0)
         return rf.fit(self.x_train, self.y_train)
 
     def get_importance_features(self, feature, reverse=False):
+        # reverse == T
+        # --> get a not important features
         model = self.__random_forest()
         values = sorted(zip(feature.keys(), model.feature_importances_), key=lambda x: x[1] * -1)
 
@@ -229,18 +237,29 @@ class DataHandler:
         for new_key, key in enumerate(sorted(feature_importance_index)):
             self.vector_matrix['feature'][str(new_key)] = self.feature[str(key)]
 
-    def show_importance_feature(self):
-        # feature_importance = self.get_importance_features(self.x_train, self.y_train, self.feature, reverse=True)
-        feature_importance = self.get_importance_features(self.feature)
+    def show_importance_feature(self, reverse=False):
+        feature_importance = self.get_importance_features(self.feature, reverse=reverse)
 
-        print("\n\nThere is not important feature")
-        print("# of count -", len(feature_importance), "\n\n\n")
+        if reverse:
+            if DO_SHOW:
+                print("\n\nThere is not important feature")
+                print("# of count -", len(feature_importance), "\n\n\n")
+        else:
+            for i, f in enumerate(feature_importance):
+                if i == NUM_OF_IMPORTANCE:
+                    break
+                self.importance[f[1][0]] = [f[1][1], f[2]]
 
-        plot = MyPlot()
-        plot.show_importance(feature_importance)
+            if DO_SHOW:
+                plot = MyPlot()
+                plot.show_importance(feature_importance)
 
-        # for f in feature_importance:
-        #     print(f[0].ljust(4), f[1], f[2])
+        if DO_SHOW:
+            num_of_split_feature = 20
+            for i, f in enumerate(feature_importance):
+                print("%s (%s)\t %0.5f" % (str(f[1]).ljust(25), f[0], float(f[2])))
+                if (i + 1) % num_of_split_feature == 0:
+                        print("\n=======================================\n")
 
     def print_feature(self):
         for k, v in self.feature.items():
@@ -256,23 +275,29 @@ class DataHandler:
             self.vector_matrix[_key] = [data for data in target]
 
     def dump(self):
-        def __counting_mortality(_data):
-            count = 0
-            for _d in _data:
-                if _d == [1]:
-                    count += 1
-
-            return count
-
-        with open(SAVE_VECTOR, 'w') as outfile:
-            json.dump(self.vector_matrix, outfile, indent=4)
+        with open(SAVE_LOG_NAME, 'w') as outfile:
+            json.dump(self.importance, outfile, indent=4)
             print("\n=========================================================\n\n")
-            print("success make dump file! - file name is", SAVE_VECTOR)
+            print("success make dump file! - file name is", SAVE_LOG_NAME, "\n\n")
 
-        if DO_SHOW:
-            print("\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
-            print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
-            print("Test  total count -", str(len(self.vector_matrix["x_test"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_test"])).rjust(4), "\n\n")
+    # def dump(self):
+    #     def __counting_mortality(_data):
+    #         count = 0
+    #         for _d in _data:
+    #             if _d == [1]:
+    #                 count += 1
+    #
+    #         return count
+    #
+    #     with open(SAVE_VECTOR, 'w') as outfile:
+    #         json.dump(self.vector_matrix, outfile, indent=4)
+    #         print("\n=========================================================\n\n")
+    #         print("success make dump file! - file name is", SAVE_VECTOR)
+    #
+    #     if DO_SHOW:
+    #         print("\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
+    #               "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
+    #         print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
+    #               "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
+    #         print("Test  total count -", str(len(self.vector_matrix["x_test"]["merge"])).rjust(4),
+    #               "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_test"])).rjust(4), "\n\n")
