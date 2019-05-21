@@ -246,8 +246,6 @@ class DataHandler:
                 print("# of count -", len(feature_importance), "\n\n\n")
         else:
             for i, f in enumerate(feature_importance):
-                if i == NUM_OF_IMPORTANCE:
-                    break
                 self.importance[f[1][0]] = [f[1][1], f[2]]
 
             if DO_SHOW:
