@@ -133,7 +133,7 @@ else:
     #     "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
     # }
 
-    # 2019 04 11 feature selection using vector_for_paper_fs
+    # 2019 04 24 feature selection using vector_for_paper_fs
     # numeric encoding == only use 1 dimension (not 2 dimension for smoothing)
     # word encoding == only use one hot
     # max features == k
@@ -183,7 +183,6 @@ else:
         "class": ['CR', 'CS', 'CT', 'CU', 'CV', 'CW', 'CX', 'CY']
     }
 
-
 columns_dict = OrderedDict()
 columns_dict["default"] = default_info_columns
 columns_dict["initial"] = initial_info_columns
@@ -195,3 +194,14 @@ columns_dict["culture"] = culture_columns
 columns_dict["influenza"] = influenza_columns
 columns_dict["ct"] = ct_columns
 columns_dict["f_diagnosis"] = final_diagnosis_columns
+
+
+def get_num_of_features():
+    num_of_features = int()
+
+    for columns in columns_dict.values():
+        for v in columns.values():
+            num_of_features += len(v)
+
+    # erase ID_COLUMN
+    return num_of_features - 1

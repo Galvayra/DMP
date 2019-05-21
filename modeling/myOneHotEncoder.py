@@ -5,11 +5,12 @@ from DMP.modeling.w2vReader import W2vReader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import math
 import numpy as np
+import json
 
 
 # initial information & Past history 만을 이용하여 학습
 class MyOneHotEncoder(W2vReader):
-    def __init__(self, ver):
+    def __init__(self, ver, log_name, num_of_important):
         super().__init__()
         self.__vector = OrderedDict()
 
@@ -23,6 +24,14 @@ class MyOneHotEncoder(W2vReader):
         self.dataHandler = None
         self.__x_data_dict = None
         self.__version = ver
+        self.__importance = dict()
+        self.__num_of_important = num_of_important
+
+        if self.version == 1:
+            print("========= Version is Making vector for training!! =========\n\n")
+            self.__set_importance(log_name)
+        elif self.version == 2:
+            print("========= Version is Making vector for Feature Selection!! =========\n\n")
 
         # { 0: ["column", "header"], .... n: ["column", "header"] }
         # a dictionary to show how to match feature to dimensionality
@@ -54,6 +63,14 @@ class MyOneHotEncoder(W2vReader):
         return self.__feature_dict
 
     @property
+    def importance(self):
+        return self.__importance
+
+    @property
+    def num_of_important(self):
+        return self.__num_of_important
+
+    @property
     def num_of_dim(self):
         return self.__num_of_dim
 
@@ -64,6 +81,14 @@ class MyOneHotEncoder(W2vReader):
     @property
     def version(self):
         return self.__version
+
+    def __set_importance(self, log_name):
+        if log_name:
+            with open(log_name, 'r') as r_file:
+                for k, v in json.load(r_file).items():
+                    self.importance[k] = v
+                print("success load file! - file name is", log_name)
+                print("\n=========================================================\n\n")
 
     # scalar dictionary 생성을 위해 앞 뒤 예외처리를 해야하는지 각 column 마다 확인해주어야 한다
     @staticmethod
@@ -163,12 +188,27 @@ class MyOneHotEncoder(W2vReader):
             self.feature_dict[self.num_of_dim] = column_info
             self.num_of_dim += 1
 
+    def __get_column_list(self):
+        column_list = list()
+
+        if self.importance:
+            column_import_list = [c for c in self.importance]
+
+            for column in list(self.x_data_dict.keys()):
+                if column in column_import_list[:self.num_of_important]:
+                    column_list.append(column)
+        else:
+            for column in list(self.x_data_dict.keys()):
+                column_list.append(column)
+
+        return column_list
+
     def fit(self, data_handler):
         # init handler for making dictionary
         self.dataHandler = data_handler
         self.__x_data_dict = data_handler.x_data_dict
-
-        for column in list(self.x_data_dict.keys()):
+        
+        for column in self.__get_column_list():
             type_of_column = self.dataHandler.get_type_of_column(column)
             column_info = [column, self.dataHandler.raw_header_dict[column]]
 
@@ -402,7 +442,7 @@ class MyOneHotEncoder(W2vReader):
         target_data_dict = data_handler.x_data_dict
 
         if self.version == 1:
-            for column in list(self.x_data_dict.keys()):
+            for column in self.__get_column_list():
                 type_of_column = self.dataHandler.get_type_of_column(column)
                 class_of_column = self.dataHandler.get_class_of_column(column)
                 generator = False
@@ -433,7 +473,7 @@ class MyOneHotEncoder(W2vReader):
                 self.__set_vector(class_of_column, generator)
 
         elif self.version == 2:
-            for column in list(self.x_data_dict.keys()):
+            for column in self.__get_column_list():
                 type_of_column = self.dataHandler.get_type_of_column(column)
                 class_of_column = self.dataHandler.get_class_of_column(column)
                 generator = False

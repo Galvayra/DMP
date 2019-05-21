@@ -1,4 +1,5 @@
 from DMP.modeling.variables import KEY_NAME_OF_MERGE_VECTOR
+from DMP.dataset.variables import get_num_of_features
 import argparse
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -8,7 +9,7 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set loading vector file name to get importance of features"
                                                     "\nUseAge : python extract_feature.py -vector 'V'\n\n")
     parser.add_argument("-output", "--output", help="set saving a result of feature selection"
-                                                    "\n(default is 'fsResult_{n option}')"
+                                                    "\n(default is 'fsResult')"
                                                     "\nUseAge : python extract_feature.py -output 'O'\n\n")
     parser.add_argument("-ntree", "--ntree", help="set a number of tree in random forest (default is 400)"
                                                   "\nUseAge : python extract_feature.py -ntree 400\n\n")
@@ -31,7 +32,7 @@ SAVE_LOG_NAME = SAVE_PATH + "fsResult"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 
 DO_SHOW = False
-NUM_OF_FEATURES = 99
+NUM_OF_FEATURES = get_num_of_features()
 
 # Random Forest Option #
 NUM_OF_TREE = 400
@@ -67,8 +68,6 @@ if args.ntree:
 
 if args.output:
     SAVE_LOG_NAME = SAVE_PATH + args.output
-else:
-    SAVE_LOG_NAME += "_" + str(NUM_OF_IMPORTANCE)
 
 
 def show_options():

@@ -30,6 +30,6 @@ if __name__ == '__main__':
         dataHandler_dict[key] = dataHandler
 
     # encoding data using dataHandler
-    vectorMaker = VectorMaker(dataHandler_dict, ver=VERSION)
+    vectorMaker = VectorMaker(dataHandler_dict)
     vectorMaker.encoding()
     vectorMaker.dump()

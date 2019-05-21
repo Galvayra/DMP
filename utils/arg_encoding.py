@@ -1,4 +1,5 @@
 import argparse
+from DMP.dataset.variables import get_num_of_features
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -18,6 +19,10 @@ def get_arguments():
                                                   "\n1 - make vector for Training"
                                                   "\n2 - make vector for Feature Selection"
                                                   "\nUseAge : python encoding.py -ver 1\n\n")
+    parser.add_argument("-log", "--log", help="set a json file to select important features(default is None)"
+                                              "\nUseAge : python encoding.py -log 'L'\n\n")
+    parser.add_argument("-n", "--n", help="set a number of importance features for making vectors(default is k)"
+                                          "\nUseAge : python encoding.py -N 'n'\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -32,9 +37,13 @@ SAVE_FILE_VALID = "parsing_valid" + EXTENSION_FILE
 SAVE_FILE_TEST = "parsing_test" + EXTENSION_FILE
 COLUMN_TARGET = str()
 FILE_VECTOR = "model"
+LOG_PATH = "modeling/fsResult/"
 
 USE_W2V = True
 VERSION = 1
+
+NUM_OF_FEATURES = get_num_of_features()
+NUM_OF_IMPORTANT = NUM_OF_FEATURES
 
 if args.input:
     SAVE_FILE_TOTAL = args.input
@@ -92,4 +101,22 @@ if args.version:
     else:
         if VERSION != 1 and VERSION != 2:
             print("\nInput Error Boundary of version option!\n")
+            exit(-1)
+
+if args.log:
+    LOG_NAME = args.log
+else:
+    LOG_NAME = str()
+
+if args.n:
+    try:
+        NUM_OF_IMPORTANT = int(args.n)
+    except ValueError:
+        print("\nInput Error type of n option!\n")
+        exit(-1)
+    else:
+        if NUM_OF_IMPORTANT == -1:
+            NUM_OF_IMPORTANT = NUM_OF_FEATURES
+        elif NUM_OF_IMPORTANT < 1 or VERSION > NUM_OF_FEATURES:
+            print("\nInput Error Boundary of n option!\n")
             exit(-1)

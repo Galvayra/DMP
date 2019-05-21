@@ -2,6 +2,7 @@ import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR
+from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT
 import json
 
 
@@ -14,7 +15,7 @@ import json
 ###
 class VectorMaker:
     # must using DataParser or DataHandler
-    def __init__(self, data_handler, ver):
+    def __init__(self, data_handler):
         # dataHandler_dict = { KEY : handler }
         self.dataHandler_dict = {key: handler for key, handler in data_handler.items()}
         self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
@@ -35,13 +36,6 @@ class VectorMaker:
             "y_test": list()
         }
 
-        self.__version = ver
-
-        if self.version == 1:
-            print("========= Version is Making vector for training!! =========\n\n")
-        elif self.version == 2:
-            print("========= Version is Making vector for Feature Selection!! =========\n\n")
-
     @property
     def y_data(self):
         return self.__y_data
@@ -54,13 +48,9 @@ class VectorMaker:
     def vector_matrix(self):
         return self.__vector_matrix
 
-    @property
-    def version(self):
-        return self.__version
-
     def encoding(self):
         # init encoder and fit it
-        encoder = MyOneHotEncoder(ver=self.version)
+        encoder = MyOneHotEncoder(ver=VERSION, log_name=LOG_NAME, num_of_important=NUM_OF_IMPORTANT)
         encoder.fit(self.dataHandler_dict[KEY_TOTAL])
 
         # initialize dictionary of matrix after encoding
