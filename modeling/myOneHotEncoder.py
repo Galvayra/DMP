@@ -207,7 +207,7 @@ class MyOneHotEncoder(W2vReader):
         # init handler for making dictionary
         self.dataHandler = data_handler
         self.__x_data_dict = data_handler.x_data_dict
-        
+
         for column in self.__get_column_list():
             type_of_column = self.dataHandler.get_type_of_column(column)
             column_info = [column, self.dataHandler.raw_header_dict[column]]

@@ -19,10 +19,11 @@ def get_arguments():
                                                   "\n1 - make vector for Training"
                                                   "\n2 - make vector for Feature Selection"
                                                   "\nUseAge : python encoding.py -ver 1\n\n")
-    parser.add_argument("-log", "--log", help="set a json file to select important features(default is None)"
-                                              "\nUseAge : python encoding.py -log 'L'\n\n")
-    parser.add_argument("-n", "--n", help="set a number of importance features for making vectors(default is k)"
-                                          "\nUseAge : python encoding.py -N 'n'\n\n")
+    parser.add_argument("-fs", "--fs", help="set a json file to select important features(default is None)"
+                                            "\nUseAge : python encoding.py -fs 'F'\n\n")
+    parser.add_argument("-n_features", "--n_features",
+                        help="set a number of importance features for making vectors(default is k)"
+                             "\nUseAge : python encoding.py -n_features 'N'\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -103,14 +104,14 @@ if args.version:
             print("\nInput Error Boundary of version option!\n")
             exit(-1)
 
-if args.log:
-    LOG_NAME = args.log
+if args.fs:
+    LOG_NAME = args.fs
 else:
     LOG_NAME = str()
 
-if args.n:
+if args.n_features:
     try:
-        NUM_OF_IMPORTANT = int(args.n)
+        NUM_OF_IMPORTANT = int(args.n_features)
     except ValueError:
         print("\nInput Error type of n option!\n")
         exit(-1)
