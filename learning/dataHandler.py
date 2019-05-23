@@ -245,7 +245,7 @@ class DataHandler:
                 print("\n\nThere is not important feature")
                 print("# of count -", len(feature_importance), "\n\n\n")
         else:
-            for i, f in enumerate(feature_importance):
+            for f in feature_importance:
                 self.importance[f[1][0]] = [f[1][1], f[2]]
 
             if DO_SHOW:
