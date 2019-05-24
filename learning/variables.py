@@ -9,6 +9,7 @@ RATIO_HIDDEN = 2
 PATH_LOGS = "./logs/"
 PATH_TENSOR = "modeling/save/"
 PATH_RESULT = "analysis/"
+FILE_OF_TRAINING_TIME = "run_time"
 
 # name of tensor
 NAME_HYPO = "hypothesis"
@@ -32,6 +33,8 @@ KEY_RECALL = "recall"
 KEY_F1 = "f1"
 KEY_ACCURACY = "accuracy"
 KEY_AUC = "auc"
+
+NUM_OF_K_FOLD = 5
 
 # gray scale for convolution neural network
 GRAY_SCALE = 255

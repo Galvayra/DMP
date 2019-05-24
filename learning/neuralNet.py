@@ -5,6 +5,7 @@ import os
 import shutil
 import math
 import sys
+import json
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
@@ -73,6 +74,7 @@ class MyNeuralNetwork(MyScore):
 
         if DO_SHOW:
             print("Tensor File -", tensor_name, "\n\n\n")
+        print("\n\n")
 
         self.name_of_tensor = tensor_name
 
@@ -118,7 +120,7 @@ class MyNeuralNetwork(MyScore):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def feed_forward(self, x_train, y_train, x_valid, y_valid):
+    def feed_forward(self, x_train, y_train, x_valid, y_valid, is_cross_valid=True):
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -127,10 +129,10 @@ class MyNeuralNetwork(MyScore):
 
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID)
-        self.show_score(target=KEY_VALID)
+        self.set_score(target=KEY_VALID, k_fold=1)
+        self.show_score(target=KEY_VALID, k_fold=1)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -225,7 +227,7 @@ class MyNeuralNetwork(MyScore):
 
         return convolution_layer, num_of_filter[-1]
 
-    def convolution(self, x_train, y_train, x_valid, y_valid):
+    def convolution(self, x_train, y_train, x_valid, y_valid, is_cross_valid=True):
         num_of_dimension = len(x_train[0])
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
@@ -235,12 +237,12 @@ class MyNeuralNetwork(MyScore):
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer_model_1(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID)
-        self.show_score(target=KEY_VALID)
+        self.set_score(target=KEY_VALID, k_fold=1)
+        self.show_score(target=KEY_VALID, k_fold=1)
 
-    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid):
         if DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
@@ -271,35 +273,6 @@ class MyNeuralNetwork(MyScore):
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            print("\n\n")
-
-            # for step in range(1, EPOCH + 1):
-            #     _, summary, tra_loss, tra_acc = sess.run(
-            #         [train_op, merged_summary, cost, _accuracy],
-            #         feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-            #     )
-            #
-            #     # training
-            #     if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
-            #         # write train curve on tensor board
-            #         train_writer.add_summary(summary, global_step=step)
-            #
-            #         val_summary, val_loss, val_acc = sess.run(
-            #             [merged_summary, cost, _accuracy],
-            #             feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
-            #         )
-            #
-            #         # write validation curve on tensor board
-            #         val_writer.add_summary(val_summary, global_step=step)
-            #
-            #         print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc*100.0))
-            #         print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
-            #
-            #         # save tensor every NUM_OF_SAVE_EPOCH
-            #         saver.save(sess, self.name_of_tensor + "model", global_step=step)
-            #
-            #         if self.__is_stopped_training(val_loss):
-            #             break
 
             batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
 
@@ -418,19 +391,55 @@ class MyNeuralNetwork(MyScore):
 
         # set score of immortality
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY)
-        self.show_score(target=KEY_IMMORTALITY)
+        self.set_score(target=KEY_IMMORTALITY, k_fold=1)
+        self.show_score(target=KEY_IMMORTALITY, k_fold=1)
         # self.set_plot()
 
         # set score of mortality
         self.compute_score(y_predict, y_test, h)
-        self.set_score(target=KEY_MORTALITY)
-        self.show_score(target=KEY_MORTALITY)
+        self.set_score(target=KEY_MORTALITY, k_fold=1)
+        self.show_score(target=KEY_MORTALITY, k_fold=1)
         self.set_plot()
 
         # set total score of immortality and mortality
-        self.set_total_score()
-        self.show_score(target=KEY_TOTAL)
+        self.set_2_class_score(k_fold=1)
+        self.show_score(target=KEY_TOTAL, k_fold=1)
+
+    def set_multi_plot(self):
+
+        title = "FFNN_baseline"
+
+        fpr = [0., 0., 0.26246719, 0.26246719, 0.52493438,
+               0.52493438, 1.04986877, 1.04986877, 1.31233596, 1.31233596,
+               3.1496063, 3.1496063, 3.67454068, 3.67454068, 3.93700787,
+               3.93700787, 4.72440945, 4.72440945, 5.24934383, 5.24934383,
+               5.77427822, 5.77427822, 6.56167979, 6.56167979, 7.34908136,
+               7.34908136, 7.61154856, 7.61154856, 17.32283465, 17.32283465,
+               18.37270341, 18.37270341, 21.52230971, 21.52230971, 22.04724409,
+               22.04724409, 22.83464567, 22.83464567, 24.67191601, 24.67191601,
+               36.22047244, 36.22047244, 49.08136483, 49.08136483, 50.1312336,
+               50.1312336, 65.09186352, 65.09186352, 100.]
+
+        tpr = [2.7027027, 5.40540541, 5.40540541, 16.21621622, 16.21621622,
+               18.91891892, 18.91891892, 24.32432432, 24.32432432, 32.43243243,
+               32.43243243, 35.13513514, 35.13513514, 48.64864865, 48.64864865,
+               51.35135135, 51.35135135, 54.05405405, 54.05405405, 56.75675676,
+               56.75675676, 62.16216216, 62.16216216, 64.86486486, 64.86486486,
+               70.27027027, 70.27027027, 72.97297297, 72.97297297, 75.67567568,
+               75.67567568, 78.37837838, 78.37837838, 81.08108108, 81.08108108,
+               83.78378378, 83.78378378, 86.48648649, 86.48648649, 89.18918919,
+               89.18918919, 91.89189189, 91.89189189, 94.59459459, 94.59459459,
+               97.2972973, 97.2972973, 100., 100.]
+
+        self.set_plot(fpr=fpr, tpr=tpr, title=title)
 
     def save(self, data_handler):
-        self.save_score(data_handler, self.best_epoch, self.num_of_dimension, self.num_of_hidden, self.learning_rate)
+        self.save_score(data_handler=data_handler,
+                        best_epoch=self.best_epoch,
+                        num_of_dimension=self.num_of_dimension,
+                        num_of_hidden=self.num_of_hidden,
+                        learning_rate=self.learning_rate)
+
+    def save_training_time(self, _time):
+        with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:
+            json.dump(_time, outfile, indent=4)

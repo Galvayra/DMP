@@ -1,5 +1,6 @@
 import sys
 from sklearn.svm import SVC
+from sklearn.model_selection import KFold
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
@@ -8,9 +9,9 @@ import time
 current_script = sys.argv[0].split('/')[-1]
 
 if current_script == "training.py":
-    from DMP.utils.arg_training import TYPE_OF_MODEL, IMAGE_PATH
+    from DMP.utils.arg_training import TYPE_OF_MODEL, IMAGE_PATH, VERSION
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH
+    from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH, VERSION
 
 
 class DataClassifier:
@@ -20,29 +21,70 @@ class DataClassifier:
             self.dataHandler.set_x_y_set(name_of_set="train")
             self.dataHandler.set_x_y_set(name_of_set="valid")
             self.dataHandler.set_x_y_set(name_of_set="test")
-            self.dataHandler.show_info()
+
+            if VERSION == 1:
+                self.dataHandler.show_info()
 
     def training(self):
         start_time = time.time()
+        nn = MyNeuralNetwork()
 
+        if VERSION == 1:
+            x_train = self.dataHandler.x_train
+            y_train = self.dataHandler.y_train
+            x_valid = self.dataHandler.x_valid
+            y_valid = self.dataHandler.y_valid
+
+            if TYPE_OF_MODEL == "ffnn":
+                nn.feed_forward(x_train, y_train, x_valid, y_valid, is_cross_valid=False)
+            elif TYPE_OF_MODEL == "cnn":
+                if IMAGE_PATH:
+                    self.dataHandler.set_image_path([x_train, x_valid], [y_train, y_valid], key_list=["train", "valid"])
+                else:
+                    self.dataHandler.expand4square_matrix(x_train, x_valid)
+                nn.convolution(x_train, y_train, x_valid, y_valid, is_cross_valid=False)
+
+        elif VERSION == 2:
+            if TYPE_OF_MODEL == "ffnn":
+                x_data, y_data = self.__get_total_set()
+
+                for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                    nn.feed_forward(x_train, y_train, x_test, y_test)
+
+            elif TYPE_OF_MODEL == "cnn":
+                pass
+
+        training_time = time.time() - start_time
+        print("\n\n processing time     --- %s seconds ---" % training_time, "\n\n")
+        nn.save_training_time(training_time)
+
+    def __get_total_set(self):
         x_train = self.dataHandler.x_train
         y_train = self.dataHandler.y_train
         x_valid = self.dataHandler.x_valid
         y_valid = self.dataHandler.y_valid
+        x_test = self.dataHandler.x_test
+        y_test = self.dataHandler.y_test
 
-        nn = MyNeuralNetwork()
+        return x_train + x_valid + x_test, y_train + y_valid + y_test
 
-        if TYPE_OF_MODEL == "ffnn":
-            nn.feed_forward(x_train, y_train, x_valid, y_valid)
-        elif TYPE_OF_MODEL == "cnn":
-            if IMAGE_PATH:
-                self.dataHandler.set_image_path([x_train, x_valid], [y_train, y_valid], key_list=["train", "valid"])
-            else:
-                self.dataHandler.expand4square_matrix(*[x_train, x_valid])
+    @staticmethod
+    def __data_generator(x_data, y_data):
+        def __get_data_matrix(_data, _index_list):
+            return [_data[i] for i in _index_list]
 
-            nn.convolution(x_train, y_train, x_valid, y_valid)
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
 
-        print("\n\n processing time     --- %s seconds ---" % (time.time() - start_time), "\n\n")
+        for train_index_list, test_index_list in cv.split(x_data, y_data):
+            x_train = __get_data_matrix(x_data, train_index_list)
+            y_train = __get_data_matrix(y_data, train_index_list)
+            x_test = __get_data_matrix(x_data, test_index_list)
+            y_test = __get_data_matrix(y_data, test_index_list)
+
+            yield x_train, y_train, x_test, y_test
+
+    def __get_data_set(self, index_list):
+        pass
 
     def predict(self):
         x_test = self.dataHandler.x_test
@@ -65,7 +107,7 @@ class DataClassifier:
                 if IMAGE_PATH:
                     self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
                 else:
-                    self.dataHandler.expand4square_matrix(*[x_test])
+                    self.dataHandler.expand4square_matrix(x_test)
 
             # initialize Neural Network
             nn = MyNeuralNetwork()
@@ -75,7 +117,8 @@ class DataClassifier:
             nn.save(self.dataHandler)
             nn.show_plot()
 
-    def show_multi_plot(self):
+    @staticmethod
+    def show_multi_plot():
         # initialize Neural Network
         nn = MyNeuralNetwork()
         nn.init_plot()
@@ -115,18 +158,18 @@ class OlderClassifier(MyScore):
 
         # set score of immortality
         self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY)
-        self.show_score(target=KEY_IMMORTALITY)
+        self.set_score(target=KEY_IMMORTALITY, k_fold=1)
+        self.show_score(target=KEY_IMMORTALITY, k_fold=1)
 
         # set score of mortality
         self.compute_score(y_predict, y_test, h)
-        self.set_score(target=KEY_MORTALITY)
-        self.show_score(target=KEY_MORTALITY)
+        self.set_score(target=KEY_MORTALITY, k_fold=1)
+        self.show_score(target=KEY_MORTALITY, k_fold=1)
         self.set_plot()
 
         # set total score of immortality and mortality
-        self.set_total_score()
-        self.show_score(target=KEY_TOTAL)
+        self.set_2_class_score(k_fold=1)
+        self.show_score(target=KEY_TOTAL, k_fold=1)
 
     def save(self, data_handler):
         self.save_score(data_handler)

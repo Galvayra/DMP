@@ -30,6 +30,10 @@ def get_arguments():
                                                 "\nUseAge : python predict.py -show 1 (True)\n\n")
     parser.add_argument("-plot", "--plot", help="set a option for visualization (default is 0)"
                                                 "\nUseAge : python predict.py -plot 1 (True)\n\n")
+    parser.add_argument("-ver", "--version", help="set a version for training (Default is 1)"
+                                                  "\n1 - 5-cross validation"
+                                                  "\n2 - hyper-param optimization using valid set"
+                                                  "\nUseAge : python predict.py -ver 1\n\n")
 
     _args = parser.parse_args()
 
@@ -68,6 +72,8 @@ DO_SHOW_PLOT = False
 LOG_DIR_NAME = str()
 SAVE_DIR_NAME = str()
 DO_DELETE = False
+
+VERSION = 1
 
 if args.image_dir:
     IMAGE_PATH = args.image_dir
@@ -157,6 +163,17 @@ if args.plot:
             print("\nInput Error show option!\n")
             exit(-1)
 
+if args.version:
+    try:
+        VERSION = int(args.version)
+    except ValueError:
+        print("\nInput Error type of version option!\n")
+        exit(-1)
+    else:
+        if VERSION != 1 and VERSION != 2:
+            print("\nInput Error Boundary of version option!\n")
+            exit(-1)
+
 
 def show_options():
     if DO_SHOW:
@@ -174,5 +191,10 @@ def show_options():
             print("Target is -", COLUMN_TARGET_NAME, "\n")
         else:
             print("Target is All\n")
+
+        if VERSION == 1:
+            print("\n\n--- 5 Cross Validation !! ---\n\n\n")
+        elif VERSION == 2:
+            print("\n\n--- Optimize hyper-param using validation set !! ---\n\n\n")
 
         print("model -", TYPE_OF_MODEL, "\n\n")

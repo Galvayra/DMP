@@ -36,6 +36,10 @@ def get_arguments():
                                                     "\nUseAge : python training.py -delete 0 (False)\n\n")
     parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
                                                 "\nUseAge : python training.py -show 1 (True)\n\n")
+    parser.add_argument("-ver", "--version", help="set a version for training (Default is 1)"
+                                                  "\n1 - 5-cross validation"
+                                                  "\n2 - hyper-param optimization using valid set"
+                                                  "\nUseAge : python training.py -ver 1\n\n")
     _args = parser.parse_args()
 
     return _args
@@ -59,6 +63,7 @@ TYPE_OF_MODEL = "ffnn"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 IMAGE_PATH = str()
+VERSION = 1
 
 # Target options #
 COLUMN_TARGET = False
@@ -180,6 +185,17 @@ if args.delete:
             print("\nInput Error delete option!\n")
             exit(-1)
 
+if args.version:
+    try:
+        VERSION = int(args.version)
+    except ValueError:
+        print("\nInput Error type of version option!\n")
+        exit(-1)
+    else:
+        if VERSION != 1 and VERSION != 2:
+            print("\nInput Error Boundary of version option!\n")
+            exit(-1)
+
 
 def show_options():
     if DO_SHOW:
@@ -192,7 +208,12 @@ def show_options():
             print("Target is -", COLUMN_TARGET_NAME, "\n")
         else:
             print("Target is All\n")
-            
+
+        if VERSION == 1:
+            print("\n\n--- 5 Cross Validation !! ---\n\n\n")
+        elif VERSION == 2:
+            print("\n\n--- Optimize hyper-param using validation set !! ---\n\n\n")
+
         print("model -", TYPE_OF_MODEL)
         print("type of feature -", TYPE_OF_FEATURE)
         print("# of hidden layers -", NUM_HIDDEN_LAYER)
