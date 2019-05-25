@@ -16,6 +16,7 @@ class MyScore(MyPlot):
         super().__init__()
         self.__score = self.__init_score()
         self.__score_dict = dict()
+        self.__num_of_fold = int()
 
     @property
     def score(self):
@@ -24,6 +25,14 @@ class MyScore(MyPlot):
     @property
     def score_dict(self):
         return self.__score_dict
+
+    @property
+    def num_of_fold(self):
+        return self.__num_of_fold
+
+    @num_of_fold.setter
+    def num_of_fold(self, num):
+        self.__num_of_fold = num
 
     @staticmethod
     def __init_score():
@@ -48,7 +57,7 @@ class MyScore(MyPlot):
         self.score_dict[k_fold][target] = copy.deepcopy(self.score)
         self.__score = self.__init_score()
 
-    def compute_score(self, y_predict, y, hypothesis, accuracy=False):
+    def compute_score(self, y, y_predict, hypothesis, accuracy=False):
         try:
             fpr, tpr, _ = roc_curve(y, hypothesis)
         except ValueError:
@@ -139,11 +148,13 @@ class MyScore(MyPlot):
         if DO_SHOW:
             print("\n\ncomplete saving!! -", save_name, "\n")
 
-    def set_2_class_score(self, k_fold):
-        length = len(self.score_dict[k_fold])
+    def set_2_class_score(self):
+        for k_fold in self.score_dict:
+            for key in self.score:
+                self.score[key] = (self.score_dict[k_fold][KEY_MORTALITY][key] +
+                                   self.score_dict[k_fold][KEY_IMMORTALITY][key]) / 2
 
         for key in self.score:
-            self.score[key] = (self.score_dict[k_fold][KEY_MORTALITY][key] +
-                               self.score_dict[k_fold][KEY_IMMORTALITY][key]) / length
+            self.score[key] /= self.num_of_fold
 
-        self.set_score(target=KEY_TOTAL, k_fold=k_fold)
+        self.set_score(target=KEY_TOTAL, k_fold=0)

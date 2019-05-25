@@ -6,6 +6,7 @@ import shutil
 import math
 import sys
 import json
+import time
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
@@ -16,8 +17,9 @@ BATCH_SIZE = 512
 
 
 class MyNeuralNetwork(MyScore):
-    def __init__(self):
+    def __init__(self, is_cross_valid=True):
         super().__init__()
+        self.__start_time = time.time()
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
@@ -29,6 +31,12 @@ class MyNeuralNetwork(MyScore):
         self.__loss_list = list()
         self.__name_of_log = str()
         self.__name_of_tensor = str()
+        self.__is_cross_valid = is_cross_valid
+        self.__init_log_and_tensor()
+
+    @property
+    def start_time(self):
+        return self.__start_time
 
     @property
     def loss_list(self):
@@ -50,33 +58,44 @@ class MyNeuralNetwork(MyScore):
     def name_of_tensor(self, name):
         self.__name_of_tensor = name
 
-    def __set_name_of_log(self):
-        log_name = PATH_LOGS + LOG_DIR_NAME
+    @property
+    def is_cross_valid(self):
+        return self.__is_cross_valid
+
+    def __init_log_and_tensor(self):
+        self.name_of_log = PATH_LOGS + LOG_DIR_NAME
+        self.name_of_tensor = PATH_TENSOR + LOG_DIR_NAME
 
         if DO_DELETE:
-            if os.path.isdir(log_name):
-                shutil.rmtree(log_name)
-            os.mkdir(log_name)
+            if os.path.isdir(self.name_of_log):
+                shutil.rmtree(self.name_of_log)
+            os.mkdir(self.name_of_log)
+
+            if os.path.isdir(self.name_of_tensor):
+                shutil.rmtree(self.name_of_tensor)
+            os.mkdir(self.name_of_tensor)
+
+    def __set_name_of_log(self):
+        name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
+
+        if self.is_cross_valid:
+            os.mkdir(name_of_log)
 
         if DO_SHOW:
             print("======== Directory for Saving ========")
-            print("   Log File -", log_name)
-
-        self.name_of_log = log_name
+            print("   Log File -", name_of_log)
 
     def __set_name_of_tensor(self):
-        tensor_name = PATH_TENSOR + LOG_DIR_NAME
+        name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
-        if DO_DELETE:
-            if os.path.isdir(tensor_name):
-                shutil.rmtree(tensor_name)
-            os.mkdir(tensor_name)
+        if self.is_cross_valid:
+            os.mkdir(name_of_tensor)
 
         if DO_SHOW:
-            print("Tensor File -", tensor_name, "\n\n\n")
-        print("\n\n")
+            print("Tensor File -", name_of_tensor, "\n\n\n")
 
-        self.name_of_tensor = tensor_name
+    def __get_name_of_tensor(self):
+        return self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
     def __init_feed_forward_layer(self, num_input_node, input_layer):
         if NUM_HIDDEN_DIMENSION:
@@ -94,23 +113,28 @@ class MyNeuralNetwork(MyScore):
             num_hidden_node = int(num_input_node / RATIO_HIDDEN)
 
             # append weight
-            tf_weight.append(tf.get_variable(name="h_weight_" + str(i + 1), dtype=tf.float32,
+            tf_weight.append(tf.get_variable(name="h_weight_" + str(i + 1) + '_' + str(self.num_of_fold),
+                                             dtype=tf.float32,
                                              shape=[num_input_node, num_hidden_node],
                                              initializer=tf.contrib.layers.xavier_initializer()))
             # append bias
-            tf_bias.append(tf.Variable(tf.random_normal([num_hidden_node]), name="h_bias_" + str(i + 1)))
+            tf_bias.append(tf.Variable(tf.random_normal([num_hidden_node]),
+                                       name="h_bias_" + str(i + 1) + '_' + str(self.num_of_fold)))
             layer = tf.add(tf.matmul(tf_layer[i], tf_weight[i]), tf_bias[i])
 
             # append hidden layer
             hidden_layer = tf.nn.relu(layer)
-            tf_layer.append(tf.nn.dropout(hidden_layer, keep_prob=self.keep_prob, name="dropout_" + str(i + 1)))
+            tf_layer.append(tf.nn.dropout(hidden_layer, keep_prob=self.keep_prob,
+                                          name="dropout_" + str(i + 1) + '_' + str(self.num_of_fold)))
 
             # set number of node which is next layer
             num_input_node = int(num_input_node / RATIO_HIDDEN)
 
-        tf_weight.append(tf.get_variable("o_weight", dtype=tf.float32, shape=[num_hidden_node, 1],
-                                         initializer=tf.contrib.layers.xavier_initializer()))
-        tf_bias.append(tf.Variable(tf.random_normal([1]), name="o_bias"))
+        tf_weight.append(tf.get_variable(dtype=tf.float32, shape=[num_hidden_node, 1],
+                                         initializer=tf.contrib.layers.xavier_initializer(),
+                                         name="o_weight_" + str(self.num_of_fold)))
+        tf_bias.append(tf.Variable(tf.random_normal([1]),
+                                   name="o_bias_" + str(self.num_of_fold)))
 
         if DO_SHOW:
             print("\n\n======== Feed Forward Layer ========")
@@ -120,19 +144,23 @@ class MyNeuralNetwork(MyScore):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def feed_forward(self, x_train, y_train, x_valid, y_valid, is_cross_valid=True):
+    def feed_forward(self, x_train, y_train, x_valid, y_valid):
         num_of_dimension = len(x_train[0])
 
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
-        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
+        self.num_of_fold += 1
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension],
+                                   name=NAME_X + '_' + str(self.num_of_fold))
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1],
+                                   name=NAME_Y + '_' + str(self.num_of_fold))
+        self.keep_prob = tf.placeholder(tf.float32,
+                                        name=NAME_PROB + '_' + str(self.num_of_fold))
 
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID, k_fold=1)
-        self.show_score(target=KEY_VALID, k_fold=1)
+        self.set_score(target=KEY_VALID, k_fold=self.num_of_fold)
+        self.show_score(target=KEY_VALID, k_fold=self.num_of_fold)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -188,29 +216,39 @@ class MyNeuralNetwork(MyScore):
         filter_1 = tf.Variable(
             tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
             name="cnn_filter_1")
-        conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID", name="conv_1")
-        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID", name="pool_1")
-        pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob, name="dropout_1")
+        conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_1_" + str(self.num_of_fold))
+        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_1_" + str(self.num_of_fold))
+        pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob,
+                               name="dropout_1_" + str(self.num_of_fold))
 
         # 7 x 7 x 20 x 50
         filter_2 = tf.Variable(
             tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
             name="cnn_filter_2")
-        conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID", name="conv_2")
-        pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID", name="pool_2")
-        pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob, name="dropout_2")
+        conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_2_" + str(self.num_of_fold))
+        pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_2_" + str(self.num_of_fold))
+        pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob,
+                               name="dropout_2_" + str(self.num_of_fold))
 
         # 7 x 7 x 50 x 500
         filter_3 = tf.Variable(
             tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
             name="cnn_filter_32")
-        conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID", name="conv_3")
-        pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID", name="pool_3")
-        pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob, name="dropout_3")
+        conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_3_" + str(self.num_of_fold))
+        pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_3_" + str(self.num_of_fold))
+        pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob,
+                               name="dropout_3_" + str(self.num_of_fold))
 
         relu_layer = tf.nn.relu(pool_3)
 
-        convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]], name="cnn_span_layer")
+        convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]],
+                                       name="cnn_span_layer_" + str(self.num_of_fold))
 
         if DO_SHOW:
             print("\n\n======== Convolution Layer ========")
@@ -227,25 +265,29 @@ class MyNeuralNetwork(MyScore):
 
         return convolution_layer, num_of_filter[-1]
 
-    def convolution(self, x_train, y_train, x_valid, y_valid, is_cross_valid=True):
+    def convolution(self, x_train, y_train, x_valid, y_valid):
         num_of_dimension = len(x_train[0])
 
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension], name=NAME_X)
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name=NAME_Y)
-        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB)
+        self.num_of_fold += 1
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension],
+                                   name=NAME_X + '_' + str(self.num_of_fold))
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1],
+                                   name=NAME_Y + '_' + str(self.num_of_fold))
+        self.keep_prob = tf.placeholder(tf.float32,
+                                        name=NAME_PROB + '_' + str(self.num_of_fold))
 
         # concat CNN to Feed Forward NN
         convolution_layer, num_of_dimension = self.__init_convolution_layer_model_1(num_of_dimension)
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID, k_fold=1)
-        self.show_score(target=KEY_VALID, k_fold=1)
+        self.set_score(target=KEY_VALID, k_fold=self.num_of_fold)
+        self.show_score(target=KEY_VALID, k_fold=self.num_of_fold)
 
-    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid, is_cross_valid):
+    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
-        hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO)
+        hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
 
         with tf.name_scope("cost"):
             cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
@@ -254,22 +296,31 @@ class MyNeuralNetwork(MyScore):
         train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
 
         # cut off
-        predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT)
+        predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
         _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
         accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
 
         # set file names for saving
         self.__set_name_of_log()
         self.__set_name_of_tensor()
-        tf.Variable(LEARNING_RATE, name=NAME_LEARNING_RATE)
-        tf.Variable(NUM_HIDDEN_LAYER, name=NAME_HIDDEN)
+        tf.Variable(LEARNING_RATE, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
+        tf.Variable(NUM_HIDDEN_LAYER, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
 
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
-            train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
-            val_writer = tf.summary.FileWriter(self.name_of_log + "/val", sess.graph)
+            print("\n\n\n")
 
-            saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
+            if not self.is_cross_valid:
+                train_writer = tf.summary.FileWriter(self.name_of_log + "/train",
+                                                     sess.graph)
+                val_writer = tf.summary.FileWriter(self.name_of_log + "/val",
+                                                   sess.graph)
+                saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
+            else:
+                train_writer = tf.summary.FileWriter(self.name_of_log + "/fold_" + str(self.num_of_fold) + "/train",
+                                                     sess.graph)
+                val_writer = None
+                saver = tf.train.Saver()
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -289,31 +340,39 @@ class MyNeuralNetwork(MyScore):
 
                 # training
                 if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
-                    # write train curve on tensor board
+                    if not self.is_cross_valid:
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                        )
 
-                    train_summary, tra_loss, tra_acc = sess.run(
-                        [merged_summary, cost, _accuracy],
-                        feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                    )
+                        train_writer.add_summary(train_summary, global_step=step)
+                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
 
-                    train_writer.add_summary(train_summary, global_step=step)
+                        val_summary, val_loss, val_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
+                        )
 
-                    val_summary, val_loss, val_acc = sess.run(
-                        [merged_summary, cost, _accuracy],
-                        feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
-                    )
+                        # write validation curve on tensor board
+                        val_writer.add_summary(val_summary, global_step=step)
+                        print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
 
-                    # write validation curve on tensor board
-                    val_writer.add_summary(val_summary, global_step=step)
+                        # save tensor every NUM_OF_SAVE_EPOCH
+                        saver.save(sess, global_step=step, save_path=self.__get_name_of_tensor() + "/model")
 
-                    print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc*100.0))
-                    print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
+                        if self.__is_stopped_training(val_loss):
+                            break
+                    else:
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                        )
 
-                    # save tensor every NUM_OF_SAVE_EPOCH
-                    saver.save(sess, self.name_of_tensor + "model", global_step=step)
+                        train_writer.add_summary(train_summary, global_step=step)
+                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
 
-                    if self.__is_stopped_training(val_loss):
-                        break
+                        saver.save(sess, global_step=step, save_path=self.__get_name_of_tensor() + "/model")
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
@@ -344,9 +403,8 @@ class MyNeuralNetwork(MyScore):
                 return False
 
     def load_nn(self, x_test, y_test):
-        # restore tensor
-        self.__set_name_of_tensor()
-        checkpoint = tf.train.get_checkpoint_state(self.name_of_tensor)
+        self.num_of_fold += 1
+        checkpoint = tf.train.get_checkpoint_state(self.__get_name_of_tensor())
         paths = checkpoint.all_model_checkpoint_paths
         path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
         self.best_epoch = int(path.split("/")[-1].split("model-")[-1])
@@ -360,13 +418,13 @@ class MyNeuralNetwork(MyScore):
 
             # load tensor
             graph = tf.get_default_graph()
-            tf_x = graph.get_tensor_by_name(NAME_X + ":0")
-            tf_y = graph.get_tensor_by_name(NAME_Y + ":0")
-            keep_prob = graph.get_tensor_by_name(NAME_PROB + ":0")
-            hypothesis = graph.get_tensor_by_name(NAME_HYPO + ":0")
-            predict = graph.get_tensor_by_name(NAME_PREDICT + ":0")
-            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + ":0")
-            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + ":0")
+            tf_x = graph.get_tensor_by_name(NAME_X + "_" + str(self.num_of_fold) + ":0")
+            tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str(self.num_of_fold) + ":0")
+            keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str(self.num_of_fold) + ":0")
+            hypothesis = graph.get_tensor_by_name(NAME_HYPO + "_" + str(self.num_of_fold) + ":0")
+            predict = graph.get_tensor_by_name(NAME_PREDICT + "_" + str(self.num_of_fold) + ":0")
+            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str(self.num_of_fold) + ":0")
+            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str(self.num_of_fold) + ":0")
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
@@ -390,20 +448,16 @@ class MyNeuralNetwork(MyScore):
             return _y_labels_reverse
 
         # set score of immortality
-        self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY, k_fold=1)
-        self.show_score(target=KEY_IMMORTALITY, k_fold=1)
+        self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
+        self.set_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
+        self.show_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
         # self.set_plot()
 
         # set score of mortality
-        self.compute_score(y_predict, y_test, h)
-        self.set_score(target=KEY_MORTALITY, k_fold=1)
-        self.show_score(target=KEY_MORTALITY, k_fold=1)
+        self.compute_score(y_test, y_predict, h)
+        self.set_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
+        self.show_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
         self.set_plot()
-
-        # set total score of immortality and mortality
-        self.set_2_class_score(k_fold=1)
-        self.show_score(target=KEY_TOTAL, k_fold=1)
 
     def set_multi_plot(self):
 
@@ -434,12 +488,26 @@ class MyNeuralNetwork(MyScore):
         self.set_plot(fpr=fpr, tpr=tpr, title=title)
 
     def save(self, data_handler):
+        # set total score of immortality and mortality
+        self.set_2_class_score()
+        self.show_score(target=KEY_TOTAL, k_fold=0)
+
+        exit(-1)
+
         self.save_score(data_handler=data_handler,
                         best_epoch=self.best_epoch,
                         num_of_dimension=self.num_of_dimension,
                         num_of_hidden=self.num_of_hidden,
                         learning_rate=self.learning_rate)
 
-    def save_training_time(self, _time):
+    def show_process_time(self):
+        process_time = self.start_time - time.time()
+
+        if DO_SHOW:
+            print("\n\n processing time     --- %s seconds ---" % process_time, "\n\n")
+
+        return process_time
+
+    def save_process_time(self):
         with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:
-            json.dump(_time, outfile, indent=4)
+            json.dump(self.show_process_time(), outfile, indent=4)

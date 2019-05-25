@@ -12,6 +12,7 @@ plot=0
 feature=""
 target=""
 image_dir=""
+ver=1
 #save=""
 #result=""
 
@@ -20,9 +21,9 @@ image_dir=""
 echo
 echo "################# Training !! #################"
 echo
-./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir"
+./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"
 
 echo
 echo "################# Test !! #################"
 echo
-./test.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --plot "$plot" --save "$log" --feature "$feature" --target "$target" --image_dir "$image_dir"
+./test.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --plot "$plot" --save "$log" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"
