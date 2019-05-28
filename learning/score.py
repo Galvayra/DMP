@@ -54,6 +54,9 @@ class MyScore(MyPlot):
         if k_fold not in self.score_dict:
             self.score_dict[k_fold] = dict()
 
+        if target not in self.score_dict[k_fold]:
+            self.score_dict[k_fold][target] = dict()
+
         self.score_dict[k_fold][target] = copy.deepcopy(self.score)
         self.__score = self.__init_score()
 
@@ -108,7 +111,7 @@ class MyScore(MyPlot):
             print('Accuracy  : %.1f' % self.score_dict[k_fold][target][KEY_ACCURACY])
             print('AUC       : %.1f' % self.score_dict[k_fold][target][KEY_AUC])
 
-    def save_score(self, data_handler=None, best_epoch=None, num_of_dimension=None, num_of_hidden=None,
+    def save_score(self, data_handler, is_cross_valid=True, best_epoch=None, num_of_dimension=None, num_of_hidden=None,
                    learning_rate=None):
 
         def __get_score_list(class_of_key):
@@ -122,8 +125,6 @@ class MyScore(MyPlot):
 
         save_name = PATH_RESULT + SAVE_DIR_NAME
         loop_cnt = len(self.score_dict[1][KEY_TOTAL])
-        # for k_fold in self.score_dict:
-        #     loop_cnt += len(self.score_dict[k_fold][KEY_TOTAL])
 
         data_frame = {
             "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt)],
@@ -135,7 +136,7 @@ class MyScore(MyPlot):
             "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt)],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt)],
             "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt)],
-            " ": ["" for _ in range(len(self.score_dict[1][KEY_TOTAL]))],
+            " ": ["" for _ in range(loop_cnt)],
             SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_IMMORTALITY)],
             KEY_MORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_MORTALITY)],
@@ -148,13 +149,11 @@ class MyScore(MyPlot):
         if DO_SHOW:
             print("\n\ncomplete saving!! -", save_name, "\n")
 
-    def set_2_class_score(self):
-        for k_fold in self.score_dict:
-            for key in self.score:
-                self.score[key] = (self.score_dict[k_fold][KEY_MORTALITY][key] +
-                                   self.score_dict[k_fold][KEY_IMMORTALITY][key]) / 2
+    def set_2_class_score(self, k_fold):
+        self.set_score(target=KEY_TOTAL, k_fold=self.num_of_fold)
 
         for key in self.score:
-            self.score[key] /= self.num_of_fold
+            self.score[key] += (self.score_dict[k_fold][KEY_MORTALITY][key] +
+                                self.score_dict[k_fold][KEY_IMMORTALITY][key]) / 2
 
-        self.set_score(target=KEY_TOTAL, k_fold=0)
+        self.set_score(target=KEY_TOTAL, k_fold=self.num_of_fold)

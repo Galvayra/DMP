@@ -23,6 +23,7 @@ NAME_HIDDEN = "num_of_hidden"
 
 # key of target
 KEY_VALID = "validation"
+KEY_TEST = "test"
 KEY_MORTALITY = "mortality"
 KEY_IMMORTALITY = "alive"
 KEY_TOTAL = "total"

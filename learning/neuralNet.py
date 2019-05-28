@@ -159,8 +159,14 @@ class MyNeuralNetwork(MyScore):
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
         h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_VALID, k_fold=self.num_of_fold)
+
+        if self.is_cross_valid:
+            key = KEY_TEST
+        else:
+            key = KEY_VALID
+
+        self.set_score(target=key, k_fold=self.num_of_fold)
+        self.show_score(target=key, k_fold=self.num_of_fold)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -281,8 +287,14 @@ class MyNeuralNetwork(MyScore):
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
         h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
-        self.set_score(target=KEY_VALID, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_VALID, k_fold=self.num_of_fold)
+
+        if self.is_cross_valid:
+            key = KEY_TEST
+        else:
+            key = KEY_VALID
+
+        self.set_score(target=key, k_fold=self.num_of_fold)
+        self.show_score(target=key, k_fold=self.num_of_fold)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if DO_SHOW:
@@ -489,8 +501,9 @@ class MyNeuralNetwork(MyScore):
 
     def save(self, data_handler):
         # set total score of immortality and mortality
-        self.set_2_class_score()
-        self.show_score(target=KEY_TOTAL, k_fold=0)
+
+        # self.set_2_class_score()
+        # self.show_score(target=KEY_TOTAL, k_fold=0)
 
         exit(-1)
 
@@ -501,7 +514,7 @@ class MyNeuralNetwork(MyScore):
                         learning_rate=self.learning_rate)
 
     def show_process_time(self):
-        process_time = self.start_time - time.time()
+        process_time = time.time() - self.start_time
 
         if DO_SHOW:
             print("\n\n processing time     --- %s seconds ---" % process_time, "\n\n")

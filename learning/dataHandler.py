@@ -66,6 +66,7 @@ class DataHandler:
             self.count_all = list()
             self.count_mortality = list()
             self.count_alive = list()
+            self.__set_count()
 
             self.__importance = dict()
 
@@ -106,7 +107,7 @@ class DataHandler:
                 self.x_test = [x_target[index] for index in target_index]
                 self.y_test = [y_target[index] for index in target_index]
 
-    def show_info(self):
+    def __set_count(self):
         def __count_mortality(_y_data_):
             _count = 0
             for _i in _y_data_:
@@ -121,6 +122,7 @@ class DataHandler:
                                 __count_mortality(self.y_test)]
         self.count_alive = [self.count_all[i] - self.count_mortality[i] for i in range(3)]
 
+    def show_info(self):
         if DO_SHOW:
             print("\n\n\n======== DataSet Count ========")
             print("dims - ", len(self.x_train[0]))

@@ -21,7 +21,7 @@ class DataClassifier:
             self.dataHandler.set_x_y_set(name_of_set="valid")
             self.dataHandler.set_x_y_set(name_of_set="test")
 
-            if VERSION == 1:
+            if VERSION == 2:
                 self.dataHandler.show_info()
 
     def training(self):
@@ -96,10 +96,34 @@ class DataClassifier:
         y_test = self.dataHandler.y_test
 
         if VERSION == 1:
-            pass
+            x_data, y_data = self.__get_total_set()
+
+            if TYPE_OF_MODEL == "svm":
+                ocf = OlderClassifier()
+                ocf.init_plot()
+
+                for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                    h, y_predict = ocf.load_svm(x_train, y_train, x_test)
+                    ocf.predict(h, y_predict, y_test)
+
+                # ocf.save(x_data, y_data)
+                # ocf.show_plot()
+            else:
+                nn = MyNeuralNetwork()
+                nn.init_plot()
+
+                if TYPE_OF_MODEL == "ffnn":
+                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                        nn.feed_forward(x_train, y_train, x_test, y_test)
+                elif TYPE_OF_MODEL == "cnn":
+                    # self.dataHandler.set_image_path method does not apply in cross validation!
+                    if IMAGE_PATH:
+                        print("Do not use image path option !!")
+                        print("You just input vectors!\n\n")
+                        exit(-1)
 
         elif VERSION == 2:
-            if TYPE_OF_MODEL == "svm" or TYPE_OF_MODEL == "rf":
+            if TYPE_OF_MODEL == "svm":
                 x_train = self.dataHandler.x_train
                 y_train = self.dataHandler.y_train
 
@@ -169,19 +193,20 @@ class OlderClassifier(MyScore):
         self.num_of_fold += 1
 
         # set score of immortality
-        self.compute_score(__get_reverse(y_predict), __get_reverse(y_test), __get_reverse(h, is_hypothesis=True))
+        self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
         self.show_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
 
         # set score of mortality
-        self.compute_score(y_predict, y_test, h)
+        self.compute_score(y_test, y_predict,  h)
         self.set_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
         self.show_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
-        self.set_plot()
 
         # set total score of immortality and mortality
-        self.set_2_class_score()
+        self.set_2_class_score(k_fold=self.num_of_fold)
         self.show_score(target=KEY_TOTAL, k_fold=self.num_of_fold)
 
-    def save(self, data_handler):
-        self.save_score(data_handler)
+        self.set_plot()
+
+    def save(self, y):
+        self.save_score(y)
