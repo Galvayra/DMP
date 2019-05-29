@@ -17,7 +17,7 @@ def get_arguments():
                                                   "\nUseAge : python encoding.py -ratio 0.5 (2:1:1)\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
                                                     "\nUseAge : python parsing.py -target 'symptom'\n\n")
-    parser.add_argument("-sampling", "--sampling", help="set whether sampling or not (default is 0)"
+    parser.add_argument("-sampling", "--sampling", help="set whether sampling or not (default is 1)"
                                                         "\nUseAge : python parsing.py -sampling 1\n\n")
 
     _args = parser.parse_args()
@@ -37,7 +37,7 @@ SAVE_FILE_TRAIN = "parsing_train"
 SAVE_FILE_VALID = "parsing_valid"
 SAVE_FILE_TEST = "parsing_test"
 
-DO_SAMPLING = False
+DO_SAMPLING = True
 RATIO = 0.8
 
 if args.input:
