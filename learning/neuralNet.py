@@ -6,7 +6,6 @@ import shutil
 import math
 import sys
 import json
-import time
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
@@ -19,7 +18,6 @@ BATCH_SIZE = 512
 class MyNeuralNetwork(MyScore):
     def __init__(self, is_cross_valid=True):
         super().__init__()
-        self.__start_time = time.time()
         self.tf_x = None
         self.tf_y = None
         self.keep_prob = None
@@ -33,10 +31,6 @@ class MyNeuralNetwork(MyScore):
         self.__name_of_tensor = str()
         self.__is_cross_valid = is_cross_valid
         self.__init_log_and_tensor()
-
-    @property
-    def start_time(self):
-        return self.__start_time
 
     @property
     def loss_list(self):
@@ -503,7 +497,7 @@ class MyNeuralNetwork(MyScore):
 
         self.set_plot(fpr=fpr, tpr=tpr, title=title)
 
-    def save(self, data_handler):
+    def save(self, data_handler=False):
         # set total score of immortality and mortality
 
         self.set_performance()
@@ -517,14 +511,6 @@ class MyNeuralNetwork(MyScore):
                             num_of_dimension=self.num_of_dimension,
                             num_of_hidden=self.num_of_hidden,
                             learning_rate=self.learning_rate)
-
-    def show_process_time(self):
-        process_time = time.time() - self.start_time
-
-        if DO_SHOW:
-            print("\n\n processing time     --- %s seconds ---" % process_time, "\n\n")
-
-        return process_time
 
     def save_process_time(self):
         with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:

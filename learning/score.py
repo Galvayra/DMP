@@ -4,6 +4,8 @@ from .variables import *
 from .plot import MyPlot
 import copy
 import sys
+import time
+from collections import OrderedDict
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW
@@ -17,10 +19,15 @@ INDEX_OF_PERFORMANCE = 0
 class MyScore(MyPlot):
     def __init__(self):
         super().__init__()
+        self.__start_time = time.time()
         self.__score = self.__init_score()
         self.__score_dict = dict()
         self.__count_dict = dict()
         self.__num_of_fold = int()
+
+    @property
+    def start_time(self):
+        return self.__start_time
 
     @property
     def score(self):
@@ -35,11 +42,8 @@ class MyScore(MyPlot):
               'Training' :
                { "survive": int, "death": int, "total" : int},
 
-              'Validation' :
-               { "survive": int, "death": int, "total" : int},
-
               'Test' :
-               { "survive": int, "death": int, "total" : int},
+               { "survive": int, "death": int, "total" : int}
             } , ... ,
 
           K : { ... }
@@ -60,7 +64,7 @@ class MyScore(MyPlot):
                { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float},
 
               'Total' :
-               { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float},
+               { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float}
             } , ... ,
 
           K : { ... }
@@ -159,7 +163,20 @@ class MyScore(MyPlot):
             if self.num_of_fold == INDEX_OF_PERFORMANCE:
                 print("\t\t\t\tSystem Performance")
             else:
-                print("\t\t\t\t" + str(self.num_of_fold) + " Fold Performance")
+                print("\t\t\t\t" + str(self.num_of_fold) + " Fold Performance\n")
+
+                if self.count_dict:
+                    print("Training  Count -", str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_TOTAL]).rjust(4),
+                          "\t Survive Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_IMMORTALITY]).rjust(3),
+                          "\t Death   Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_MORTALITY]).rjust(4))
+
+                    print("Test      Count -", str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_TOTAL]).rjust(4),
+                          "\t Survive Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_IMMORTALITY]).rjust(3),
+                          "\t Death   Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_MORTALITY]).rjust(4), '\n')
             print("-------------------------------------------------------------------------------------")
 
         self.__show_score(target=KEY_IMMORTALITY)
@@ -169,9 +186,32 @@ class MyScore(MyPlot):
         if DO_SHOW:
             print("\n\n")
 
+    def set_training_count(self, y_train, y_test):
+        def __get_death_count(target_list):
+            count = int()
+
+            for x in target_list:
+                if x == [1]:
+                    count += 1
+
+            return count
+
+        if self.num_of_fold not in self.count_dict:
+            self.count_dict[self.num_of_fold] = {
+                KEY_TRAIN: {
+                    KEY_IMMORTALITY: len(y_train) - __get_death_count(y_train),
+                    KEY_MORTALITY: __get_death_count(y_train),
+                    KEY_TOTAL: len(y_train)
+                },
+                KEY_TEST: {
+                    KEY_IMMORTALITY: len(y_test) - __get_death_count(y_test),
+                    KEY_MORTALITY: __get_death_count(y_test),
+                    KEY_TOTAL: len(y_test)
+                }
+            }
+
     def save_score_cross_valid(self, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
         save_name = PATH_RESULT + SAVE_DIR_NAME
-        # loop_cnt = len(self.score)
         num_of_fold = len(self.score_dict)
         loop_cnt = (len(self.score) + NUM_OF_BLANK)
 
@@ -181,52 +221,32 @@ class MyScore(MyPlot):
             "# of total": ["" for _ in range(loop_cnt)],
             "# of mortality": ["" for _ in range(loop_cnt)],
             "# of alive": ["" for _ in range(loop_cnt)],
-            " ": ["" for _ in range(loop_cnt * num_of_fold)],
+            "": ["" for _ in range(loop_cnt * num_of_fold)],
             SAVE_DIR_NAME: [key for key in self.score] + ["" for _ in range(NUM_OF_BLANK)],
             KEY_IMMORTALITY: list(),
             KEY_MORTALITY: list(),
             KEY_TOTAL: list(),
-            "": ["" for _ in range(loop_cnt * num_of_fold)],
+            " ": ["" for _ in range(loop_cnt * num_of_fold)],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_fold)],
             "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_fold)],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_fold)],
             "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_fold)],
         }
-
-        # data_frame = {
-        #     "K fold": list(),
-        #     "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt * num_of_fold)],
-        #     "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt * num_of_fold)],
-        #     "# of mortality": data_handler.count_mortality + ["" for _ in range(3, loop_cnt * num_of_fold)],
-        #     "# of alive": data_handler.count_alive + ["" for _ in range(3, loop_cnt * num_of_fold)],
-        #     "": ["" for _ in range(loop_cnt * num_of_fold)],
-        #     "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-        #     "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-        #     "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-        #     "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-        #     " ": ["" for _ in range(loop_cnt * num_of_fold)],
-        #     SAVE_DIR_NAME: [key for key in self.score] + ["" for _ in range(len(self.score) * num_of_fold)]
-        #     # KEY_IMMORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_IMMORTALITY)],
-        #     # KEY_MORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_MORTALITY)],
-        #     # KEY_TOTAL: ["%0.2f" % score for score in __get_score_list(KEY_TOTAL)]
-        # }
-
-        # set "K fold" column
-        for _k_fold in range(1, num_of_fold):
-            data_frame["K fold"].append(str(_k_fold) + " fold")
-
-            for _ in range(loop_cnt - 1):
-                data_frame["K fold"].append("")
-
-        data_frame["Set"] *= num_of_fold
-        data_frame[SAVE_DIR_NAME] *= num_of_fold
+        #
+        # # set "K fold" column
+        # for _k_fold in range(1, num_of_fold):
+        #     data_frame["K fold"].append(str(_k_fold) + " fold")
+        #
+        #     for _ in range(loop_cnt - 1):
+        #         data_frame["K fold"].append("")
+        #
+        # data_frame["Set"] *= num_of_fold
+        # data_frame[SAVE_DIR_NAME] *= num_of_fold
 
         for k, v in data_frame.items():
             print(k, len(v), v)
 
         exit(-1)
-
-        pass
 
     def save_score(self, data_handler, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
         save_name = PATH_RESULT + SAVE_DIR_NAME
@@ -237,12 +257,12 @@ class MyScore(MyPlot):
             "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt)],
             "# of mortality": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
             "# of alive": data_handler.count_alive + ["" for _ in range(3, loop_cnt)],
-            " ": ["" for _ in range(loop_cnt)],
+            "": ["" for _ in range(loop_cnt)],
             SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_IMMORTALITY].values()],
             KEY_MORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_MORTALITY].values()],
             KEY_TOTAL: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_TOTAL].values()],
-            "": ["" for _ in range(loop_cnt)],
+            " ": ["" for _ in range(loop_cnt)],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt)],
             "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt)],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt)],
@@ -284,4 +304,16 @@ class MyScore(MyPlot):
                 for measure in self.score:
                     average_score[target][measure] += self.score_dict[k_fold][target][measure]
 
+        for target in average_score:
+            for measure in self.score:
+                average_score[target][measure] /= self.num_of_fold
+
         return average_score
+
+    def show_process_time(self):
+        process_time = time.time() - self.start_time
+
+        if DO_SHOW:
+            print("\n\n processing time     --- %s seconds ---" % process_time, "\n\n")
+
+        return process_time

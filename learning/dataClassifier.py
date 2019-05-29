@@ -104,23 +104,29 @@ class DataClassifier:
 
                 for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                     h, y_predict = ocf.load_svm(x_train, y_train, x_test)
+                    ocf.set_training_count(y_train, y_test)
                     ocf.predict(h, y_predict, y_test)
 
-                # ocf.save(x_data, y_data)
-                # ocf.show_plot()
+                ocf.save()
+                ocf.show_process_time()
+                ocf.show_plot()
             else:
                 nn = MyNeuralNetwork()
                 nn.init_plot()
 
                 if TYPE_OF_MODEL == "ffnn":
                     for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                        nn.feed_forward(x_train, y_train, x_test, y_test)
+                        nn.load_nn(x_test, y_test)
+                        nn.set_training_count(y_train, y_test)
                 elif TYPE_OF_MODEL == "cnn":
                     # self.dataHandler.set_image_path method does not apply in cross validation!
                     if IMAGE_PATH:
                         print("Do not use image path option !!")
                         print("You just input vectors!\n\n")
                         exit(-1)
+                nn.save()
+                nn.show_process_time()
+                nn.show_plot()
 
         elif VERSION == 2:
             if TYPE_OF_MODEL == "svm":
@@ -134,6 +140,7 @@ class DataClassifier:
                 h, y_predict = ocf.load_svm(x_train, y_train, x_test)
                 ocf.predict(h, y_predict, y_test)
                 ocf.save(self.dataHandler)
+                ocf.show_process_time()
                 ocf.show_plot()
             else:
                 if TYPE_OF_MODEL == "cnn":
@@ -148,8 +155,8 @@ class DataClassifier:
                 h, y_predict = nn.load_nn(x_test, y_test)
                 nn.predict(h, y_predict, y_test)
                 nn.save(self.dataHandler)
-                nn.show_plot()
                 nn.show_process_time()
+                nn.show_plot()
 
     @staticmethod
     def show_multi_plot():
@@ -169,8 +176,8 @@ class OlderClassifier(MyScore):
     def is_cross_valid(self):
         return self.__is_cross_valid
 
-    @staticmethod
-    def load_svm(x_train, y_train, x_test):
+    def load_svm(self, x_train, y_train, x_test):
+        self.num_of_fold += 1
         svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
         svc.fit(x_train, y_train)
 
@@ -195,8 +202,6 @@ class OlderClassifier(MyScore):
 
             return _y_labels_reverse
 
-        self.num_of_fold += 1
-
         # set score of immortality
         self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
@@ -213,7 +218,11 @@ class OlderClassifier(MyScore):
 
         self.set_plot()
 
-    def save(self, y):
+    def save(self, data_handler=False):
         self.set_performance()
         self.show_performance()
-        self.save_score(y)
+
+        if self.is_cross_valid:
+            self.save_score_cross_valid()
+        else:
+            self.save_score(data_handler)
