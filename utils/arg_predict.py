@@ -192,9 +192,12 @@ def show_options():
         else:
             print("Target is All\n")
 
-        if VERSION == 1:
-            print("\n\n--- 5 Cross Validation !! ---\n\n\n")
-        elif VERSION == 2:
-            print("\n\n--- Optimize hyper-param using validation set !! ---\n\n\n")
+        if TYPE_OF_MODEL == "svm":
+            print("\n\n--- Support Vector Machine    !! ---\n\n\n")
+        else:
+            if VERSION == 1:
+                print("\n\n--- 5 Cross Validation !! ---\n\n\n")
+            elif VERSION == 2:
+                print("\n\n--- Optimize hyper-param using validation set !! ---\n\n\n")
 
         print("model -", TYPE_OF_MODEL, "\n\n")

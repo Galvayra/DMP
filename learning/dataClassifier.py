@@ -127,7 +127,7 @@ class DataClassifier:
                 x_train = self.dataHandler.x_train
                 y_train = self.dataHandler.y_train
 
-                ocf = OlderClassifier()
+                ocf = OlderClassifier(is_cross_valid=False)
                 ocf.init_plot()
 
                 # initialize support vector machine
@@ -143,7 +143,7 @@ class DataClassifier:
                         self.dataHandler.expand4square_matrix(x_test)
 
                 # initialize Neural Network
-                nn = MyNeuralNetwork()
+                nn = MyNeuralNetwork(is_cross_valid=False)
                 nn.init_plot()
                 h, y_predict = nn.load_nn(x_test, y_test)
                 nn.predict(h, y_predict, y_test)
@@ -161,8 +161,13 @@ class DataClassifier:
 
 
 class OlderClassifier(MyScore):
-    def __init__(self):
+    def __init__(self, is_cross_valid=True):
         super().__init__()
+        self.__is_cross_valid = is_cross_valid
+
+    @property
+    def is_cross_valid(self):
+        return self.__is_cross_valid
 
     @staticmethod
     def load_svm(x_train, y_train, x_test):
@@ -194,19 +199,21 @@ class OlderClassifier(MyScore):
 
         # set score of immortality
         self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
+        self.set_score(target=KEY_IMMORTALITY)
 
         # set score of mortality
         self.compute_score(y_test, y_predict,  h)
-        self.set_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
+        self.set_score(target=KEY_MORTALITY)
 
         # set total score of immortality and mortality
-        self.set_2_class_score(k_fold=self.num_of_fold)
-        self.show_score(target=KEY_TOTAL, k_fold=self.num_of_fold)
+        self.set_2_class_score()
+
+        if self.is_cross_valid:
+            self.show_performance()
 
         self.set_plot()
 
     def save(self, y):
+        self.set_performance()
+        self.show_performance()
         self.save_score(y)

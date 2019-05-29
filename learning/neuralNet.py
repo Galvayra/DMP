@@ -165,8 +165,8 @@ class MyNeuralNetwork(MyScore):
         else:
             key = KEY_VALID
 
-        self.set_score(target=key, k_fold=self.num_of_fold)
-        self.show_score(target=key, k_fold=self.num_of_fold)
+        self.set_score(target=key)
+        self.__show_score(target=key)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -293,8 +293,8 @@ class MyNeuralNetwork(MyScore):
         else:
             key = KEY_VALID
 
-        self.set_score(target=key, k_fold=self.num_of_fold)
-        self.show_score(target=key, k_fold=self.num_of_fold)
+        self.set_score(target=key)
+        self.__show_score(target=key)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if DO_SHOW:
@@ -461,14 +461,18 @@ class MyNeuralNetwork(MyScore):
 
         # set score of immortality
         self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_IMMORTALITY, k_fold=self.num_of_fold)
-        # self.set_plot()
+        self.set_score(target=KEY_IMMORTALITY)
 
         # set score of mortality
         self.compute_score(y_test, y_predict, h)
-        self.set_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
-        self.show_score(target=KEY_MORTALITY, k_fold=self.num_of_fold)
+        self.set_score(target=KEY_MORTALITY)
+
+        # set 2 class score
+        self.set_2_class_score()
+
+        if self.is_cross_valid:
+            self.show_performance()
+
         self.set_plot()
 
     def set_multi_plot(self):
@@ -502,16 +506,17 @@ class MyNeuralNetwork(MyScore):
     def save(self, data_handler):
         # set total score of immortality and mortality
 
-        # self.set_2_class_score()
-        # self.show_score(target=KEY_TOTAL, k_fold=0)
+        self.set_performance()
+        self.show_performance()
 
-        exit(-1)
-
-        self.save_score(data_handler=data_handler,
-                        best_epoch=self.best_epoch,
-                        num_of_dimension=self.num_of_dimension,
-                        num_of_hidden=self.num_of_hidden,
-                        learning_rate=self.learning_rate)
+        if self.is_cross_valid:
+            pass
+        else:
+            self.save_score(data_handler=data_handler,
+                            best_epoch=self.best_epoch,
+                            num_of_dimension=self.num_of_dimension,
+                            num_of_hidden=self.num_of_hidden,
+                            learning_rate=self.learning_rate)
 
     def show_process_time(self):
         process_time = time.time() - self.start_time

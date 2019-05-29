@@ -10,12 +10,16 @@ if sys.argv[0].split('/')[-1] == "training.py":
 elif sys.argv[0].split('/')[-1] == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
 
+NUM_OF_BLANK = 2
+INDEX_OF_PERFORMANCE = 0
+
 
 class MyScore(MyPlot):
     def __init__(self):
         super().__init__()
         self.__score = self.__init_score()
         self.__score_dict = dict()
+        self.__count_dict = dict()
         self.__num_of_fold = int()
 
     @property
@@ -23,7 +27,45 @@ class MyScore(MyPlot):
         return self.__score
 
     @property
+    def count_dict(self):
+        """
+        {
+          1 (k_fold):
+            {
+              'Training' :
+               { "survive": int, "death": int, "total" : int},
+
+              'Validation' :
+               { "survive": int, "death": int, "total" : int},
+
+              'Test' :
+               { "survive": int, "death": int, "total" : int},
+            } , ... ,
+
+          K : { ... }
+        }
+        """
+        return self.__count_dict
+
+    @property
     def score_dict(self):
+        """
+        {
+          1 (k_fold):
+            {
+              'alive' :
+               { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float},
+
+              'death' :
+               { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float},
+
+              'Total' :
+               { "Precision": float, "Recall": float, "F1 score": float, "Accuracy": float, "AUC" : float},
+            } , ... ,
+
+          K : { ... }
+        }
+        """
         return self.__score_dict
 
     @property
@@ -31,8 +73,8 @@ class MyScore(MyPlot):
         return self.__num_of_fold
 
     @num_of_fold.setter
-    def num_of_fold(self, num):
-        self.__num_of_fold = num
+    def num_of_fold(self, num_of_fold):
+        self.__num_of_fold = num_of_fold
 
     @staticmethod
     def __init_score():
@@ -50,14 +92,14 @@ class MyScore(MyPlot):
         for measure, value in score.items():
             self.__score[measure] = value
 
-    def set_score(self, target, k_fold):
-        if k_fold not in self.score_dict:
-            self.score_dict[k_fold] = dict()
+    def set_score(self, target):
+        if self.num_of_fold not in self.score_dict:
+            self.score_dict[self.num_of_fold] = dict()
 
-        if target not in self.score_dict[k_fold]:
-            self.score_dict[k_fold][target] = dict()
+        if target not in self.score_dict[self.num_of_fold]:
+            self.score_dict[self.num_of_fold][target] = dict()
 
-        self.score_dict[k_fold][target] = copy.deepcopy(self.score)
+        self.score_dict[self.num_of_fold][target] = copy.deepcopy(self.score)
         self.__score = self.__init_score()
 
     def compute_score(self, y, y_predict, hypothesis, accuracy=False):
@@ -100,47 +142,111 @@ class MyScore(MyPlot):
             self.fpr = fpr
             self.auc = (auc(fpr, tpr) / 100)
 
-    def show_score(self, target, k_fold):
+    def __show_score(self, target):
         if DO_SHOW:
             if target:
-                print('\n\n\n\n======== Target is', target, "========\n")
+                print('\n\n======== Target is', target, "========\n")
 
-            print('Precision : %.1f' % self.score_dict[k_fold][target][KEY_PRECISION])
-            print('Recall    : %.1f' % self.score_dict[k_fold][target][KEY_RECALL])
-            print('F1-Score  : %.1f' % self.score_dict[k_fold][target][KEY_F1])
-            print('Accuracy  : %.1f' % self.score_dict[k_fold][target][KEY_ACCURACY])
-            print('AUC       : %.1f' % self.score_dict[k_fold][target][KEY_AUC])
+            print('Precision : %.1f' % self.score_dict[self.num_of_fold][target][KEY_PRECISION])
+            print('Recall    : %.1f' % self.score_dict[self.num_of_fold][target][KEY_RECALL])
+            print('F1-Score  : %.1f' % self.score_dict[self.num_of_fold][target][KEY_F1])
+            print('Accuracy  : %.1f' % self.score_dict[self.num_of_fold][target][KEY_ACCURACY])
+            print('AUC       : %.1f' % self.score_dict[self.num_of_fold][target][KEY_AUC])
 
-    def save_score(self, data_handler, is_cross_valid=True, best_epoch=None, num_of_dimension=None, num_of_hidden=None,
-                   learning_rate=None):
+    def show_performance(self):
+        if DO_SHOW:
+            print("\n\n\n\n\n-------------------------------------------------------------------------------------")
+            if self.num_of_fold == INDEX_OF_PERFORMANCE:
+                print("\t\t\t\tSystem Performance")
+            else:
+                print("\t\t\t\t" + str(self.num_of_fold) + " Fold Performance")
+            print("-------------------------------------------------------------------------------------")
 
-        def __get_score_list(class_of_key):
-            score_list = [float() for _ in range(loop_cnt)]
+        self.__show_score(target=KEY_IMMORTALITY)
+        self.__show_score(target=KEY_MORTALITY)
+        self.__show_score(target=KEY_TOTAL)
 
-            for _k_fold in self.score_dict:
-                for i, score in enumerate(self.score_dict[_k_fold][class_of_key].values()):
-                    score_list[i] += score
+        if DO_SHOW:
+            print("\n\n")
 
-            return score_list
-
+    def save_score_cross_valid(self, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
         save_name = PATH_RESULT + SAVE_DIR_NAME
-        loop_cnt = len(self.score_dict[1][KEY_TOTAL])
+        # loop_cnt = len(self.score)
+        num_of_fold = len(self.score_dict)
+        loop_cnt = (len(self.score) + NUM_OF_BLANK)
+
+        data_frame = {
+            "K fold": ["Total"] + ["" for _ in range(1, loop_cnt)],
+            "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt)],
+            "# of total": ["" for _ in range(loop_cnt)],
+            "# of mortality": ["" for _ in range(loop_cnt)],
+            "# of alive": ["" for _ in range(loop_cnt)],
+            " ": ["" for _ in range(loop_cnt * num_of_fold)],
+            SAVE_DIR_NAME: [key for key in self.score] + ["" for _ in range(NUM_OF_BLANK)],
+            KEY_IMMORTALITY: list(),
+            KEY_MORTALITY: list(),
+            KEY_TOTAL: list(),
+            "": ["" for _ in range(loop_cnt * num_of_fold)],
+            "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+            "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+            "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+            "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+        }
+
+        # data_frame = {
+        #     "K fold": list(),
+        #     "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt * num_of_fold)],
+        #     "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt * num_of_fold)],
+        #     "# of mortality": data_handler.count_mortality + ["" for _ in range(3, loop_cnt * num_of_fold)],
+        #     "# of alive": data_handler.count_alive + ["" for _ in range(3, loop_cnt * num_of_fold)],
+        #     "": ["" for _ in range(loop_cnt * num_of_fold)],
+        #     "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+        #     "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+        #     "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+        #     "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+        #     " ": ["" for _ in range(loop_cnt * num_of_fold)],
+        #     SAVE_DIR_NAME: [key for key in self.score] + ["" for _ in range(len(self.score) * num_of_fold)]
+        #     # KEY_IMMORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_IMMORTALITY)],
+        #     # KEY_MORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_MORTALITY)],
+        #     # KEY_TOTAL: ["%0.2f" % score for score in __get_score_list(KEY_TOTAL)]
+        # }
+
+        # set "K fold" column
+        for _k_fold in range(1, num_of_fold):
+            data_frame["K fold"].append(str(_k_fold) + " fold")
+
+            for _ in range(loop_cnt - 1):
+                data_frame["K fold"].append("")
+
+        data_frame["Set"] *= num_of_fold
+        data_frame[SAVE_DIR_NAME] *= num_of_fold
+
+        for k, v in data_frame.items():
+            print(k, len(v), v)
+
+        exit(-1)
+
+        pass
+
+    def save_score(self, data_handler, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
+        save_name = PATH_RESULT + SAVE_DIR_NAME
+        loop_cnt = len(self.score)
 
         data_frame = {
             "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt)],
             "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt)],
             "# of mortality": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
             "# of alive": data_handler.count_alive + ["" for _ in range(3, loop_cnt)],
+            " ": ["" for _ in range(loop_cnt)],
+            SAVE_DIR_NAME: [key for key in self.score],
+            KEY_IMMORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_IMMORTALITY].values()],
+            KEY_MORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_MORTALITY].values()],
+            KEY_TOTAL: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_TOTAL].values()],
             "": ["" for _ in range(loop_cnt)],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt)],
             "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt)],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt)],
-            "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt)],
-            " ": ["" for _ in range(loop_cnt)],
-            SAVE_DIR_NAME: [key for key in self.score],
-            KEY_IMMORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_IMMORTALITY)],
-            KEY_MORTALITY: ["%0.2f" % score for score in __get_score_list(KEY_MORTALITY)],
-            KEY_TOTAL: ["%0.2f" % score for score in __get_score_list(KEY_TOTAL)]
+            "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt)]
         }
 
         data_df = DataFrame(data_frame)
@@ -149,11 +255,33 @@ class MyScore(MyPlot):
         if DO_SHOW:
             print("\n\ncomplete saving!! -", save_name, "\n")
 
-    def set_2_class_score(self, k_fold):
-        self.set_score(target=KEY_TOTAL, k_fold=self.num_of_fold)
+    def set_2_class_score(self):
+        self.set_score(target=KEY_TOTAL)
 
         for key in self.score:
-            self.score[key] += (self.score_dict[k_fold][KEY_MORTALITY][key] +
-                                self.score_dict[k_fold][KEY_IMMORTALITY][key]) / 2
+            self.score[key] += (self.score_dict[self.num_of_fold][KEY_MORTALITY][key] +
+                                self.score_dict[self.num_of_fold][KEY_IMMORTALITY][key]) / 2
 
-        self.set_score(target=KEY_TOTAL, k_fold=self.num_of_fold)
+        self.set_score(target=KEY_TOTAL)
+
+    def set_performance(self):
+        average_score = self.__get_average_score()
+        self.__num_of_fold = INDEX_OF_PERFORMANCE
+
+        for target in average_score:
+            self.__score = average_score[target]
+            self.set_score(target)
+
+    def __get_average_score(self):
+        average_score = {
+            KEY_IMMORTALITY: self.__init_score(),
+            KEY_MORTALITY: self.__init_score(),
+            KEY_TOTAL: self.__init_score()
+        }
+
+        for k_fold in range(1, self.num_of_fold + 1):
+            for target in average_score:
+                for measure in self.score:
+                    average_score[target][measure] += self.score_dict[k_fold][target][measure]
+
+        return average_score
