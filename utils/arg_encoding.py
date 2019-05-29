@@ -118,6 +118,6 @@ if args.n_features:
     else:
         if NUM_OF_IMPORTANT == -1:
             NUM_OF_IMPORTANT = NUM_OF_FEATURES
-        elif NUM_OF_IMPORTANT < 1 or VERSION > NUM_OF_FEATURES:
+        elif NUM_OF_IMPORTANT < 1 or NUM_OF_IMPORTANT > NUM_OF_FEATURES:
             print("\nInput Error Boundary of n option!\n")
             exit(-1)

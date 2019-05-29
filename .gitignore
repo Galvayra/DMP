@@ -15,6 +15,7 @@ modeling/vectors/
 modeling/save/
 modeling/embedding/
 modeling/parsing_result/
+modeling/fsResult/
 reference/
 result/
 make/
