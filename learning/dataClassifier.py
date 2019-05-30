@@ -95,6 +95,7 @@ class DataClassifier:
         x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
+        # k cross validation
         if VERSION == 1:
             x_data, y_data = self.__get_total_set()
 
@@ -116,10 +117,12 @@ class DataClassifier:
 
                 if TYPE_OF_MODEL == "ffnn":
                     for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                        nn.load_nn(x_test, y_test)
+                        h, y_predict = nn.load_nn(x_test, y_test)
                         nn.set_training_count(y_train, y_test)
+                        nn.predict(h, y_predict, y_test)
                 elif TYPE_OF_MODEL == "cnn":
                     # self.dataHandler.set_image_path method does not apply in cross validation!
+                    # ############# have to make loading and linking images
                     if IMAGE_PATH:
                         print("Do not use image path option !!")
                         print("You just input vectors!\n\n")

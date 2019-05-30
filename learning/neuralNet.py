@@ -160,7 +160,7 @@ class MyNeuralNetwork(MyScore):
             key = KEY_VALID
 
         self.set_score(target=key)
-        self.__show_score(target=key)
+        self.show_score(target=key)
 
     def __init_convolution_layer(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
@@ -288,7 +288,7 @@ class MyNeuralNetwork(MyScore):
             key = KEY_VALID
 
         self.set_score(target=key)
-        self.__show_score(target=key)
+        self.show_score(target=key)
 
     def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if DO_SHOW:
@@ -346,7 +346,17 @@ class MyNeuralNetwork(MyScore):
 
                 # training
                 if DO_SHOW and step % NUM_OF_SAVE_EPOCH == 0:
-                    if not self.is_cross_valid:
+                    if self.is_cross_valid:
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                        )
+
+                        train_writer.add_summary(train_summary, global_step=step)
+                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+
+                        saver.save(sess, global_step=step, save_path=self.__get_name_of_tensor() + "/model")
+                    else:
                         train_summary, tra_loss, tra_acc = sess.run(
                             [merged_summary, cost, _accuracy],
                             feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
@@ -369,16 +379,6 @@ class MyNeuralNetwork(MyScore):
 
                         if self.__is_stopped_training(val_loss):
                             break
-                    else:
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                        )
-
-                        train_writer.add_summary(train_summary, global_step=step)
-                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
-
-                        saver.save(sess, global_step=step, save_path=self.__get_name_of_tensor() + "/model")
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
@@ -412,7 +412,12 @@ class MyNeuralNetwork(MyScore):
         self.num_of_fold += 1
         checkpoint = tf.train.get_checkpoint_state(self.__get_name_of_tensor())
         paths = checkpoint.all_model_checkpoint_paths
-        path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
+
+        if self.is_cross_valid:
+            path = paths[-1]
+        else:
+            path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
+
         self.best_epoch = int(path.split("/")[-1].split("model-")[-1])
         self.num_of_dimension = len(x_test[0])
 
@@ -420,7 +425,7 @@ class MyNeuralNetwork(MyScore):
             saver = tf.train.import_meta_graph(path + '.meta')
             saver.restore(sess, path)
 
-            print("\n\n\ncheckpoint -", path, "\nBest Epoch  -", self.best_epoch, "\n")
+            print("\n\n\ncheckpoint -", path, "\nBest Epoch -", self.best_epoch, "\n")
 
             # load tensor
             graph = tf.get_default_graph()
@@ -434,6 +439,8 @@ class MyNeuralNetwork(MyScore):
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
+
+        tf.reset_default_graph()
 
         return h, y_predict
 
@@ -504,9 +511,12 @@ class MyNeuralNetwork(MyScore):
         self.show_performance()
 
         if self.is_cross_valid:
-            pass
+            self.save_score_cross_valid(best_epoch=self.best_epoch,
+                                        num_of_dimension=self.num_of_dimension,
+                                        num_of_hidden=self.num_of_hidden,
+                                        learning_rate=self.learning_rate)
         else:
-            self.save_score(data_handler=data_handler,
+            self.save_score(data_handler,
                             best_epoch=self.best_epoch,
                             num_of_dimension=self.num_of_dimension,
                             num_of_hidden=self.num_of_hidden,

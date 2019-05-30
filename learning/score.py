@@ -145,7 +145,7 @@ class MyScore(MyPlot):
             self.fpr = fpr
             self.auc = (auc(fpr, tpr) / 100)
 
-    def __show_score(self, target):
+    def show_score(self, target):
         if DO_SHOW:
             if target:
                 print('\n\n======== Target is', target, "========\n")
@@ -178,9 +178,9 @@ class MyScore(MyPlot):
                           str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_MORTALITY]).rjust(4), '\n')
             print("-------------------------------------------------------------------------------------")
 
-        self.__show_score(target=KEY_IMMORTALITY)
-        self.__show_score(target=KEY_MORTALITY)
-        self.__show_score(target=KEY_TOTAL)
+        self.show_score(target=KEY_IMMORTALITY)
+        self.show_score(target=KEY_MORTALITY)
+        self.show_score(target=KEY_TOTAL)
 
         if DO_SHOW:
             print("\n\n")
@@ -227,7 +227,6 @@ class MyScore(MyPlot):
                 for _ in range(NUM_OF_BLANK):
                     data_frame[frame_key].append("")
 
-        save_name = PATH_RESULT + SAVE_DIR_NAME
         num_of_total_fold = len(self.score_dict)
         loop_cnt = (len(self.score) + NUM_OF_BLANK)
         set_list = [KEY_TRAIN, KEY_TEST]
@@ -246,7 +245,7 @@ class MyScore(MyPlot):
             KEY_TOTAL: list(),
             "  ": ["" for _ in range(loop_cnt * num_of_total_fold)],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
-            "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
+            "Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
             "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
         }
