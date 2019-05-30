@@ -467,7 +467,7 @@ class MyNeuralNetwork(MyScore):
         if self.is_cross_valid:
             self.show_performance()
 
-        self.set_plot()
+        self.set_plot(self.num_of_fold)
 
     def set_multi_plot(self):
 

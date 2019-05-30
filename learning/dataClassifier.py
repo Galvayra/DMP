@@ -216,7 +216,7 @@ class OlderClassifier(MyScore):
         if self.is_cross_valid:
             self.show_performance()
 
-        self.set_plot()
+        self.set_plot(self.num_of_fold)
 
     def save(self, data_handler=False):
         self.set_performance()

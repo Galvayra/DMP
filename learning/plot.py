@@ -40,18 +40,18 @@ class MyPlot:
             elif TYPE_OF_MODEL == "cnn":
                 self.my_plot.set_title("Convolution Neural Network")
 
-    def set_plot(self, fpr=None, tpr=None, title=None):
+    def set_plot(self, k=None, fpr=None, tpr=None, title=None):
         if DO_SHOW_PLOT:
             if fpr:
                 self.fpr = fpr
             if tpr:
                 self.tpr = tpr
+
             if not title:
-                title = "AUC"
-            # self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='AUC = %0.1f' % self.auc)
-            self.my_plot.plot(self.fpr, self.tpr, alpha=0.5, label='%s' % title)
-            # print(self.fpr)
-            # print(self.tpr)
+                self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='%d fold AUC = %0.2f' % (k, self.auc))
+            else:
+                self.my_plot.plot(self.fpr, self.tpr, alpha=0.5, label='%s' % title)
+
             self.tpr, self.fpr = self.__init_plot()
 
     def show_plot(self):

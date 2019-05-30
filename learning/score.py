@@ -5,7 +5,6 @@ from .plot import MyPlot
 import copy
 import sys
 import time
-from collections import OrderedDict
 
 if sys.argv[0].split('/')[-1] == "training.py":
     from DMP.utils.arg_training import DO_SHOW
@@ -211,52 +210,83 @@ class MyScore(MyPlot):
             }
 
     def save_score_cross_valid(self, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
+
+        def count_dict2frame(frame_key, count_key):
+            for _k_fold in range(1, num_of_total_fold):
+                for target_key in set_list:
+                    data_frame[frame_key].append(self.count_dict[_k_fold][target_key][count_key])
+
+                for _ in range(len(set_list), loop_cnt):
+                    data_frame[frame_key].append("")
+
+        def score_dict2frame(frame_key):
+            for _k_fold in range(0, num_of_total_fold):
+                for s in self.score_dict[_k_fold][frame_key].values():
+                    data_frame[frame_key].append("%0.2f" % s)
+
+                for _ in range(NUM_OF_BLANK):
+                    data_frame[frame_key].append("")
+
         save_name = PATH_RESULT + SAVE_DIR_NAME
-        num_of_fold = len(self.score_dict)
+        num_of_total_fold = len(self.score_dict)
         loop_cnt = (len(self.score) + NUM_OF_BLANK)
+        set_list = [KEY_TRAIN, KEY_TEST]
 
         data_frame = {
-            "K fold": ["Total"] + ["" for _ in range(1, loop_cnt)],
-            "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt)],
+            "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],
             "# of total": ["" for _ in range(loop_cnt)],
-            "# of mortality": ["" for _ in range(loop_cnt)],
-            "# of alive": ["" for _ in range(loop_cnt)],
-            "": ["" for _ in range(loop_cnt * num_of_fold)],
+            "# of death": ["" for _ in range(loop_cnt)],
+            "# of survive": ["" for _ in range(loop_cnt)],
+            "": ["" for _ in range(loop_cnt * num_of_total_fold)],
+            "K fold": ["Average"] + ["" for _ in range(1, loop_cnt)],
+            " ": ["" for _ in range(loop_cnt * num_of_total_fold)],
             SAVE_DIR_NAME: [key for key in self.score] + ["" for _ in range(NUM_OF_BLANK)],
             KEY_IMMORTALITY: list(),
             KEY_MORTALITY: list(),
             KEY_TOTAL: list(),
-            " ": ["" for _ in range(loop_cnt * num_of_fold)],
-            "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-            "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-            "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_fold)],
-            "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_fold)],
+            "  ": ["" for _ in range(loop_cnt * num_of_total_fold)],
+            "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
+            "Best Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
+            "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
+            "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
         }
-        #
-        # # set "K fold" column
-        # for _k_fold in range(1, num_of_fold):
-        #     data_frame["K fold"].append(str(_k_fold) + " fold")
-        #
-        #     for _ in range(loop_cnt - 1):
-        #         data_frame["K fold"].append("")
-        #
-        # data_frame["Set"] *= num_of_fold
-        # data_frame[SAVE_DIR_NAME] *= num_of_fold
 
-        for k, v in data_frame.items():
-            print(k, len(v), v)
+        # set count_dict to data_frame
+        count_dict2frame("# of total", KEY_TOTAL)
+        count_dict2frame("# of death", KEY_MORTALITY)
+        count_dict2frame("# of survive", KEY_IMMORTALITY)
 
-        exit(-1)
+        # set score_dict to data_frame
+        score_dict2frame(KEY_TOTAL)
+        score_dict2frame(KEY_MORTALITY)
+        score_dict2frame(KEY_IMMORTALITY)
+
+        # "K fold" column
+        for k_fold in range(1, num_of_total_fold):
+            data_frame["K fold"].append(str(k_fold) + " fold")
+
+            for _ in range(loop_cnt - 1):
+                data_frame["K fold"].append("")
+
+        # "Set" column
+        data_frame["Set"] *= num_of_total_fold
+        for i in range(len(set_list)):
+            data_frame["Set"][i] = ""
+
+        # "measure" column
+        data_frame[SAVE_DIR_NAME] *= num_of_total_fold
+
+        self.__save_df(data_frame)
 
     def save_score(self, data_handler, best_epoch=None, num_of_dimension=None, num_of_hidden=None, learning_rate=None):
-        save_name = PATH_RESULT + SAVE_DIR_NAME
         loop_cnt = len(self.score)
+        set_list = [KEY_TRAIN, KEY_VALID, KEY_TEST]
 
         data_frame = {
-            "Set": ["Training", "Validation", "Test"] + ["" for _ in range(3, loop_cnt)],
+            "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],
             "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt)],
-            "# of mortality": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
-            "# of alive": data_handler.count_alive + ["" for _ in range(3, loop_cnt)],
+            "# of death": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
+            "# of survive": data_handler.count_alive + ["" for _ in range(3, loop_cnt)],
             "": ["" for _ in range(loop_cnt)],
             SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_IMMORTALITY].values()],
@@ -268,6 +298,12 @@ class MyScore(MyPlot):
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt)],
             "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt)]
         }
+
+        self.__save_df(data_frame)
+
+    @staticmethod
+    def __save_df(data_frame):
+        save_name = PATH_RESULT + SAVE_DIR_NAME
 
         data_df = DataFrame(data_frame)
         data_df.to_csv(save_name + '.csv', index=False)
