@@ -20,25 +20,19 @@ step 2) Encoding Dataset to make vector (vectorization)
 
 	2-1-1) set input or ouput name, you can use word2vec or not
 	Useage) python encoding.py -input INPUT -output OUTPUT -ver 1 -w2v 0
-	(path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/")
-	(              "w2v file=modeling/embedding/")
+	(path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/",  "w2v file=modeling/embedding/")
 
 	2-1-2) set target symptom (when data is vetorized, the target symptom is excepted)
 	Useage) python encoding.py -target s (sepsis) -ver 1
 
 
-
 	==2-2) Feature Selection using Random Forest
 
-	2-2-1) if you want to select important features, use "ver 2" option 
-	Useage) python encoding.py -input INPUT -output OUTPUT -ver 2 
-	(path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/")
-
-	2-2-2) you make a log file to save importance of features
-	Useage) python extract_feature.py -vector VECTOR -output OUTPUT -ntree N
-	(path of dir,  "vector=modeling/vectors/"  "output=modeling/fsResult/")
-
-	2-2-3) Finally, make a vector using "fs" option
+    2-2-1) if you want to select important features, use build_feature_selection.sh
+    Useage) ./build_feature_selection.sh --input INPUT --output OUTPUT --fs_name FS_NAME --ntree NTREE
+    (path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/", "fs_name=modeling/fsResult/")
+    
+	2-2-2) Finally, make a vector using "fs" option
 	Useage) python encoding.py -input INPUT -output OUTPUT -fs FS -n_feature N -w2v 0
 	(path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/")
 	(              "fs=modeling/fsResult/"  "w2v file=modeling/embedding/")

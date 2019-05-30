@@ -72,4 +72,4 @@ if args.output:
 
 def show_options():
     if DO_SHOW:
-        print("# of tree in random forest -", NUM_OF_TREE)
+        print("# of tree in random forest -", NUM_OF_TREE, "\n\n\n")
