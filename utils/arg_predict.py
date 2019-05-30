@@ -22,8 +22,8 @@ def get_arguments():
     parser.add_argument("-target", "--target", help="set a target of specific symptom"
                                                     "\n(s, sepsis), (p, pneumonia), (b, bacteremia)"
                                                     "\nUseAge : python predict.py -target s(sepsis)\n\n")
-    parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
-                                              "\nUseAge : python predict.py -dir 'dir_name'\n\n")
+    parser.add_argument("-tensor_dir", "--tensor_dir", help="set directory name for log and tensor (default is Null)"
+                                                            "\nUseAge : python predict.py -tensor_dir 'dir_name'\n\n")
     parser.add_argument("-save", "--save", help="save a score to csv file (default is 'LOG_NAME')"
                                                 "\nUseAge : python predict.py -save 'NAME' (in analysis dir)\n\n")
     parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
@@ -69,7 +69,7 @@ DO_SHOW = False
 DO_SHOW_PLOT = False
 
 # SAVE options #
-LOG_DIR_NAME = str()
+TENSOR_DIR_NAME = str()
 SAVE_DIR_NAME = str()
 DO_DELETE = False
 
@@ -140,17 +140,17 @@ if args.show:
 
 # SAVE options #
 if args.log:
-    LOG_DIR_NAME = args.log
+    TENSOR_DIR_NAME = args.log
 
 if TYPE_OF_FEATURE != KEY_NAME_OF_MERGE_VECTOR:
-    LOG_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
+    TENSOR_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
 else:
-    LOG_DIR_NAME += "/"
+    TENSOR_DIR_NAME += "/"
 
 if args.save:
     SAVE_DIR_NAME = args.save
 else:
-    SAVE_DIR_NAME = LOG_DIR_NAME[:-1]
+    SAVE_DIR_NAME = TENSOR_DIR_NAME[:-1]
 
 if args.plot:
     try:

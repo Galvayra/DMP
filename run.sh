@@ -5,7 +5,7 @@ learn=0.00001
 hidden=2
 show=1
 delete=1
-log=""
+tensor_dir=""
 model=ffnn
 vector=""
 plot=0
@@ -21,9 +21,9 @@ ver=1
 echo
 echo "################# Training !! #################"
 echo
-./train.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --delete "$delete" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"
+./train.sh --vector "$vector" --model "$model" --show "$show" --tensor_dir "$tensor_dir" --delete "$delete" --epoch "$epoch" --hidden "$hidden" --learn "$learn" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"
 
 echo
 echo "################# Test !! #################"
 echo
-./test.sh --vector "$vector" --model "$model" --show "$show" --log "$log" --plot "$plot" --save "$log" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"
+./test.sh --vector "$vector" --model "$model" --show "$show" --tensor_dir "$tensor_dir" --plot "$plot" --save "$tensor_dir" --feature "$feature" --target "$target" --image_dir "$image_dir" --ver "$ver"

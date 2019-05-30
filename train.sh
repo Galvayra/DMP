@@ -5,7 +5,7 @@ learn=0.00001
 hidden=2
 show=1
 delete=0
-log=""
+tensor_dir=""
 model=ffnn
 vector=""
 result=""
@@ -22,8 +22,8 @@ if [ "$vector" == "" ]; then
 	echo
 else
     if [ "$result" == "" ]; then
-        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
+        python training.py -vector "$vector" -tensor_dir "$tensor_dir" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
     else
-        python training.py -vector "$vector" -log "$log" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver" > result/"$result"
+        python training.py -vector "$vector" -tensor_dir "$tensor_dir" -model "$model" -show "$show" -delete "$delete" -epoch "$epoch" -hidden "$hidden" -learn "$learn" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver" > result/"$result"
     fi
 fi

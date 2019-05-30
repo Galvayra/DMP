@@ -8,9 +8,9 @@ import sys
 import json
 
 if sys.argv[0].split('/')[-1] == "training.py":
-    from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, LOG_DIR_NAME, LEARNING_RATE
+    from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE
 else:
-    from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, LOG_DIR_NAME
+    from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME
 
 BATCH_SIZE = 512
 
@@ -57,8 +57,8 @@ class MyNeuralNetwork(MyScore):
         return self.__is_cross_valid
 
     def __init_log_and_tensor(self):
-        self.name_of_log = PATH_LOGS + LOG_DIR_NAME
-        self.name_of_tensor = PATH_TENSOR + LOG_DIR_NAME
+        self.name_of_log = PATH_LOGS + TENSOR_DIR_NAME
+        self.name_of_tensor = PATH_TENSOR + TENSOR_DIR_NAME
 
         if DO_DELETE:
             if os.path.isdir(self.name_of_log):

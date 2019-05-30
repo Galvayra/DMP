@@ -4,7 +4,7 @@ learn=0.00001
 hidden=2
 show=0
 plot=0
-log=""
+tensor_dir=""
 model=ffnn
 vector=""
 save=""
@@ -21,8 +21,8 @@ if [ "$vector" == "" ]; then
 	echo
 else
     if [ "$save" == "" ]; then
-        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$log" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
+        python predict.py -vector "$vector" -tensor_dir "$tensor_dir" -model "$model" -show "$show" -save "$tensor_dir" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
     else
-        python predict.py -vector "$vector" -log "$log" -model "$model" -show "$show" -save "$save" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
+        python predict.py -vector "$vector" -tensor_dir "$tensor_dir" -model "$model" -show "$show" -save "$save" -plot "$plot" -feature "$feature" -target "$target" -image_dir "$image_dir" -ver "$ver"
     fi
 fi

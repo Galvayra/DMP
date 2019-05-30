@@ -28,8 +28,8 @@ def get_arguments():
                                                     "\nUseAge : python training.py -hidden 2 (non-linear)\n\n")
     parser.add_argument("-learn", "--learn", help="set a learning rate for training (default is 0.0001)"
                                                   "\nUseAge : python training.py -learn 0.01\n\n")
-    parser.add_argument("-log", "--log", help="set directory name for log and tensor (default is Null)"
-                                              "\nUseAge : python training.py -dir 'dir_name'\n\n")
+    parser.add_argument("-tensor_dir", "--tensor_dir", help="set directory name for log and tensor (default is Null)"
+                                                            "\nUseAge : python training.py -tensor_dir 'dir_name'\n\n")
     parser.add_argument("-delete", "--delete", help="set whether SAVE_DIR will be delete (default is 1)"
                                                     "\nIf you already have dir for saving, delete it and then save"
                                                     "\nIf you set False, It will be stopped before training"
@@ -79,7 +79,7 @@ LEARNING_RATE = 0.0001
 DO_SHOW = False
 
 # SAVE options #
-LOG_DIR_NAME = str()
+TENSOR_DIR_NAME = str()
 DO_DELETE = True
 
 if args.model:
@@ -165,14 +165,14 @@ if args.show:
 
 # SAVE options #
 if args.log:
-    LOG_DIR_NAME = args.log
+    TENSOR_DIR_NAME = args.tensor_dir
 else:
-    LOG_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + TYPE_OF_MODEL + "_h_" + str(NUM_HIDDEN_LAYER)
+    TENSOR_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + TYPE_OF_MODEL + "_h_" + str(NUM_HIDDEN_LAYER)
 
 if TYPE_OF_FEATURE != KEY_NAME_OF_MERGE_VECTOR:
-    LOG_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
+    TENSOR_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"
 else:
-    LOG_DIR_NAME += "/"
+    TENSOR_DIR_NAME += "/"
 
 if args.delete:
     try:
