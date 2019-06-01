@@ -139,8 +139,8 @@ if args.show:
             exit(-1)
 
 # SAVE options #
-if args.log:
-    TENSOR_DIR_NAME = args.log
+if args.tensor_dir:
+    TENSOR_DIR_NAME = args.tensor_dir
 
 if TYPE_OF_FEATURE != KEY_NAME_OF_MERGE_VECTOR:
     TENSOR_DIR_NAME += "_" + TYPE_OF_FEATURE + "/"

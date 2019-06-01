@@ -164,7 +164,7 @@ if args.show:
             exit(-1)
 
 # SAVE options #
-if args.log:
+if args.tensor_dir:
     TENSOR_DIR_NAME = args.tensor_dir
 else:
     TENSOR_DIR_NAME = READ_VECTOR.split('/')[-1] + "_" + TYPE_OF_MODEL + "_h_" + str(NUM_HIDDEN_LAYER)
