@@ -33,15 +33,16 @@ class DataClassifier:
                 for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                     nn.feed_forward(x_train, y_train, x_test, y_test)
             elif TYPE_OF_MODEL == "cnn":
-                # self.dataHandler.set_image_path method does not apply in cross validation!
                 if IMAGE_PATH:
-                    print("Do not use image path option !!")
-                    print("You just input vectors!\n\n")
-                    exit(-1)
-
-                for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                    self.dataHandler.expand4square_matrix(x_train, x_test)
-                    nn.convolution(x_train, y_train, x_test, y_test)
+                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
+                        self.dataHandler.set_image_path([x_train, x_test],
+                                                        [y_train, y_test],
+                                                        key_list=["train", "test"])
+                        nn.convolution(x_train, y_train, x_test, y_test)
+                else:
+                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                        self.dataHandler.expand4square_matrix(x_train, x_test)
+                        nn.convolution(x_train, y_train, x_test, y_test)
 
             nn.save_process_time()
 
@@ -56,7 +57,9 @@ class DataClassifier:
                 nn.feed_forward(x_train, y_train, x_valid, y_valid)
             elif TYPE_OF_MODEL == "cnn":
                 if IMAGE_PATH:
-                    self.dataHandler.set_image_path([x_train, x_valid], [y_train, y_valid], key_list=["train", "valid"])
+                    self.dataHandler.set_image_path([x_train, x_valid],
+                                                    [y_train, y_valid],
+                                                    key_list=["train", "valid"])
                 else:
                     self.dataHandler.expand4square_matrix(x_train, x_valid)
                 nn.convolution(x_train, y_train, x_valid, y_valid)
@@ -74,22 +77,28 @@ class DataClassifier:
         return x_train + x_valid + x_test, y_train + y_valid + y_test
 
     @staticmethod
-    def __data_generator(x_data, y_data):
-        def __get_data_matrix(_data, _index_list):
-            return [_data[i] for i in _index_list]
+    def __get_data_matrix(_data, _index_list):
+        return [_data[i] for i in _index_list]
 
+    def __data_generator(self, x_data, y_data, do_get_index=False):
         cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
 
-        for train_index_list, test_index_list in cv.split(x_data, y_data):
-            x_train = __get_data_matrix(x_data, train_index_list)
-            y_train = __get_data_matrix(y_data, train_index_list)
-            x_test = __get_data_matrix(x_data, test_index_list)
-            y_test = __get_data_matrix(y_data, test_index_list)
+        if do_get_index:
+            for train_index_list, test_index_list in cv.split(x_data, y_data):
+                x_train = [int(i) for i in train_index_list]
+                x_test = [int(i) for i in test_index_list]
+                y_train = self.__get_data_matrix(y_data, train_index_list)
+                y_test = self.__get_data_matrix(y_data, test_index_list)
 
-            yield x_train, y_train, x_test, y_test
+                yield x_train, y_train, x_test, y_test
+        else:
+            for train_index_list, test_index_list in cv.split(x_data, y_data):
+                x_train = self.__get_data_matrix(x_data, train_index_list)
+                y_train = self.__get_data_matrix(y_data, train_index_list)
+                x_test = self.__get_data_matrix(x_data, test_index_list)
+                y_test = self.__get_data_matrix(y_data, test_index_list)
 
-    def __get_data_set(self, index_list):
-        pass
+                yield x_train, y_train, x_test, y_test
 
     def predict(self):
         x_test = self.dataHandler.x_test
@@ -116,17 +125,24 @@ class DataClassifier:
                 nn.init_plot()
 
                 if TYPE_OF_MODEL == "ffnn":
-                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                    for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                         h, y_predict = nn.load_nn(x_test, y_test)
                         nn.set_training_count(y_train, y_test)
                         nn.predict(h, y_predict, y_test)
                 elif TYPE_OF_MODEL == "cnn":
-                    # self.dataHandler.set_image_path method does not apply in cross validation!
-                    # ############# have to make loading and linking images
                     if IMAGE_PATH:
-                        print("Do not use image path option !!")
-                        print("You just input vectors!\n\n")
-                        exit(-1)
+                        for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
+                            self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
+                            h, y_predict = nn.load_nn(x_test, y_test)
+                            nn.set_training_count(y_train, y_test)
+                            nn.predict(h, y_predict, y_test)
+                    else:
+                        for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                            self.dataHandler.expand4square_matrix(x_test)
+                            h, y_predict = nn.load_nn(x_test, y_test)
+                            nn.set_training_count(y_train, y_test)
+                            nn.predict(h, y_predict, y_test)
+
                 nn.save()
                 nn.show_process_time()
                 nn.show_plot()

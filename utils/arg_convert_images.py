@@ -6,9 +6,10 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 def get_arguments():
     parser.add_argument("-version", "--version", help="set a convert version to save image files"
-                                                      "\nversion 1 or 2 (default is '2')"
+                                                      "\nversion 1 - 'alive', 'death'"
+                                                      "\nversion 2 - 'train', 'valid', 'test'"
                                                       "\nUseAge : python convert_images.py -version 1\n\n",
-                        default=2, type=int)
+                        default=1, type=int)
     parser.add_argument("-vector", "--vector", help="set loading vector file name to train or predict"
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python convert_images.py -vector 'V'\n\n")
@@ -62,7 +63,7 @@ else:
 if args.log:
     LOG_NAME = args.log
 else:
-    LOG_NAME = SAVE_VECTOR
+    LOG_NAME = SAVE_VECTOR.split('/')[-1]
 
 if args.resize:
     try:

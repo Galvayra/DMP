@@ -93,6 +93,8 @@ if args.image_dir:
     if not os.path.isdir(IMAGE_PATH):
         print("\nFileNotFoundError image_dir option!\n")
         exit(-1)
+    else:
+        print("Success to read image files -", IMAGE_PATH, '\n\n')
 
 if args.feature:
     TYPE_OF_FEATURE = args.feature

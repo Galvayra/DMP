@@ -8,9 +8,11 @@ import sys
 current_script = sys.argv[0].split('/')[-1]
 
 if current_script == "training.py":
-    from DMP.utils.arg_training import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
+    from DMP.utils.arg_training import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
+        show_options
 elif current_script == "predict.py":
-    from DMP.utils.arg_predict import READ_VECTOR, show_options, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH
+    from DMP.utils.arg_predict import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
+        show_options
 elif current_script == "extract_feature.py" or current_script == "print_feature.py":
     from DMP.utils.arg_extract_feature import *
     from DMP.learning.plot import MyPlot
@@ -52,6 +54,7 @@ class DataHandler:
                     "x_test": dict(),
                     "y_test": list()
                 }
+                self.__importance = dict()
 
             self.feature = vector_list["feature"]
             self.x_train = vector_list["x_train"][TYPE_OF_FEATURE]
@@ -67,8 +70,6 @@ class DataHandler:
             self.count_mortality = list()
             self.count_alive = list()
             self.__set_count()
-
-            self.__importance = dict()
 
     @property
     def importance(self):
@@ -153,13 +154,12 @@ class DataHandler:
             print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
 
     def set_image_path(self, vector_set_list, y_set_list, key_list):
-        print("Success to read image files -", IMAGE_PATH, '\n\n')
-
         for key, vector_set, y_list in zip(key_list, vector_set_list, y_set_list):
-            for i, d in enumerate(zip(vector_set, y_list)):
-                x_data, y_label = d[0], d[1]
+            for enumerate_i, d in enumerate(zip(vector_set, y_list)):
+                y_label = d[1]
 
-                img_name = key + "_" + str(i + 1) + EXTENSION_OF_IMAGE
+                img_name = self.__get_name_of_image_from_index(key, enumerate_i, d[0])
+
                 # img_name_list = [
                 #     img_name + EXTENSION_OF_IMAGE,
                 #     img_name + '_FLIP_LR' + EXTENSION_OF_IMAGE,
@@ -172,9 +172,9 @@ class DataHandler:
                 # ]
 
                 if y_label == [1]:
-                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
+                    vector_set[enumerate_i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
                 else:
-                    vector_set[i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
+                    vector_set[enumerate_i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
 
     @staticmethod
     def __set_image_from_path(path):
@@ -184,6 +184,27 @@ class DataHandler:
         new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
 
         return new_img[0]
+
+    def __get_name_of_image_from_index(self, key, enumerate_i, x_index):
+        # k cross validation (version 1)
+        if VERSION == 1:
+            length_of_train = len(self.y_train)
+            length_of_valid = length_of_train + len(self.y_valid)
+
+            if x_index < length_of_train:
+                return "train_" + str(x_index + 1) + EXTENSION_OF_IMAGE
+            elif length_of_train <= x_index < length_of_valid:
+                x_index -= length_of_train
+                return "valid_" + str(x_index + 1) + EXTENSION_OF_IMAGE
+            else:
+                x_index -= length_of_valid
+                return "test_" + str(x_index + 1) + EXTENSION_OF_IMAGE
+
+        # optimize hyper-parameters (version 2)
+        elif VERSION == 2:
+            return key + "_" + str(enumerate_i + 1) + EXTENSION_OF_IMAGE
+        else:
+            return None
 
     @staticmethod
     def expand4square_matrix(*vector_set_list, use_origin=False):
