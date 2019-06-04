@@ -281,8 +281,7 @@ class MyOneHotEncoder(W2vReader):
             vector_list = list()
 
             if self.version == 1:
-                # ##### using function scaling version
-
+                # #### using function scaling version
                 # scaling
                 for i in range(len(scale)):
                     scale[i].fit(data_list)
@@ -298,6 +297,43 @@ class MyOneHotEncoder(W2vReader):
                 # copy values into the vector matrix
                 for index, vector in enumerate(vector_list):
                     yield index, vector
+
+                # # ##### original scaling version
+                # differ = self.vector_dict[column]["dif"]
+                # minimum = self.vector_dict[column]["min"]
+                #
+                # # The differ is 0 == The scalar vector size is 1
+                # # ex) vector size == 1
+                # #     if value in vector_dict ? [1.0] : [0.0]
+                # if not differ:
+                #     for index, data in enumerate(data_list):
+                #         vector = [0.0]
+                #         value = data[0]
+                #
+                #         if not math.isnan(value):
+                #             vector[0] = 1.0
+                #
+                #         vector_list.append(vector)
+                #
+                # # ex) vector size > 1
+                # #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
+                # else:
+                #     for index, data in enumerate(data_list):
+                #         vector = SCALAR_VECTOR[:]
+                #         value = data[0]
+                #
+                #         if not math.isnan(value):
+                #             if len(vector) == 2:
+                #                 vector[0] = SCALAR_DEFAULT_WEIGHT
+                #                 vector[1] = (value - minimum) / differ
+                #             else:
+                #                 vector[0] = (value - minimum) / differ
+                #
+                #         vector_list.append(vector)
+                #
+                # # copy values into the vector matrix
+                # for index, vector in enumerate(vector_list):
+                #     yield index, vector
 
             elif self.version == 2:
                 # processing 'nan' value after transform
@@ -344,36 +380,6 @@ class MyOneHotEncoder(W2vReader):
             #
             #     for index, value in enumerate(values):
             #         __set_vector(index, value)
-
-            # # ##### original scaling version
-            # differ = self.vector_dict[column]["dif"]
-            # minimum = self.vector_dict[column]["min"]
-            #
-            # # The differ is 0 == The scalar vector size is 1
-            # # ex) vector size == 1
-            # #     if value in vector_dict ? [1.0] : [0.0]
-            # if not differ:
-            #     for index, value in enumerate(target_data_dict[column]):
-            #         values = [0.0]
-            #
-            #         if not math.isnan(value):
-            #             values[0] = 1.0
-            #
-            #         __set_vector(index, values)
-            # # ex) vector size > 1
-            # #     if value in vector_dict ? [SCALAR_DEFAULT_WEIGHT, value] : [0.0, 0.0]
-            # else:
-            #     for index, value in enumerate(target_data_dict[column]):
-            #         values = SCALAR_VECTOR[:]
-            #
-            #         if not math.isnan(value):
-            #             if len(values) == 2:
-            #                 values[0] = SCALAR_DEFAULT_WEIGHT
-            #                 values[1] = (value - minimum) / differ
-            #             else:
-            #                 values[0] = (value - minimum) / differ
-            #
-            #         __set_vector(index, values)
 
     # make a generator for class vector
     def __set_class_vector(self, column, target_data_dict):
