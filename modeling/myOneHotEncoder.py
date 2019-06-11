@@ -33,6 +33,13 @@ class MyOneHotEncoder(W2vReader):
         elif self.version == 2:
             print("========= Version is Making vector for Feature Selection!! =========\n\n")
 
+        if USE_QUANTIZATION:
+            print("Using Vector Quantization!!\n")
+        elif USE_STANDARD_SCALE:
+            print("Using Standard Scale!!\n")
+        else:
+            print("Using MinMax Scale!!\n")
+
         # { 0: ["column", "header"], .... n: ["column", "header"] }
         # a dictionary to show how to match feature to dimensionality
         self.__feature_dict = dict()
@@ -96,12 +103,18 @@ class MyOneHotEncoder(W2vReader):
         scalar_dict = dict()
         scalar_list = list()
 
-        for v in sorted(list(set(value_list))):
+        # for v in sorted(list(set(value_list))):
+        #     # 공백은 사전에 넣지 않음
+        #     if not math.isnan(v):
+        #         scalar_list.append(v)
+
+        for v in sorted(value_list):
             # 공백은 사전에 넣지 않음
             if not math.isnan(v):
                 scalar_list.append(v)
 
         if scalar_list:
+            scalar_dict["list"] = scalar_list
             scalar_dict["max"] = max(scalar_list)
             scalar_dict["min"] = min(scalar_list)
             scalar_dict["dif"] = float(scalar_dict["max"] - scalar_dict["min"])
@@ -274,6 +287,22 @@ class MyOneHotEncoder(W2vReader):
 
     # make a generator for scalar vector
     def __set_scalar_vector(self, column, target_data_dict, *scale):
+        def __get_quantize_dict():
+            _quantize_dict = dict()
+            div_range = int(len(scalar_list) / NUM_QUANTIZE)
+
+            for value in range(1, NUM_QUANTIZE):
+                _quantize_dict[value] = scalar_list[div_range * value]
+
+            return _quantize_dict
+
+        def __get_quantize_value():
+            for k, v in quantize_dict.items():
+                if target_value <= v:
+                    return [k / NUM_QUANTIZE]
+
+            return [1.0]
+
         # If dict of scalar vector, make vector using dict
         # But, If not have it, do not make vector (we consider that the column will be noise)
         if self.vector_dict[column]:
@@ -283,20 +312,37 @@ class MyOneHotEncoder(W2vReader):
             if self.version == 1:
                 # #### using function scaling version
                 # scaling
-                for i in range(len(scale)):
-                    scale[i].fit(data_list)
-                    data_list = scale[i].transform(data_list)
+                if scale[0] is not None:
+                    for i in range(len(scale)):
+                        scale[i].fit(data_list)
+                        data_list = scale[i].transform(data_list)
 
-                # processing 'nan' value after transform
-                for x in data_list:
-                    if math.isnan(x):
-                        vector_list.append([0.0])
-                    else:
-                        vector_list.append(x)
+                    # processing 'nan' value after transform
+                    for x in data_list:
+                        if math.isnan(x):
+                            vector_list.append([0.0])
+                        else:
+                            vector_list.append(x)
 
-                # copy values into the vector matrix
-                for index, vector in enumerate(vector_list):
-                    yield index, vector
+                    # copy values into the vector matrix
+                    for index, vector in enumerate(vector_list):
+                        yield index, vector
+
+                # vector quantization
+                else:
+                    scalar_list = self.vector_dict[column]["list"]
+                    quantize_dict = __get_quantize_dict()
+
+                    # copy values into the vector matrix
+                    for index, vector in enumerate(data_list):
+                        target_value = vector[0]
+
+                        if math.isnan(target_value):
+                            vector = [0.0]
+                        else:
+                            vector = __get_quantize_value()
+
+                        yield index, vector
 
                 # # ##### original scaling version
                 # differ = self.vector_dict[column]["dif"]
@@ -346,40 +392,6 @@ class MyOneHotEncoder(W2vReader):
                 # copy values into the vector matrix
                 for index, vector in enumerate(vector_list):
                     yield index, vector
-
-            # # ##### using function scaling version if exist feature has vector size == 1
-            # differ = self.vector_dict[column]["dif"]
-            #
-            # # The differ is 0 == The scalar vector size is 1
-            # # ex) vector size == 1
-            # #     if value in vector_dict ? [1.0] : [0.0]
-            # if not differ:
-            #     for index, value in enumerate(target_data_dict[column]):
-            #
-            #         if math.isnan(value):
-            #             values = [0.0]
-            #         else:
-            #             values = [1.0]
-            #
-            #         __set_vector(index, values)
-            # # ex) vector size > 1
-            # #     if value in vector_dict --> min max scaling
-            # else:
-            #     data_list = [[x] for x in target_data_dict[column]]
-            #
-            #     for i in range(len(scale)):
-            #         scale[i].fit(data_list)
-            #         data_list = scale[i].transform(data_list)
-            #
-            #     values = list()
-            #     for x in data_list:
-            #         if math.isnan(x):
-            #             values.append([0.0])
-            #         else:
-            #             values.append(x)
-            #
-            #     for index, value in enumerate(values):
-            #         __set_vector(index, value)
 
     # make a generator for class vector
     def __set_class_vector(self, column, target_data_dict):
@@ -457,7 +469,9 @@ class MyOneHotEncoder(W2vReader):
                     pass
                 elif type_of_column == "scalar":
                     # using standard scaling
-                    if USE_STANDARD_SCALE:
+                    if USE_QUANTIZATION:
+                        generator = self.__set_scalar_vector(column, target_data_dict, None)
+                    elif USE_STANDARD_SCALE:
                         generator = self.__set_scalar_vector(column, target_data_dict, StandardScaler())
                     # using min max scaling
                     else:
@@ -487,7 +501,9 @@ class MyOneHotEncoder(W2vReader):
                 if type_of_column == "id":
                     pass
                 elif type_of_column == "scalar":
-                    if USE_STANDARD_SCALE:
+                    if USE_QUANTIZATION:
+                        generator = self.__set_scalar_vector(column, target_data_dict, None)
+                    elif USE_STANDARD_SCALE:
                         generator = self.__set_scalar_vector(column, target_data_dict, StandardScaler())
                     else:
                         generator = self.__set_scalar_vector(column, target_data_dict, MinMaxScaler())
