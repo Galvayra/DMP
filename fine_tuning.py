@@ -61,3 +61,4 @@ from DMP.learning.transferLearner import TransferLearner
 
 if __name__ == '__main__':
     learner = TransferLearner()
+    learner.my_transfer_learning()
