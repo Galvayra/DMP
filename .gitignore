@@ -1,10 +1,6 @@
 dataset/parsing/
 dataset/origin/
-dataset/images/1/
-dataset/images/2/
-dataset/images/3/
-dataset/images/4/
-dataset/images/5/
+dataset/images/ct_images/
 dataset/images/image_data/
 dataset/images/csv_data/
 dataset/images/log/
