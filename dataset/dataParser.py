@@ -5,13 +5,14 @@ from DMP.utils.arg_parsing import COLUMN_TARGET, COLUMN_TARGET_NAME, DO_SAMPLING
 
 
 class DataParser(DataHandler):
-    def __init__(self, read_csv):
+    def __init__(self, read_csv, ct_image_path=""):
         if COLUMN_TARGET_NAME:
             print("The Target is", COLUMN_TARGET_NAME, "\n\n")
         else:
             print("The Target is None\n\n")
 
-        super().__init__(read_csv, do_what="parsing", do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET)
+        super().__init__(read_csv, do_what="parsing", do_sampling=DO_SAMPLING, column_target=COLUMN_TARGET,
+                         ct_image_path=ct_image_path)
 
     def parsing(self):
 

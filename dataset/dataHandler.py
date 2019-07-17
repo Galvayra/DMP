@@ -17,7 +17,7 @@ PROPOSITION = 10
 # ### refer to reference file ###
 class DataHandler:
     def __init__(self, read_csv, data_path=path.dirname(path.abspath(__file__)) + '/', do_what="encoding",
-                 do_sampling=False, column_target=False, eliminate_target=False):
+                 do_sampling=False, column_target=False, eliminate_target=False, ct_image_path=""):
 
         self.__do_parsing = False
         self.__data_path = data_path
@@ -76,7 +76,12 @@ class DataHandler:
         if self.do_parsing:
             # except for data which is not necessary
             # [ position 1, ... position n ]
-            self.__erase_index_list = self.__init_erase_index_list()
+            if ct_image_path:
+                self.__ct_image_path = self.data_path + "images/" + ct_image_path
+                self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
+                exit(-1)
+            else:
+                self.__erase_index_list = self.__init_erase_index_list()
 
             if self.column_target:
                 self.__append_target_in_erase_index_list()
@@ -131,6 +136,10 @@ class DataHandler:
     @property
     def data_path(self):
         return self.__data_path
+
+    @property
+    def ct_image_path(self):
+        return self.__ct_image_path
 
     @property
     def save_dict(self):
@@ -306,6 +315,12 @@ class DataHandler:
 
         # return list()
         return sorted(list(set(erase_index_list)), reverse=False)
+
+    def __init_erase_index_list_for_ct_image(self):
+        erase_index_list = list()
+        ### self.ct_image_path
+        
+        return erase_index_list
 
     # focus on target column
     def __append_target_in_erase_index_list(self):
