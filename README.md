@@ -1,6 +1,10 @@
 # DeepPredict
 Deep Learning for mortality
 
+First of all, import this project using ~/.bash_profile
+
+
+
 step 1) Parsing Dataset to erase noise
 
 	1-1) set input or ouput name
