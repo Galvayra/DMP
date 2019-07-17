@@ -1,19 +1,3 @@
 # -*- coding: utf-8 -*-
 
-PARENT_PATH = "dataset/images/"
-CSV_PATH = "csv_data/"
-IMAGE_PATH = "image_data/"
-READ_CSV = "dataset_images.csv"
-
-SAVE_DIR = "ct_images/"
-ALIVE_DIR = "alive/"
-DEATH_DIR = "death/"
-
-NAME_LOG = "log/ct_dict"
-
-COLUMN_NUMBER = "A"
-COLUMN_HOSPITAL = "B"
-COLUMN_ID = "C"
-
-# a ratio of training set
-RATIO = 0.7
+CT_PATH = "ct_images/"

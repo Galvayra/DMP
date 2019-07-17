@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import random
 import sys
+from os import path
 from .variables import *
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
@@ -15,10 +16,11 @@ PROPOSITION = 10
 
 # ### refer to reference file ###
 class DataHandler:
-    def __init__(self, read_csv, data_path=DATA_PATH, do_what="encoding", do_sampling=False, column_target=False,
-                 eliminate_target=False):
+    def __init__(self, read_csv, data_path=path.dirname(path.abspath(__file__)) + '/', do_what="encoding",
+                 do_sampling=False, column_target=False, eliminate_target=False):
 
         self.__do_parsing = False
+        self.__data_path = data_path
 
         # set path of csv file
         if do_what == "parsing":
@@ -125,6 +127,10 @@ class DataHandler:
     @property
     def do_sampling(self):
         return self.__do_sampling
+
+    @property
+    def data_path(self):
+        return self.__data_path
 
     @property
     def save_dict(self):
@@ -368,8 +374,8 @@ class DataHandler:
 
         for file_name, data_dict in df_dict.items():
             df = pd.DataFrame(data_dict)
-            df.to_csv(DATA_PATH + PARSING_PATH + file_name, index=False)
-            print("Write csv file -", DATA_PATH + PARSING_PATH + file_name)
+            df.to_csv(self.data_path + PARSING_PATH + file_name, index=False)
+            print("Write csv file -", self.data_path + PARSING_PATH + file_name)
 
             cnt_mortality = self.counting_mortality(data_dict[self.raw_header_dict[self.y_column]])
             cnt_total = len(data_dict[self.raw_header_dict[self.y_column]])
