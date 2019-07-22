@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import random
 import sys
-from os import path
+from os import path, listdir
 from .variables import *
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
@@ -79,7 +79,6 @@ class DataHandler:
             if ct_image_path:
                 self.__ct_image_path = self.data_path + "images/" + ct_image_path
                 self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
-                exit(-1)
             else:
                 self.__erase_index_list = self.__init_erase_index_list()
 
@@ -318,8 +317,14 @@ class DataHandler:
 
     def __init_erase_index_list_for_ct_image(self):
         erase_index_list = list()
-        ### self.ct_image_path
-        
+
+        patient_list = listdir(self.ct_image_path)
+        patient_list = [int(patient_number.split('_')[0]) for patient_number in patient_list]
+
+        for num_id in self.__get_raw_data(COLUMN_NUMBER):
+            if num_id not in patient_list:
+                erase_index_list.append(num_id)
+
         return erase_index_list
 
     # focus on target column
@@ -398,48 +403,51 @@ class DataHandler:
                   "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
                   "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
 
+    # copy raw data to raw data list except for erase index
+    def __get_copied_raw_data(self, raw_data):
+        _raw_data_list = list()
+
+        for _index in list(raw_data.keys()):
+            if _index + POSITION_OF_ROW not in self.erase_index_list:
+                _raw_data_list.append(raw_data[_index])
+
+        return _raw_data_list
+
+    def __init_down_sampling_list(self, down_sampling_count):
+        _down_sampling_list = list()
+
+        for _index, y in enumerate(self.y_data):
+            if y == [0]:
+                _down_sampling_list.append(_index)
+
+        return sorted(random.sample(_down_sampling_list, down_sampling_count), reverse=True)
+
+    def __down_sampling(self, down_sampling_count):
+        down_sampling_list = self.__init_down_sampling_list(down_sampling_count)
+
+        for header, header_key in self.raw_header_dict.items():
+            if header in self.header_list:
+                raw_data_list = self.x_data_dict[header]
+            else:
+                raw_data_list = self.__get_copied_raw_data(self.raw_data[header_key])
+
+            for index in down_sampling_list:
+                del raw_data_list[index]
+
+            self.save_dict[header_key] = raw_data_list
+
     # set save dictionary for csv file
     # {
     #   header_1 : [ data_1 , ... , data_N ], ... , h
     #   header_I
     # }
     def __set_save_dict(self):
-        # copy raw data to raw data list except for erase index
-        def __get_copied_raw_data(raw_data):
-            _raw_data_list = list()
-
-            for _index in list(raw_data.keys()):
-                if _index + POSITION_OF_ROW not in self.erase_index_list:
-                    _raw_data_list.append(raw_data[_index])
-
-            return _raw_data_list
-
-        def __init_down_sampling_list():
-            _down_sampling_list = list()
-
-            for _index, y in enumerate(self.y_data):
-                if y == [0]:
-                    _down_sampling_list.append(_index)
-
-            return sorted(random.sample(_down_sampling_list, down_sampling_count), reverse=True)
 
         down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * PROPOSITION)
 
         # apply down sampling
         if self.do_sampling and down_sampling_count > 0:
-            down_sampling_list = __init_down_sampling_list()
-
-            for header, header_key in self.raw_header_dict.items():
-                if header in self.header_list:
-                    raw_data_list = self.x_data_dict[header]
-                else:
-                    raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
-
-                for index in down_sampling_list:
-                    del raw_data_list[index]
-
-                self.save_dict[header_key] = raw_data_list
-
+            self.__down_sampling(down_sampling_count)
             self.__summary(down_sampling_count)
         # do not apply sampling
         else:
@@ -447,7 +455,7 @@ class DataHandler:
                 if header in self.header_list:
                     raw_data_list = self.x_data_dict[header]
                 else:
-                    raw_data_list = __get_copied_raw_data(self.raw_data[header_key])
+                    raw_data_list = self.__get_copied_raw_data(self.raw_data[header_key])
 
                 self.save_dict[header_key] = raw_data_list
 

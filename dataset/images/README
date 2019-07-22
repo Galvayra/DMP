@@ -1,14 +1,7 @@
-1 = 서울
-2 = 여의도
-3 = 인천
-4 = 빈센트
-5 = 대전
-
-
 
 1) renaming.sh : renaming image files for security of patient information
 
-2) ../../build_ct_images.sh : build a json file(in log/) for split train, valid, test set
+2) build_image_data.sh : build a json file which is distributed represent vector(in ../../modeling/vectors/)
 
 3) inceptionv3_retrain.py : retrain a neural network which is inception v3. having a json file(in log/), you can use --log_path option
 
