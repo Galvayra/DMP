@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import random
 import sys
+import json
 from os import path, listdir
 from .variables import *
 
@@ -77,7 +78,7 @@ class DataHandler:
             # except for data which is not necessary
             # [ position 1, ... position n ]
             if ct_image_path:
-                self.__ct_image_path = self.data_path + "images/" + ct_image_path
+                self.__ct_image_path = self.data_path + IMAGE_PATH + ct_image_path
                 self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
             else:
                 self.__erase_index_list = self.__init_erase_index_list()
@@ -247,6 +248,7 @@ class DataHandler:
     def parsing(self):
         # set data
         self.__reset_data_dict()
+        self.__set_save_dict()
 
     def __apply_exception(self):
         for header in self.header_list:
@@ -321,9 +323,9 @@ class DataHandler:
         patient_list = listdir(self.ct_image_path)
         patient_list = [int(patient_number.split('_')[0]) for patient_number in patient_list]
 
-        for num_id in self.__get_raw_data(COLUMN_NUMBER):
+        for index, num_id in enumerate(self.__get_raw_data(COLUMN_NUMBER)):
             if num_id not in patient_list:
-                erase_index_list.append(num_id)
+                erase_index_list.append(index + POSITION_OF_ROW)
 
         return erase_index_list
 
@@ -382,7 +384,6 @@ class DataHandler:
         return count
 
     def save(self):
-        self.__set_save_dict()
         train_dict, valid_dict, test_dict = self.__split_files()
 
         df_dict = {
@@ -402,6 +403,26 @@ class DataHandler:
             print("\n# of     total -", str(cnt_total).rjust(4),
                   "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
                   "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
+
+    def save_log(self):
+        """
+        init dict of patient who have ct images
+        key: patient_number
+        value: alive(0) or death(1)
+        """
+        patient_dict = dict()
+        save_path = self.data_path + IMAGE_PATH + IMAGE_LOG_PATH + IMAGE_LOG_NAME
+
+        if not path.isfile(save_path):
+            for p_number, y in zip(self.save_dict[self.raw_header_dict[COLUMN_NUMBER]],
+                                   self.save_dict[self.raw_header_dict[self.y_column]]):
+                if y == HAVE_SYMPTOM:
+                    patient_dict[str(p_number)] = 1
+                else:
+                    patient_dict[str(p_number)] = 0
+
+            with open(save_path, 'w') as outfile:
+                json.dump(patient_dict, outfile, indent=4)
 
     # copy raw data to raw data list except for erase index
     def __get_copied_raw_data(self, raw_data):

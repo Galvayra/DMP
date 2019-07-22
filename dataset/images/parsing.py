@@ -10,4 +10,5 @@ IMAGE_PATH = "ct_images/"
 if __name__ == '__main__':
     dataParser = DataParser(IMAGE_CSV, ct_image_path=IMAGE_PATH)
     dataParser.parsing()
+    dataParser.save_log()
     dataParser.save()

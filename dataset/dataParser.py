@@ -47,6 +47,9 @@ class DataParser(DataHandler):
     def save(self):
         super().save()
 
+    def save_log(self):
+        super().save_log()
+
     @staticmethod
     def __init_data_dict(data_lines):
         data_dict = dict()
