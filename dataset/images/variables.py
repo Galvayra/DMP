@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 
-CT_PATH = "ct_images/"
+IMAGE_CSV = "dataset_images.csv"
+CT_IMAGE_PATH = "ct_images/"

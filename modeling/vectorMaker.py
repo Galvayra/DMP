@@ -3,6 +3,9 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT
+from os import path
+from DMP.dataset.images.variables import CT_IMAGE_PATH
+from DMP.dataset.variables import DATA_PATH, IMAGE_PATH, IMAGE_LOG_NAME, IMAGE_LOG_PATH
 import json
 
 
@@ -15,7 +18,7 @@ import json
 ###
 class VectorMaker:
     # must using DataParser or DataHandler
-    def __init__(self, data_handler):
+    def __init__(self, data_handler, ct_image_path=""):
         # dataHandler_dict = { KEY : handler }
         self.dataHandler_dict = {key: handler for key, handler in data_handler.items()}
         self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
@@ -36,6 +39,10 @@ class VectorMaker:
             "y_test": list()
         }
 
+        self.__ct_image_path = ct_image_path
+        self.__dump_path = path.dirname(path.abspath(__file__)) + "/"
+        self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
+
     @property
     def y_data(self):
         return self.__y_data
@@ -47,6 +54,18 @@ class VectorMaker:
     @property
     def vector_matrix(self):
         return self.__vector_matrix
+
+    @property
+    def ct_image_path(self):
+        return self.__ct_image_path
+
+    @property
+    def dump_path(self):
+        return self.__dump_path
+
+    @property
+    def image_path(self):
+        return self.__image_path
 
     def encoding(self):
         # init encoder and fit it
@@ -62,8 +81,8 @@ class VectorMaker:
 
         self.__set_vector_matrix_feature(encoder.get_feature_dict())
         self.__set_vector_matrix(matrix_dict)
-
-        del self.dataHandler_dict
+        #
+        # del self.dataHandler_dict
 
     def __set_vector_matrix_feature(self, feature_dict):
         self.vector_matrix["feature"] = feature_dict
@@ -85,6 +104,16 @@ class VectorMaker:
         for key, matrix in matrix_dict.items():
             __copy(self.vector_matrix[key[0]], self.vector_matrix[key[1]], self.dataHandler_dict[key[2]].y_data)
 
+    def encoding_images(self):
+        print(self.vector_matrix.keys())
+        self.__load_ct_dict()
+        exit(-1)
+
+    def __load_ct_dict(self):
+        with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
+            ct_dict = json.load(r_file)
+            print(ct_dict)
+
     def dump(self, do_show=True):
         def __counting_mortality(_data):
             count = 0
@@ -95,9 +124,9 @@ class VectorMaker:
             return count
 
         if op.FILE_VECTOR:
-            file_name = DUMP_PATH + op.FILE_VECTOR
+            file_name = self.dump_path + op.FILE_VECTOR
         else:
-            file_name = DUMP_PATH + DUMP_FILE
+            file_name = self.dump_path + DUMP_FILE
 
         with open(file_name, 'w') as outfile:
             json.dump(self.vector_matrix, outfile, indent=4)

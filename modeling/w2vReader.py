@@ -1,5 +1,6 @@
 from .variables import W2V_FILE, W2V_PATH
 from DMP.utils.arg_encoding import USE_W2V
+from os import path
 
 
 class W2vReader:
@@ -20,7 +21,7 @@ class W2vReader:
 
     def __load_model(self):
         if USE_W2V:
-            w2v_file = W2V_PATH + W2V_FILE
+            w2v_file = path.dirname(path.abspath(__file__)) + '/' + W2V_PATH + W2V_FILE
 
             try:
                 with open(w2v_file, "r") as r_file:
@@ -30,12 +31,12 @@ class W2vReader:
                     for line in r_file:
                         line = line.split()
                         self.w2v_dict[line[0].lower()] = [float(v) for v in line[1:]]
-
             except FileNotFoundError:
                 print("There is no File -", w2v_file, "\n")
                 exit(-1)
-
-            print("Complete Loading!!\n\n")
+            else:
+                print("Complete Loading!!\n\n")
+            exit(-1)
 
     def has_key_in_w2v_dict(self, key):
         if key + self.pos_tag in self.w2v_dict:
