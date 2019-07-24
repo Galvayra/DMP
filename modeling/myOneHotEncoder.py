@@ -3,9 +3,12 @@ from collections import OrderedDict
 from .variables import *
 from DMP.modeling.w2vReader import W2vReader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from os import listdir
 import math
 import numpy as np
 import json
+
+COLUMN_NUMBER = 'A'
 
 
 # initial information & Past history 만을 이용하여 학습
@@ -516,6 +519,22 @@ class MyOneHotEncoder(W2vReader):
                     generator = self.__set_one_hot_vector(column, target_data_dict)
 
                 self.__set_vector(class_of_column, generator)
+
+    @staticmethod
+    def transform2image_matrix(data_handler, ct_dict, ct_image_path):
+        image_matrix = list()
+        target_data_dict = data_handler.x_data_dict
+
+        for p_number in target_data_dict['A'].values():
+            folder_name = ct_dict[p_number][0]
+            target_path = ct_image_path + "/" + folder_name
+
+            for image_name in listdir(target_path):
+                target_image_path = target_path + "/" + image_name
+
+                # load vector using Image library
+
+        return image_matrix
 
     def show_vectors(self, *columns):
         for i, column in enumerate(columns):

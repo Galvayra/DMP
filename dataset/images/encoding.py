@@ -25,6 +25,5 @@ if __name__ == '__main__':
 
     # encoding data using dataHandler
     vectorMaker = VectorMaker(dataHandler_dict, ct_image_path=CT_IMAGE_PATH)
-    vectorMaker.encoding()
-    vectorMaker.encoding_images()
+    vectorMaker.encoding(encode_image=True)
     vectorMaker.dump()
