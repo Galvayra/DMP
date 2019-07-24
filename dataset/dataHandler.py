@@ -6,6 +6,7 @@ import sys
 import json
 from os import path, listdir
 from .variables import *
+from DMP.dataset.images.variables import CT_IMAGE_PATH
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
     from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO
@@ -412,14 +413,20 @@ class DataHandler:
         """
         patient_dict = dict()
         save_path = self.data_path + IMAGE_PATH + IMAGE_LOG_PATH + IMAGE_LOG_NAME
+        ct_path = self.data_path + IMAGE_PATH + CT_IMAGE_PATH
+        folder_dict = dict()
+
+        for folder_name in listdir(ct_path):
+            p_number = folder_name.split('_')[0]
+            folder_dict[str(p_number)] = folder_name
 
         if not path.isfile(save_path):
             for p_number, y in zip(self.save_dict[self.raw_header_dict[COLUMN_NUMBER]],
                                    self.save_dict[self.raw_header_dict[self.y_column]]):
                 if y == HAVE_SYMPTOM:
-                    patient_dict[str(p_number)] = 1
+                    patient_dict[str(p_number)] = [folder_dict[str(p_number)], 1]
                 else:
-                    patient_dict[str(p_number)] = 0
+                    patient_dict[str(p_number)] = [folder_dict[str(p_number)], 0]
 
             with open(save_path, 'w') as outfile:
                 json.dump(patient_dict, outfile, indent=4)
