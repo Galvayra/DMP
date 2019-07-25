@@ -432,10 +432,15 @@ class MyOneHotEncoder(W2vReader):
     # set vector into self.vector_matrix using generator
     def __set_vector(self, class_of_column, generator):
         if generator:
-            for index, vector in generator:
-                for v in vector:
-                    self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
-                    self.vector_matrix[class_of_column][index].append(v)
+            if USE_CLASS_VECTOR:
+                for index, vector in generator:
+                    for v in vector:
+                        self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
+                        self.vector_matrix[class_of_column][index].append(v)
+            else:
+                for index, vector in generator:
+                    for v in vector:
+                        self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR][index].append(v)
 
     def __init_vector_matrix(self, data_handler):
         self.vector_matrix = OrderedDict()
@@ -447,11 +452,12 @@ class MyOneHotEncoder(W2vReader):
             self.vector_matrix[KEY_NAME_OF_MERGE_VECTOR].append(list())
 
         # set X(number of rows) using rows_data
-        for class_of_column in self.dataHandler.columns_dict:
-            self.vector_matrix[class_of_column] = list()
+        if USE_CLASS_VECTOR:
+            for class_of_column in self.dataHandler.columns_dict:
+                self.vector_matrix[class_of_column] = list()
 
-            for _ in range(num_of_data):
-                self.vector_matrix[class_of_column].append(list())
+                for _ in range(num_of_data):
+                    self.vector_matrix[class_of_column].append(list())
 
     def transform2matrix(self, data_handler):
         self.__init_vector_matrix(data_handler)
@@ -527,12 +533,15 @@ class MyOneHotEncoder(W2vReader):
 
         for p_number in target_data_dict['A'].values():
             folder_name = ct_dict[p_number][0]
-            target_path = ct_image_path + "/" + folder_name
+            target_path = ct_image_path + folder_name
+
+            patient_image_matrix = list()
 
             for image_name in listdir(target_path):
                 target_image_path = target_path + "/" + image_name
+                patient_image_matrix.append(target_image_path)
 
-                # load vector using Image library
+            image_matrix.append(patient_image_matrix)
 
         return image_matrix
 

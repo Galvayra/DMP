@@ -1,7 +1,8 @@
 import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
-from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR
+from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
+    KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH
@@ -40,7 +41,7 @@ class VectorMaker:
         }
 
         self.__ct_image_path = ct_image_path
-        self.__dump_path = path.dirname(path.abspath(__file__)) + "/"
+        self.__dump_path = path.dirname(path.abspath(__file__)) + "/" + DUMP_PATH
         self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
 
     @property
@@ -67,7 +68,7 @@ class VectorMaker:
     def image_path(self):
         return self.__image_path
 
-    def encoding(self, encode_image=False):
+    def encoding(self):
         # init encoder and fit it
         encoder = MyOneHotEncoder(ver=VERSION, log_name=LOG_NAME, num_of_important=NUM_OF_IMPORTANT)
         encoder.fit(self.dataHandler_dict[KEY_TOTAL])
@@ -82,21 +83,19 @@ class VectorMaker:
         self.__set_vector_matrix_feature(encoder.get_feature_dict())
         self.__set_vector_matrix(matrix_dict)
 
-        if encode_image:
+        if self.ct_image_path:
             ct_dict = self.__load_ct_dict()
             ct_image_path = self.image_path + CT_IMAGE_PATH
 
-            encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN], ct_dict, ct_image_path)
-            print()
-            encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID], ct_dict, ct_image_path)
-            print()
-            encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST], ct_dict, ct_image_path)
-            matrix_image_dict = {
-
+            image_matrix_dict = {
+                KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN], ct_dict, ct_image_path),
+                KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID], ct_dict, ct_image_path),
+                KEY_IMG_TEST: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST], ct_dict, ct_image_path)
             }
 
+            self.__set_vector_matrix4image(image_matrix_dict)
+
         del self.dataHandler_dict
-        exit(-1)
 
     def __set_vector_matrix_feature(self, feature_dict):
         self.vector_matrix["feature"] = feature_dict
@@ -117,6 +116,10 @@ class VectorMaker:
         # copy x data in self.vector_matrix
         for key, matrix in matrix_dict.items():
             __copy(self.vector_matrix[key[0]], self.vector_matrix[key[1]], self.dataHandler_dict[key[2]].y_data)
+
+    def __set_vector_matrix4image(self, matrix_dict):
+        for key, matrix in matrix_dict.items():
+            self.vector_matrix[key] = matrix
 
     def __load_ct_dict(self):
         with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
