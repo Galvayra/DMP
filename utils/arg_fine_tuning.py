@@ -9,6 +9,7 @@ parser.add_argument("-val_dir", "--val_dir", help="set a image file directory fo
 parser.add_argument("-model_path", "--model_path", help="set a path for loading off-the-shelf model"
                                                         "\nUseAge : python fine_tuning.py -model_path 'M'\n\n",
                     default="learning/model/vgg_16.ckpt", type=str)
+parser.add_argument('-show', '--show', default=True, type=bool)
 
 parser.add_argument('--log', default='transfer', type=str)
 parser.add_argument('--batch_size', default=32, type=int)
@@ -26,3 +27,4 @@ VGG_MEAN = [123.68, 116.78, 103.94]
 
 PATH_LOGS = "./logs/"
 LOG_DIR_NAME = args.log
+DO_SHOW = args.show

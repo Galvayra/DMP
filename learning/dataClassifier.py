@@ -7,8 +7,9 @@ from .score import MyScore
 
 current_script = sys.argv[0].split('/')[-1]
 
-if current_script == "training.py":
+if current_script == "training.py" or "fine_tuning.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL, IMAGE_PATH, VERSION
+    from DMP.learning.transferLearner import TransferLearner
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH, VERSION
 
@@ -66,12 +67,29 @@ class DataClassifier:
 
             nn.save_process_time()
 
-    def __get_total_set(self):
-        x_train = self.dataHandler.x_train
+    def transfer_learning(self):
+        x_data, y_data = self.__get_total_set(has_img_paths=True)
+
+        nn = TransferLearner()
+        nn.transfer_learning()
+
+        # print(len(img_paths))
+
+    def __get_total_set(self, has_img_paths=False):
+        def __get_expended_x_data(vector_list, path_list):
+            return [[vector] + [path] for vector, path in zip(vector_list, path_list)]
+
+        if has_img_paths:
+            x_train = __get_expended_x_data(self.dataHandler.x_train, self.dataHandler.img_train)
+            x_valid = __get_expended_x_data(self.dataHandler.x_valid, self.dataHandler.img_valid)
+            x_test = __get_expended_x_data(self.dataHandler.x_test, self.dataHandler.img_test)
+        else:
+            x_train = self.dataHandler.x_train
+            x_valid = self.dataHandler.x_valid
+            x_test = self.dataHandler.x_test
+
         y_train = self.dataHandler.y_train
-        x_valid = self.dataHandler.x_valid
         y_valid = self.dataHandler.y_valid
-        x_test = self.dataHandler.x_test
         y_test = self.dataHandler.y_test
 
         return x_train + x_valid + x_test, y_train + y_valid + y_test

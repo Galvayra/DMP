@@ -7,9 +7,10 @@ import sys
 
 current_script = sys.argv[0].split('/')[-1]
 
-if current_script == "training.py":
+if current_script == "training.py" or "fine_tuning.py":
     from DMP.utils.arg_training import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
         show_options
+    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
         show_options
@@ -63,6 +64,11 @@ class DataHandler:
             self.y_valid = vector_list["y_valid"]
             self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
+
+            if current_script == "fine_tuning.py":
+                self.img_train = vector_list[KEY_IMG_TRAIN]
+                self.img_valid = vector_list[KEY_IMG_VALID]
+                self.img_test = vector_list[KEY_IMG_TEST]
 
             # count list
             # index == 0, all // index == 1, mortality // index == 2, alive

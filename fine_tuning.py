@@ -56,9 +56,10 @@ try:
 except ImportError:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from DMP.learning.transferLearner import TransferLearner
+from DMP.learning.dataClassifier import DataClassifier
+from DMP.learning.dataHandler import DataHandler
 
 
 if __name__ == '__main__':
-    learner = TransferLearner()
-    learner.my_transfer_learning()
+    classifier = DataClassifier(DataHandler())
+    classifier.transfer_learning()
