@@ -532,13 +532,13 @@ class MyOneHotEncoder(W2vReader):
         target_data_dict = data_handler.x_data_dict
 
         for p_number in target_data_dict['A'].values():
-            folder_name = ct_dict[p_number][0]
-            target_path = ct_image_path + folder_name
+            # folder_name = ct_dict[p_number][0]
+            target_path = ct_image_path + p_number + "/"
 
             patient_image_matrix = list()
 
             for image_name in listdir(target_path):
-                target_image_path = target_path + "/" + image_name
+                target_image_path = target_path + image_name
                 patient_image_matrix.append(target_image_path)
 
             image_matrix.append(patient_image_matrix)

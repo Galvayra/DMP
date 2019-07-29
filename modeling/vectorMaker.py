@@ -5,7 +5,7 @@ from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KE
     KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT
 from os import path
-from DMP.dataset.images.variables import CT_IMAGE_PATH
+from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH
 from DMP.dataset.variables import DATA_PATH, IMAGE_PATH, IMAGE_LOG_NAME, IMAGE_LOG_PATH
 import json
 
@@ -85,7 +85,7 @@ class VectorMaker:
 
         if self.ct_image_path:
             ct_dict = self.__load_ct_dict()
-            ct_image_path = self.image_path + CT_IMAGE_PATH
+            ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
 
             image_matrix_dict = {
                 KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN], ct_dict, ct_image_path),

@@ -6,7 +6,7 @@ import sys
 import json
 from os import path, listdir
 from .variables import *
-from DMP.dataset.images.variables import CT_IMAGE_PATH
+from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, CT_IMAGE_TARGET_PATH
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
     from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO
@@ -321,9 +321,9 @@ class DataHandler:
     def __init_erase_index_list_for_ct_image(self):
         erase_index_list = list()
 
-        patient_list = listdir(self.ct_image_path)
-        patient_list = [int(patient_number.split('_')[0]) for patient_number in patient_list]
+        patient_list = [int(patient_number) for patient_number in listdir(self.ct_image_path + CT_IMAGE_ALL_PATH)]
 
+        # except data(patient_number) which haven't ct image
         for index, num_id in enumerate(self.__get_raw_data(COLUMN_NUMBER)):
             if num_id not in patient_list:
                 erase_index_list.append(index + POSITION_OF_ROW)
@@ -413,7 +413,7 @@ class DataHandler:
         """
         patient_dict = dict()
         save_path = self.data_path + IMAGE_PATH + IMAGE_LOG_PATH + IMAGE_LOG_NAME
-        ct_path = self.data_path + IMAGE_PATH + CT_IMAGE_PATH
+        ct_path = self.data_path + IMAGE_PATH + CT_IMAGE_PATH + CT_IMAGE_TARGET_PATH
         folder_dict = dict()
 
         for folder_name in listdir(ct_path):

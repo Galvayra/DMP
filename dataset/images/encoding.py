@@ -18,8 +18,7 @@ if __name__ == '__main__':
 
     # loading data
     for key, read_csv in file_dict.items():
-        dataHandler = DataHandler(read_csv, column_target=COLUMN_TARGET, eliminate_target=True,
-                                  ct_image_path=CT_IMAGE_PATH)
+        dataHandler = DataHandler(read_csv, column_target=COLUMN_TARGET, eliminate_target=True)
         dataHandler.load()
         dataHandler_dict[key] = dataHandler
 
