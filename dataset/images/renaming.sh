@@ -1,5 +1,5 @@
 #!/bin/sh
-folder="ct_images"
+folder=$1
 cmd_dir=$(ls $folder | grep -v '[^0-9_]')
 
 count() {
@@ -12,7 +12,7 @@ count() {
 		cnt=$(ls | wc -l)
 	
 		sum=$(($sum + $cnt))	
-		cd ../..
+		cd ../../..
 	done
 	
 	echo "total  count = ${sum}"
@@ -27,18 +27,17 @@ rename() {
 	do
 		cd $folder/$dir
 		length=$(ls | wc -l)
-		
-		
+
 		for file in $(ls)
 		do
 			cnt=$(($cnt+1))
-			
+
 			mv $file $tmp
 			mv $tmp 00$cnt.jpg
-	
+
 		done
 	
-		cd ../..
+		cd ../../..
 		cnt=0
 	done
 }
