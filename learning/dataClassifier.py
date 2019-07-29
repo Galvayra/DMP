@@ -4,14 +4,17 @@ from sklearn.model_selection import KFold
 from .variables import *
 from .neuralNet import MyNeuralNetwork
 from .score import MyScore
+from PIL import Image
 
 current_script = sys.argv[0].split('/')[-1]
 
-if current_script == "training.py" or "fine_tuning.py":
+if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL, IMAGE_PATH, VERSION
-    from DMP.learning.transferLearner import TransferLearner
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH, VERSION
+elif current_script == "fine_tuning.py":
+    from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
+    from DMP.learning.transferLearner import TransferLearner
 
 
 class DataClassifier:
@@ -70,10 +73,17 @@ class DataClassifier:
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
 
-        nn = TransferLearner()
-        nn.transfer_learning()
+        if VERSION == 1:
+            x_data, y_data = self.__get_total_image_set(x_data, y_data)
 
-        # print(len(img_paths))
+        if TYPE_OF_MODEL == "tuning":
+            nn = TransferLearner()
+            print("have to make fine tuning")
+            exit(-1)
+        elif TYPE_OF_MODEL == "cnn":
+            nn = MyNeuralNetwork()
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                nn.convolution(x_train, y_train, x_test, y_test, train_ct_image=True)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -93,6 +103,32 @@ class DataClassifier:
         y_test = self.dataHandler.y_test
 
         return x_train + x_valid + x_test, y_train + y_valid + y_test
+
+    def __get_total_image_set(self, x_data, y_data):
+        n = 3
+        x_img_data = list()
+        y_img_data = list()
+
+        for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+            for image in images:
+                x_img_data.append(image)
+                y_img_data.append(y_value)
+
+        self.__show_info(y_img_data)
+
+        return x_img_data, y_img_data
+
+    @staticmethod
+    def __show_info(y_img_data):
+        if DO_SHOW:
+            cnt = 0
+
+            for y in y_img_data:
+                if y == [0]:
+                    cnt += 1
+
+            print("\nTotal Training Count (alive/death) -", str(len(y_img_data)),
+                  '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')', "\n\n")
 
     @staticmethod
     def __get_data_matrix(_data, _index_list):

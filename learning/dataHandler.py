@@ -7,10 +7,9 @@ import sys
 
 current_script = sys.argv[0].split('/')[-1]
 
-if current_script == "training.py" or "fine_tuning.py":
+if current_script == "training.py":
     from DMP.utils.arg_training import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
         show_options
-    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, VERSION, \
         show_options
@@ -21,6 +20,9 @@ elif current_script == "extract_feature.py" or current_script == "print_feature.
     from sklearn.ensemble import RandomForestClassifier
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
+elif current_script == "fine_tuning.py":
+    from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
+    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 
 alivePath = 'alive/'
 deathPath = 'death/'
@@ -178,18 +180,32 @@ class DataHandler:
                 # ]
 
                 if y_label == [1]:
-                    vector_set[enumerate_i] = self.__set_image_from_path(IMAGE_PATH + deathPath + img_name)
+                    vector_set[enumerate_i] = self.__get_image_from_path(IMAGE_PATH + deathPath + img_name)
                 else:
-                    vector_set[enumerate_i] = self.__set_image_from_path(IMAGE_PATH + alivePath + img_name)
+                    vector_set[enumerate_i] = self.__get_image_from_path(IMAGE_PATH + alivePath + img_name)
 
     @staticmethod
-    def __set_image_from_path(path):
+    def __get_image_from_path(path):
         img = Image.open(path)
         img.load()
         new_img = np.asarray(img, dtype='int32')
         new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
 
         return new_img[0]
+
+    def get_image_vector(self, x_data):
+        """
+
+        :param x_data:
+        :return:
+        [
+            [img_1_vector_1, img_1_vector_2, ... , img_1_vector_i]
+            [img_2_vector_1, img_2_vector_2, ... , img_2_vector_i]
+            ...
+            [img_N_vector_1, img_N_vector_2, ... , img_N_vector_i]
+        ]
+        """
+        return [[self.__get_image_from_path(path) for path in paths[1]] for paths in x_data]
 
     def __get_name_of_image_from_index(self, key, enumerate_i, x_index):
         # k cross validation (version 1)
