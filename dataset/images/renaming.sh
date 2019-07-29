@@ -26,14 +26,19 @@ rename() {
 	for dir in $cmd_dir
 	do
 		cd $folder/$dir
-		length=$(ls | wc -l)
 
 		for file in $(ls)
 		do
 			cnt=$(($cnt+1))
-
 			mv $file $tmp
-			mv $tmp 00$cnt.jpg
+
+			if [ $cnt -ge 100 ]; then
+			    mv $tmp $cnt.jpg
+            elif [ $cnt -ge 10 ]; then
+			    mv $tmp 0$cnt.jpg
+            else
+			    mv $tmp 00$cnt.jpg
+            fi
 
 		done
 	
