@@ -13,7 +13,7 @@ COLUMN_NUMBER = 'A'
 
 # initial information & Past history 만을 이용하여 학습
 class MyOneHotEncoder(W2vReader):
-    def __init__(self, ver, log_name, num_of_important):
+    def __init__(self, ver, log_name, num_of_important, ct_image_path=""):
         super().__init__()
         self.__vector = OrderedDict()
 
@@ -47,6 +47,8 @@ class MyOneHotEncoder(W2vReader):
         # a dictionary to show how to match feature to dimensionality
         self.__feature_dict = dict()
         self.__num_of_dim = int()
+
+        self.__ct_image_path = ct_image_path
 
     @property
     def vector(self):
@@ -91,6 +93,10 @@ class MyOneHotEncoder(W2vReader):
     @property
     def version(self):
         return self.__version
+
+    @property
+    def ct_image_path(self):
+        return self.__ct_image_path
 
     def __set_importance(self, log_name):
         if log_name:
@@ -526,18 +532,16 @@ class MyOneHotEncoder(W2vReader):
 
                 self.__set_vector(class_of_column, generator)
 
-    @staticmethod
-    def transform2image_matrix(data_handler, ct_dict, ct_image_path):
+    def transform2image_matrix(self, data_handler):
         image_matrix = list()
         target_data_dict = data_handler.x_data_dict
 
         for p_number in target_data_dict['A'].values():
-            # folder_name = ct_dict[p_number][0]
-            target_path = ct_image_path + p_number + "/"
+            target_path = self.ct_image_path + p_number + "/"
 
             patient_image_matrix = list()
 
-            for image_name in listdir(target_path):
+            for image_name in sorted(listdir(target_path)):
                 target_image_path = target_path + image_name
                 patient_image_matrix.append(target_image_path)
 

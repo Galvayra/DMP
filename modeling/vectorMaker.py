@@ -19,7 +19,7 @@ import json
 ###
 class VectorMaker:
     # must using DataParser or DataHandler
-    def __init__(self, data_handler, ct_image_path=""):
+    def __init__(self, data_handler):
         # dataHandler_dict = { KEY : handler }
         self.dataHandler_dict = {key: handler for key, handler in data_handler.items()}
         self.__y_data = self.dataHandler_dict[KEY_TOTAL].y_data
@@ -40,7 +40,6 @@ class VectorMaker:
             "y_test": list()
         }
 
-        self.__ct_image_path = ct_image_path
         self.__dump_path = path.dirname(path.abspath(__file__)) + "/" + DUMP_PATH
         self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
 
@@ -57,10 +56,6 @@ class VectorMaker:
         return self.__vector_matrix
 
     @property
-    def ct_image_path(self):
-        return self.__ct_image_path
-
-    @property
     def dump_path(self):
         return self.__dump_path
 
@@ -68,9 +63,12 @@ class VectorMaker:
     def image_path(self):
         return self.__image_path
 
-    def encoding(self):
+    def encoding(self, encode_image=False):
+        ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
+
         # init encoder and fit it
-        encoder = MyOneHotEncoder(ver=VERSION, log_name=LOG_NAME, num_of_important=NUM_OF_IMPORTANT)
+        encoder = MyOneHotEncoder(ver=VERSION, log_name=LOG_NAME, num_of_important=NUM_OF_IMPORTANT,
+                                  ct_image_path=ct_image_path)
         encoder.fit(self.dataHandler_dict[KEY_TOTAL])
 
         # initialize dictionary of matrix after encoding
@@ -83,14 +81,13 @@ class VectorMaker:
         self.__set_vector_matrix_feature(encoder.get_feature_dict())
         self.__set_vector_matrix(matrix_dict)
 
-        if self.ct_image_path:
-            ct_dict = self.__load_ct_dict()
-            ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
+        if encode_image:
+            # ct_dict = self.__load_ct_dict()
 
             image_matrix_dict = {
-                KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN], ct_dict, ct_image_path),
-                KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID], ct_dict, ct_image_path),
-                KEY_IMG_TEST: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST], ct_dict, ct_image_path)
+                KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
+                KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
+                KEY_IMG_TEST: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST])
             }
 
             self.__set_vector_matrix4image(image_matrix_dict)
@@ -121,9 +118,9 @@ class VectorMaker:
         for key, matrix in matrix_dict.items():
             self.vector_matrix[key] = matrix
 
-    def __load_ct_dict(self):
-        with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
-            return json.load(r_file)
+    # def __load_ct_dict(self):
+    #     with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
+    #         return json.load(r_file)
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from DMP.dataset.images.variables import CT_IMAGE_PATH
 from DMP.modeling.vectorMaker import VectorMaker
 from DMP.modeling.variables import KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST
 from DMP.dataset.dataHandler import DataHandler
@@ -23,6 +22,6 @@ if __name__ == '__main__':
         dataHandler_dict[key] = dataHandler
 
     # encoding data using dataHandler
-    vectorMaker = VectorMaker(dataHandler_dict, ct_image_path=CT_IMAGE_PATH)
-    vectorMaker.encoding()
+    vectorMaker = VectorMaker(dataHandler_dict)
+    vectorMaker.encoding(encode_image=True)
     vectorMaker.dump()
