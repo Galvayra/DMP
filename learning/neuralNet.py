@@ -14,7 +14,7 @@ elif sys.argv[0].split('/')[-1] == "predict.py":
 elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 
 
 class MyNeuralNetwork(MyScore):
@@ -144,12 +144,11 @@ class MyNeuralNetwork(MyScore):
         num_of_dimension = len(x_train[0])
 
         self.num_of_fold += 1
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, num_of_dimension],
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension],
                                    name=NAME_X + '_' + str(self.num_of_fold))
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, 1],
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
-        self.keep_prob = tf.placeholder(tf.float32,
-                                        name=NAME_PROB + '_' + str(self.num_of_fold))
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
         # initialize neural network
         hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
@@ -239,7 +238,7 @@ class MyNeuralNetwork(MyScore):
         # 7 x 7 x 50 x 500
         filter_3 = tf.Variable(
             tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
-            name="cnn_filter_32")
+            name="cnn_filter_3")
         conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
                               name="conv_3_" + str(self.num_of_fold))
         pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
@@ -267,6 +266,7 @@ class MyNeuralNetwork(MyScore):
 
         return convolution_layer, num_of_filter[-1]
 
+    # The model of our Paper
     def __init_convolution_layer_model_2(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))
         num_of_filter = [20, 50, 200]
@@ -299,7 +299,7 @@ class MyNeuralNetwork(MyScore):
         # 5 x 5 x 50 x 200
         filter_3 = tf.Variable(
             tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
-            name="cnn_filter_32")
+            name="cnn_filter_3")
         conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
                               name="conv_3_" + str(self.num_of_fold))
         pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
@@ -359,7 +359,7 @@ class MyNeuralNetwork(MyScore):
         # 5 x 5 x 40 x 80
         filter_3 = tf.Variable(
             tf.random_normal([size_of_filter[2], size_of_filter[2], num_of_filter[1], num_of_filter[2]], stddev=0.01),
-            name="cnn_filter_32")
+            name="cnn_filter_3")
         conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="SAME",
                               name="conv_3_" + str(self.num_of_fold))
         pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 4, 4, 1], strides=[1, 4, 4, 1], padding="SAME",
@@ -370,7 +370,7 @@ class MyNeuralNetwork(MyScore):
         # 3 x 3 x 80 x 100
         filter_4 = tf.Variable(
             tf.random_normal([size_of_filter[3], size_of_filter[3], num_of_filter[2], num_of_filter[3]], stddev=0.01),
-            name="cnn_filter_32")
+            name="cnn_filter_4")
         conv_4 = tf.nn.conv2d(pool_3, filter_4, strides=[1, 1, 1, 1], padding="SAME",
                               name="conv_4_" + str(self.num_of_fold))
         pool_4 = tf.nn.max_pool(conv_4, ksize=[1, 4, 4, 1], strides=[1, 4, 4, 1], padding="SAME",
@@ -381,7 +381,7 @@ class MyNeuralNetwork(MyScore):
         # 3 x 3 x 100 x 400
         filter_5 = tf.Variable(
             tf.random_normal([size_of_filter[4], size_of_filter[4], num_of_filter[3], num_of_filter[4]], stddev=0.01),
-            name="cnn_filter_32")
+            name="cnn_filter_5")
         conv_5 = tf.nn.conv2d(pool_4, filter_5, strides=[1, 1, 1, 1], padding="SAME",
                               name="conv_5_" + str(self.num_of_fold))
         pool_5 = tf.nn.max_pool(conv_5, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME",
