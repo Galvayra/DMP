@@ -14,7 +14,7 @@ elif sys.argv[0].split('/')[-1] == "predict.py":
 elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE
 
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 
 
 class MyNeuralNetwork(MyScore):
@@ -93,11 +93,11 @@ class MyNeuralNetwork(MyScore):
     def __get_name_of_tensor(self):
         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
-    def __init_feed_forward_layer(self, num_input_node, input_layer):
+    def __init_feed_forward_layer(self, num_of_input_nodes, num_of_output_nodes, input_layer):
         if NUM_HIDDEN_DIMENSION:
             num_hidden_node = NUM_HIDDEN_DIMENSION
         else:
-            num_hidden_node = num_input_node
+            num_hidden_node = num_of_input_nodes
 
         tf_weight = list()
         tf_bias = list()
@@ -106,12 +106,12 @@ class MyNeuralNetwork(MyScore):
         # # make hidden layers
         for i in range(NUM_HIDDEN_LAYER):
             # set number of hidden node
-            num_hidden_node = int(num_input_node / RATIO_HIDDEN)
+            num_hidden_node = int(num_of_input_nodes / RATIO_HIDDEN)
 
             # append weight
             tf_weight.append(tf.get_variable(name="h_weight_" + str(i + 1) + '_' + str(self.num_of_fold),
                                              dtype=tf.float32,
-                                             shape=[num_input_node, num_hidden_node],
+                                             shape=[num_of_input_nodes, num_hidden_node],
                                              initializer=tf.contrib.layers.xavier_initializer()))
             # append bias
             tf_bias.append(tf.Variable(tf.random_normal([num_hidden_node]),
@@ -124,12 +124,12 @@ class MyNeuralNetwork(MyScore):
                                           name="dropout_" + str(i + 1) + '_' + str(self.num_of_fold)))
 
             # set number of node which is next layer
-            num_input_node = int(num_input_node / RATIO_HIDDEN)
+            num_of_input_nodes = int(num_of_input_nodes / RATIO_HIDDEN)
 
         tf_weight.append(tf.get_variable(dtype=tf.float32, shape=[num_hidden_node, 1],
                                          initializer=tf.contrib.layers.xavier_initializer(),
                                          name="o_weight_" + str(self.num_of_fold)))
-        tf_bias.append(tf.Variable(tf.random_normal([1]),
+        tf_bias.append(tf.Variable(tf.random_normal([num_of_output_nodes]),
                                    name="o_bias_" + str(self.num_of_fold)))
 
         if DO_SHOW:
@@ -141,17 +141,20 @@ class MyNeuralNetwork(MyScore):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def feed_forward(self, x_train, y_train, x_valid, y_valid):
-        num_of_dimension = len(x_train[0])
+        num_of_input_nodes = len(x_train[0])
+        num_of_output_nodes = len(y_train[0])
 
         self.num_of_fold += 1
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension],
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_input_nodes],
                                    name=NAME_X + '_' + str(self.num_of_fold))
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1],
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
         # initialize neural network
-        hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=self.tf_x)
+        hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=num_of_input_nodes,
+                                                    num_of_output_nodes=num_of_output_nodes,
+                                                    input_layer=self.tf_x)
         h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
 
@@ -163,8 +166,8 @@ class MyNeuralNetwork(MyScore):
         self.set_score(target=key)
         self.show_score(target=key)
 
-    def __init_convolution_layer(self, num_of_dimension):
-        num_of_image = int(math.sqrt(num_of_dimension))
+    def __init_convolution_layer(self, num_of_input_nodes):
+        num_of_image = int(math.sqrt(num_of_input_nodes))
         num_of_filter = [16, 32]
         size_of_filter = 3
 
@@ -206,8 +209,8 @@ class MyNeuralNetwork(MyScore):
         return convolution_layer, num_of_dimension
 
     # The model of Paper 'Deep Learning for the Classification of Lung Nodules'
-    def __init_convolution_layer_model_1(self, num_of_dimension):
-        num_of_image = int(math.sqrt(num_of_dimension))
+    def __init_convolution_layer_model_1(self, num_of_input_nodes):
+        num_of_image = int(math.sqrt(num_of_input_nodes))
         num_of_filter = [20, 50, 500]
         size_of_filter = 7
 
@@ -267,8 +270,8 @@ class MyNeuralNetwork(MyScore):
         return convolution_layer, num_of_filter[-1]
 
     # The model of our Paper
-    def __init_convolution_layer_model_2(self, num_of_dimension):
-        num_of_image = int(math.sqrt(num_of_dimension))
+    def __init_convolution_layer_model_2(self, num_of_input_nodes):
+        num_of_image = int(math.sqrt(num_of_input_nodes))
         num_of_filter = [20, 50, 200]
         size_of_filter = 5
 
@@ -414,23 +417,26 @@ class MyNeuralNetwork(MyScore):
         return convolution_layer, num_of_filter[-1]
 
     def convolution(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
-        num_of_dimension = len(x_train[0])
+        num_of_input_nodes = len(x_train[0])
+        num_of_output_nodes = len(y_train[0])
 
         self.num_of_fold += 1
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_dimension],
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_input_nodes],
                                    name=NAME_X + '_' + str(self.num_of_fold))
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, 1],
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32,
                                         name=NAME_PROB + '_' + str(self.num_of_fold))
 
         # concat CNN to Feed Forward NN
         if train_ct_image:
-            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_for_ct(num_of_dimension)
+            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_for_ct(num_of_input_nodes)
         else:
-            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_2(num_of_dimension)
+            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_2(num_of_input_nodes)
 
-        hypothesis = self.__init_feed_forward_layer(num_input_node=num_of_dimension, input_layer=convolution_layer)
+        hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=num_of_dimension,
+                                                    num_of_output_nodes=num_of_output_nodes,
+                                                    input_layer=convolution_layer)
         h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
 
@@ -445,18 +451,38 @@ class MyNeuralNetwork(MyScore):
     def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if DO_SHOW:
             print("Layer O -", hypothesis.shape, "\n\n\n")
-        hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
 
-        with tf.name_scope("cost"):
-            cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
-            cost_summ = tf.summary.scalar("cost", cost)
+        num_of_class = len(y_train[0])
 
-        train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
+        # Use softmax cross entropy
+        if num_of_class > 1:
+            with tf.name_scope("cost"):
+                cost_i = tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y)
+                cost = tf.reduce_mean(cost_i)
+                cost_summ = tf.summary.scalar("cost", cost)
 
-        # cut off
-        predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
-        _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
-        accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+            with tf.name_scope("prediction"):
+                hypothesis = tf.nn.softmax(hypothesis)
+                predict = tf.argmax(hypothesis, 1)
+                correct_prediction = tf.equal(predict, tf.argmax(self.tf_y, 1))
+                _accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
+                accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+
+            train_op = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
+
+        # Do not use softmax cross entropy
+        else:
+            with tf.name_scope("cost"):
+                hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
+                cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
+                cost_summ = tf.summary.scalar("cost", cost)
+
+            with tf.name_scope("prediction"):
+                predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
+                _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+                accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+
+            train_op = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(cost)
 
         # set file names for saving
         self.__set_name_of_log()
@@ -604,20 +630,29 @@ class MyNeuralNetwork(MyScore):
                 for _y in _y_labels:
                     _y_labels_reverse.append([1 - _y[0]])
             else:
-                for _y in _y_labels:
-                    if _y == [0]:
-                        _y_labels_reverse.append([1])
-                    else:
-                        _y_labels_reverse.append([0])
+                if _y_labels[0] > 1:
+                    for _y in _y_labels:
+                        if _y == [0, 1]:
+                            _y_labels_reverse.append([1, 0])
+                        else:
+                            _y_labels_reverse.append([0, 1])
+                else:
+                    for _y in _y_labels:
+                        if _y == [0]:
+                            _y_labels_reverse.append([1])
+                        else:
+                            _y_labels_reverse.append([0])
 
             return _y_labels_reverse
 
         # set score of immortality
-        self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
+        self.compute_score(__get_reverse(self.get_y_set(y_test)),
+                           __get_reverse(y_predict),
+                           __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
 
         # set score of mortality
-        self.compute_score(y_test, y_predict, h)
+        self.compute_score(self.get_y_set(y_test), y_predict, h)
         self.set_score(target=KEY_MORTALITY)
 
         # set 2 class score

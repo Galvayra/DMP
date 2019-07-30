@@ -2,6 +2,7 @@ from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_sc
 from pandas import DataFrame
 from .variables import *
 from .plot import MyPlot
+import numpy as np
 import copy
 import sys
 import time
@@ -80,6 +81,29 @@ class MyScore(MyPlot):
     @num_of_fold.setter
     def num_of_fold(self, num_of_fold):
         self.__num_of_fold = num_of_fold
+
+    @staticmethod
+    def get_y_set(y_data):
+        if len(y_data[0]) > 1:
+            return [np.argmax(y) for y in y_data]
+        else:
+            return y_data
+
+    @staticmethod
+    def get_reverse(y_labels, is_hypothesis=False):
+        y_labels_reverse = list()
+
+        if is_hypothesis:
+            for y in y_labels:
+                y_labels_reverse.append([1 - y])
+        else:
+            for y in y_labels:
+                if y == [0]:
+                    y_labels_reverse.append([1])
+                else:
+                    y_labels_reverse.append([0])
+
+        return y_labels_reverse
 
     @staticmethod
     def __init_score():
@@ -191,8 +215,13 @@ class MyScore(MyPlot):
         def __get_death_count(target_list):
             count = int()
 
+            if len(target_list[0]) > 1:
+                death_vector = [0, 1]
+            else:
+                death_vector = [1]
+
             for x in target_list:
-                if x == [1]:
+                if x == death_vector:
                     count += 1
 
             return count

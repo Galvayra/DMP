@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 from .variables import *
@@ -78,10 +79,13 @@ class DataClassifier:
 
         if TYPE_OF_MODEL == "tuning":
             nn = TransferLearner()
-            print("have to make fine tuning")
-            exit(-1)
+
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                nn.transfer_learning(x_train, y_train, x_test, y_test)
+                exit(-1)
         elif TYPE_OF_MODEL == "cnn":
             nn = MyNeuralNetwork()
+
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                 nn.convolution(x_train, y_train, x_test, y_test, train_ct_image=True)
 
@@ -252,7 +256,7 @@ class OlderClassifier(MyScore):
     def load_svm(self, x_train, y_train, x_test):
         self.num_of_fold += 1
         svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
-        svc.fit(x_train, y_train)
+        svc.fit(x_train, self.get_y_set(y_train))
 
         y_predict = svc.predict(x_test)
         test_probas_ = svc.predict_proba(x_test)
@@ -276,11 +280,13 @@ class OlderClassifier(MyScore):
             return _y_labels_reverse
 
         # set score of immortality
-        self.compute_score(__get_reverse(y_test), __get_reverse(y_predict), __get_reverse(h, is_hypothesis=True))
+        self.compute_score(__get_reverse(self.get_y_set(y_test)),
+                           __get_reverse(y_predict),
+                           __get_reverse(h, is_hypothesis=True))
         self.set_score(target=KEY_IMMORTALITY)
 
         # set score of mortality
-        self.compute_score(y_test, y_predict,  h)
+        self.compute_score(self.get_y_set(y_test), y_predict,  h)
         self.set_score(target=KEY_MORTALITY)
 
         # set total score of immortality and mortality

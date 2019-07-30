@@ -117,10 +117,16 @@ class DataHandler:
                 self.y_test = [y_target[index] for index in target_index]
 
     def __set_count(self):
-        def __count_mortality(_y_data_):
+        def __count_mortality(_y_data):
             _count = 0
-            for _i in _y_data_:
-                if _i == [1]:
+
+            if len(_y_data) > 1:
+                death_vector = [0, 1]
+            else:
+                death_vector = [1]
+
+            for _i in _y_data:
+                if _i == death_vector:
                     _count += 1
 
             return _count
