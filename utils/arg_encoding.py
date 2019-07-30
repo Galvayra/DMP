@@ -24,6 +24,10 @@ def get_arguments():
     parser.add_argument("-n_features", "--n_features",
                         help="set a number of importance features for making vectors(default is k)"
                              "\nUseAge : python encoding.py -n_features 'N'\n\n")
+    parser.add_argument("-cross_entropy", "--cross_entropy",
+                        help="set a output nodes for cross entropy(default is 1)"
+                             "\nUseAge : python encoding.py -n_features 'N'\n\n",
+                        default=1, type=int)
     _args = parser.parse_args()
 
     return _args
@@ -45,6 +49,12 @@ VERSION = 1
 
 NUM_OF_FEATURES = get_num_of_features()
 NUM_OF_IMPORTANT = NUM_OF_FEATURES
+
+DO_CROSS_ENTROPY = args.cross_entropy
+
+if DO_CROSS_ENTROPY != 1 and DO_CROSS_ENTROPY != 0:
+    print("\nInput Error cross_entropy option!\n")
+    exit(-1)
 
 if args.input:
     SAVE_FILE_TOTAL = args.input

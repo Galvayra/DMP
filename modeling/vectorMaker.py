@@ -3,10 +3,10 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
     KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
-from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT
+from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH
-from DMP.dataset.variables import DATA_PATH, IMAGE_PATH, IMAGE_LOG_NAME, IMAGE_LOG_PATH
+from DMP.dataset.variables import DATA_PATH, IMAGE_PATH
 import json
 
 
@@ -104,7 +104,15 @@ class VectorMaker:
                 for class_of_column in x_target:
                     x_target[class_of_column].append(matrix[class_of_column][index])
 
-                y_target.append(y_data[index])
+                if DO_CROSS_ENTROPY:
+                    if y_data[index] == [1]:
+                        y = [0, 1]
+                    else:
+                        y = [1, 0]
+                else:
+                    y = y_data[index]
+
+                y_target.append(y)
 
         # initialize x data in self.vector_matrix
         for key, matrix in matrix_dict.items():
@@ -125,8 +133,14 @@ class VectorMaker:
     def dump(self, do_show=True):
         def __counting_mortality(_data):
             count = 0
+
+            if DO_CROSS_ENTROPY:
+                death_vector = [0, 1]
+            else:
+                death_vector = [1]
+
             for _d in _data:
-                if _d == [1]:
+                if _d == death_vector:
                     count += 1
 
             return count
@@ -142,9 +156,19 @@ class VectorMaker:
             print("success make dump file! - file name is", file_name)
 
         if do_show:
-            print("\nTrain total count -", str(len(self.vector_matrix["x_train"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_train"])).rjust(4))
-            print("Valid total count -", str(len(self.vector_matrix["x_valid"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_valid"])).rjust(4))
-            print("Test  total count -", str(len(self.vector_matrix["x_test"]["merge"])).rjust(4),
-                  "\tmortality count -", str(__counting_mortality(self.vector_matrix["y_test"])).rjust(4), "\n\n")
+            len_x_train = len(self.vector_matrix["x_train"]["merge"])
+            len_x_valid = len(self.vector_matrix["x_valid"]["merge"])
+            len_x_test = len(self.vector_matrix["x_test"]["merge"])
+
+            len_y_train = __counting_mortality(self.vector_matrix["y_train"])
+            len_y_valid = __counting_mortality(self.vector_matrix["y_valid"])
+            len_y_test = __counting_mortality(self.vector_matrix["y_test"])
+
+            print("\nAll   total count -", str(len_x_train + len_x_valid + len_x_test).rjust(4),
+                  "\tmortality count -", str(len_y_train + len_y_valid + len_y_test).rjust(4))
+            print("Train total count -", str(len_x_train).rjust(4),
+                  "\tmortality count -", str(len_y_train).rjust(4))
+            print("Valid total count -", str(len_x_valid).rjust(4),
+                  "\tmortality count -", str(len_y_valid).rjust(4))
+            print("Test  total count -", str(len_x_test).rjust(4),
+                  "\tmortality count -", str(len_y_test).rjust(4), "\n\n")
