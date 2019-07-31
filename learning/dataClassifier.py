@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 from .variables import *
-from .neuralNet import MyNeuralNetwork
+from .tensorLearner import NeuralNetwork, ConvolutionNet
 from .score import MyScore
 from PIL import Image
 
@@ -30,36 +30,38 @@ class DataClassifier:
                 self.dataHandler.show_info()
 
     def training(self):
+        nn = None
+
         if VERSION == 1:
-            nn = MyNeuralNetwork()
             x_data, y_data = self.__get_total_set()
 
             if TYPE_OF_MODEL == "ffnn":
+                nn = NeuralNetwork()
                 for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                    nn.feed_forward(x_train, y_train, x_test, y_test)
+                    nn.training(x_train, y_train, x_test, y_test)
+
             elif TYPE_OF_MODEL == "cnn":
+                nn = ConvolutionNet()
                 if IMAGE_PATH:
                     for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
                         self.dataHandler.set_image_path([x_train, x_test],
                                                         [y_train, y_test],
                                                         key_list=["train", "test"])
-                        nn.convolution(x_train, y_train, x_test, y_test)
+                        nn.training(x_train, y_train, x_test, y_test)
                 else:
                     for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                         self.dataHandler.expand4square_matrix(x_train, x_test)
-                        nn.convolution(x_train, y_train, x_test, y_test)
-
-            nn.save_process_time()
+                        nn.training(x_train, y_train, x_test, y_test)
 
         elif VERSION == 2:
-            nn = MyNeuralNetwork(is_cross_valid=False)
             x_train = self.dataHandler.x_train
             y_train = self.dataHandler.y_train
             x_valid = self.dataHandler.x_valid
             y_valid = self.dataHandler.y_valid
 
             if TYPE_OF_MODEL == "ffnn":
-                nn.feed_forward(x_train, y_train, x_valid, y_valid)
+                nn = NeuralNetwork(is_cross_valid=False)
+                nn.training(x_train, y_train, x_valid, y_valid)
             elif TYPE_OF_MODEL == "cnn":
                 if IMAGE_PATH:
                     self.dataHandler.set_image_path([x_train, x_valid],
@@ -67,9 +69,10 @@ class DataClassifier:
                                                     key_list=["train", "valid"])
                 else:
                     self.dataHandler.expand4square_matrix(x_train, x_valid)
-                nn.convolution(x_train, y_train, x_valid, y_valid)
+                nn = ConvolutionNet(is_cross_valid=False)
+                nn.training(x_train, y_train, x_valid, y_valid)
 
-            nn.save_process_time()
+        nn.save_process_time()
 
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
@@ -84,10 +87,10 @@ class DataClassifier:
                 nn.transfer_learning(np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test))
                 exit(-1)
         elif TYPE_OF_MODEL == "cnn":
-            nn = MyNeuralNetwork()
+            nn = ConvolutionNet()
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                nn.convolution(x_train, y_train, x_test, y_test, train_ct_image=True)
+                nn.training(x_train, y_train, x_test, y_test, train_ct_image=True)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -109,7 +112,7 @@ class DataClassifier:
         return x_train + x_valid + x_test, y_train + y_valid + y_test
 
     def __get_total_image_set(self, x_data, y_data):
-        n = 3
+        n = 40
         x_img_data = list()
         y_img_data = list()
 
@@ -184,9 +187,8 @@ class DataClassifier:
                 ocf.show_process_time()
                 ocf.show_plot()
             else:
-                nn = MyNeuralNetwork()
+                nn = NeuralNetwork()
                 nn.init_plot()
-
                 if TYPE_OF_MODEL == "ffnn":
                     for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                         h, y_predict = nn.load_nn(x_test, y_test)
@@ -232,7 +234,7 @@ class DataClassifier:
                         self.dataHandler.expand4square_matrix(x_test)
 
                 # initialize Neural Network
-                nn = MyNeuralNetwork(is_cross_valid=False)
+                nn = NeuralNetwork(is_cross_valid=False)
                 nn.init_plot()
                 h, y_predict = nn.load_nn(x_test, y_test)
                 nn.predict(h, y_predict, y_test)
@@ -243,7 +245,7 @@ class DataClassifier:
     @staticmethod
     def show_multi_plot():
         # initialize Neural Network
-        nn = MyNeuralNetwork()
+        nn = NeuralNetwork()
         nn.init_plot()
         nn.set_multi_plot()
         nn.show_plot()

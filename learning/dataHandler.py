@@ -23,7 +23,7 @@ elif current_script == "convert_images.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
-    from DMP.learning.variables import IMAGE_RESIZE
+    from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE, DO_GRAYSCALE
 
 alivePath = 'alive/'
 deathPath = 'death/'
@@ -193,6 +193,15 @@ class DataHandler:
 
     @staticmethod
     def __get_image_from_path(path, to_img=False):
+        # normalize image of gray scale
+        def __normalize_image(_img):
+            gray_value = 255
+
+            return np.array([[[k / gray_value for k in j] for j in i] for i in _img])
+
+        def __change_gray_scale(_img):
+            return np.array([[[j[0]] for j in i] for i in _img])
+
         img = Image.open(path)
         img.load()
 
@@ -202,11 +211,19 @@ class DataHandler:
         new_img = np.asarray(img, dtype='int32')
 
         if to_img:
-            return new_img
+            if DO_NORMALIZE:
+                new_img = __normalize_image(new_img)
+
+            if DO_GRAYSCALE:
+                new_img = __change_gray_scale(new_img)
         else:
             new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
+            new_img = new_img[0]
 
-            return new_img[0]
+            if DO_NORMALIZE:
+                new_img = __normalize_image(new_img)
+
+        return new_img
 
     def get_image_vector(self, x_data):
         """

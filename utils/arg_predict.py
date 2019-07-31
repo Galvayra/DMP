@@ -75,6 +75,10 @@ DO_DELETE = False
 
 VERSION = 1
 
+EPOCH = int()
+NUM_HIDDEN_LAYER = int()
+LEARNING_RATE = float()
+
 if args.image_dir:
     IMAGE_PATH = args.image_dir
     if not os.path.isdir(IMAGE_PATH):

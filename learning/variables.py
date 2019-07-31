@@ -53,5 +53,16 @@ NUM_OF_LOSS_OVER_FIT = 3
 # save every X epoch
 NUM_OF_SAVE_EPOCH = 100
 
+# mini-batch size
+BATCH_SIZE = 128
+
+# Image options #
 # set CT image size
-IMAGE_RESIZE = 64
+IMAGE_RESIZE = 128
+DO_NORMALIZE = False
+DO_GRAYSCALE = True
+
+if DO_GRAYSCALE:
+    NUM_CHANNEL_OF_IMAGE = 1
+else:
+    NUM_CHANNEL_OF_IMAGE = 3
