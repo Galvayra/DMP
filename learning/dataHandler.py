@@ -23,6 +23,7 @@ elif current_script == "convert_images.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
+    from DMP.learning.variables import IMAGE_RESIZE
 
 alivePath = 'alive/'
 deathPath = 'death/'
@@ -191,13 +192,21 @@ class DataHandler:
                     vector_set[enumerate_i] = self.__get_image_from_path(IMAGE_PATH + alivePath + img_name)
 
     @staticmethod
-    def __get_image_from_path(path):
+    def __get_image_from_path(path, to_img=False):
         img = Image.open(path)
         img.load()
-        new_img = np.asarray(img, dtype='int32')
-        new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
 
-        return new_img[0]
+        if IMAGE_RESIZE:
+            img = img.resize((IMAGE_RESIZE, IMAGE_RESIZE))
+
+        new_img = np.asarray(img, dtype='int32')
+
+        if to_img:
+            return new_img
+        else:
+            new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
+
+            return new_img[0]
 
     def get_image_vector(self, x_data):
         """
@@ -211,7 +220,7 @@ class DataHandler:
             [img_N_vector_1, img_N_vector_2, ... , img_N_vector_i]
         ]
         """
-        return [[self.__get_image_from_path(path) for path in paths[1]] for paths in x_data]
+        return [[self.__get_image_from_path(path, to_img=True) for path in paths[1]] for paths in x_data]
 
     def __get_name_of_image_from_index(self, key, enumerate_i, x_index):
         # k cross validation (version 1)

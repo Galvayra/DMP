@@ -81,7 +81,7 @@ class DataClassifier:
             nn = TransferLearner()
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                nn.transfer_learning(x_train, y_train, x_test, y_test)
+                nn.transfer_learning(np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test))
                 exit(-1)
         elif TYPE_OF_MODEL == "cnn":
             nn = MyNeuralNetwork()
@@ -127,9 +127,14 @@ class DataClassifier:
         if DO_SHOW:
             cnt = 0
 
-            for y in y_img_data:
-                if y == [0]:
-                    cnt += 1
+            if len(y_img_data[0]) > 1:
+                for y in y_img_data:
+                    if y == [0, 1]:
+                        cnt += 1
+            else:
+                for y in y_img_data:
+                    if y == [0]:
+                        cnt += 1
 
             print("\nTotal Training Count (alive/death) -", str(len(y_img_data)),
                   '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')', "\n\n")

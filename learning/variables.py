@@ -52,3 +52,6 @@ NUM_OF_LOSS_OVER_FIT = 3
 
 # save every X epoch
 NUM_OF_SAVE_EPOCH = 100
+
+# set CT image size
+IMAGE_RESIZE = 64
