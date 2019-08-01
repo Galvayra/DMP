@@ -13,7 +13,7 @@ def get_arguments():
                                                     "\nUseAge : python encoding.py -output 'NAME_OF_VECTOR'\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom "
                                                     "\nUseAge : python encoding.py -target 'symptom'\n\n")
-    parser.add_argument("-w2v", "--w2v", help="using word2vec or not (default is 1)"
+    parser.add_argument("-w2v", "--w2v", help="using word2vec or not (default is 0)"
                                               "\nUseAge : python encoding.py -w2v 1 (True)\n\n")
     parser.add_argument("-ver", "--version", help="set a version for vectorization (Default is 1)"
                                                   "\n1 - make vector for Training"
@@ -24,11 +24,11 @@ def get_arguments():
     parser.add_argument("-n_features", "--n_features",
                         help="set a number of importance features for making vectors(default is k)"
                              "\nUseAge : python encoding.py -n_features 'N'\n\n")
-    parser.add_argument("-softmax", "--softmax", help="set a output nodes for cross entropy(default is 1)"
+    parser.add_argument("-softmax", "--softmax", help="set a output nodes for cross entropy(default is 0)"
                                                       "\n0 - make just 1 output node (prediction)"
                                                       "\n1 - make output node for softmax cross entropy"
                                                       "\nUseAge : python encoding.py -cross_entropy 'C'\n\n",
-                        default=1, type=int)
+                        default=0, type=int)
     _args = parser.parse_args()
 
     return _args
@@ -45,7 +45,7 @@ COLUMN_TARGET = str()
 FILE_VECTOR = "model"
 LOG_PATH = "modeling/fsResult/"
 
-USE_W2V = True
+USE_W2V = False
 VERSION = 1
 
 NUM_OF_FEATURES = get_num_of_features()
