@@ -2,7 +2,7 @@
 
 input="image"
 output="image_vector"
-softmax=1
+softmax=0
 
 PYTHONPATH=$PYTHONPATH:~/Project
 export PYTHONPATH
