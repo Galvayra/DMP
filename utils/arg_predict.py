@@ -13,8 +13,6 @@ def get_arguments():
     parser.add_argument("-image_dir", "--image_dir", help="set a path of image directory (default is None)"
                                                           "It is only apply to use cnn model"
                                                           "\nUseAge : python predict.py -image_dir 'path'\n\n")
-    parser.add_argument("-closed", "--closed", help="set closed or open data (default is 0)"
-                                                    "\nUseAge : python predict.py -closed 1\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
                                                   "\nUseAge : python predict.py -model (svm|ffnn|cnn)\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
@@ -53,7 +51,6 @@ else:
     READ_VECTOR = vector_path + vector_name
 
 # Training options #
-IS_CLOSED = False
 USE_W2V = False
 TYPE_OF_MODEL = "svm"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
@@ -86,21 +83,6 @@ if args.image_dir:
         exit(-1)
     else:
         print("Success to read image files -", IMAGE_PATH, '\n\n')
-
-if args.closed:
-    try:
-        closed = int(args.closed)
-    except ValueError:
-        print("\nInput Error type of closed option!\n")
-        exit(-1)
-    else:
-        if closed != 1 and closed != 0:
-            print("\nInput Error closed option!\n")
-            exit(-1)
-        if closed == 1:
-            IS_CLOSED = True
-        else:
-            IS_CLOSED = False
 
 if args.model:
     TYPE_OF_MODEL = args.model
