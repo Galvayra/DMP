@@ -168,6 +168,28 @@ class DataHandler:
             x_test_np = np.array([np.array(j) for j in self.x_test])
             print("Test       Set :", np.shape(x_test_np), np.shape(y_test_np), "\n\n")
 
+    @staticmethod
+    def expand4square_matrix(*vector_set_list, use_origin=False):
+        # origin data set       = [ [ v_1,      v_2, ... ,      v_d ],                       .... , [ ... ] ]
+        # expand data set       = [ [ v_1,      v_2, ... ,      v_d,        0.0, ..., 0.0 ], .... , [ ... ] ]
+        # gray scale data set   = [ [ v_1*255,  v_2*255, ... ,  v_d*255,    0.0, ..., 0.0 ], .... , [ ... ] ]
+        size_of_1d = len(vector_set_list[0][0])
+
+        if INITIAL_IMAGE_SIZE and not use_origin:
+            size_of_2d = INITIAL_IMAGE_SIZE ** 2
+        else:
+            size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)
+
+        print("\n\nThe matrix size of vector - %d by %d" % (math.sqrt(size_of_2d), math.sqrt(size_of_2d)))
+
+        for vector_set in vector_set_list:
+            for i, vector in enumerate(vector_set):
+                # expand data for 2d matrix
+                for _ in range(size_of_1d, size_of_2d):
+                    vector.append(0.0)
+
+                vector_set[i] = [v * GRAY_SCALE for v in vector]
+
     def set_image_path(self, vector_set_list, y_set_list, key_list):
         for key, vector_set, y_list in zip(key_list, vector_set_list, y_set_list):
             for enumerate_i, d in enumerate(zip(vector_set, y_list)):
@@ -190,40 +212,6 @@ class DataHandler:
                     vector_set[enumerate_i] = self.__get_image_from_path(IMAGE_PATH + deathPath + img_name)
                 else:
                     vector_set[enumerate_i] = self.__get_image_from_path(IMAGE_PATH + alivePath + img_name)
-
-    @staticmethod
-    def __get_image_from_path(path, to_img=False):
-        # normalize image of gray scale
-        def __normalize_image(_img):
-            gray_value = 255
-
-            return np.array([[[k / gray_value for k in j] for j in i] for i in _img])
-
-        def __change_gray_scale(_img):
-            return np.array([[[j[0]] for j in i] for i in _img])
-
-        img = Image.open(path)
-        img.load()
-
-        if IMAGE_RESIZE:
-            img = img.resize((IMAGE_RESIZE, IMAGE_RESIZE))
-
-        new_img = np.asarray(img, dtype='int32')
-
-        if to_img:
-            if DO_NORMALIZE:
-                new_img = __normalize_image(new_img)
-
-            if DO_GRAYSCALE:
-                new_img = __change_gray_scale(new_img)
-        else:
-            new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
-            new_img = new_img[0]
-
-            if DO_NORMALIZE:
-                new_img = __normalize_image(new_img)
-
-        return new_img
 
     def get_image_vector(self, x_data):
         """
@@ -261,26 +249,43 @@ class DataHandler:
             return None
 
     @staticmethod
-    def expand4square_matrix(*vector_set_list, use_origin=False):
-        # origin data set       = [ [ v_1,      v_2, ... ,      v_d ],                       .... , [ ... ] ]
-        # expand data set       = [ [ v_1,      v_2, ... ,      v_d,        0.0, ..., 0.0 ], .... , [ ... ] ]
-        # gray scale data set   = [ [ v_1*255,  v_2*255, ... ,  v_d*255,    0.0, ..., 0.0 ], .... , [ ... ] ]
-        size_of_1d = len(vector_set_list[0][0])
+    def __get_image_from_path(path, to_img=False):
+        # normalize image of gray scale
+        def __normalize_image(_img):
+            gray_value = 255.0
 
-        if INITIAL_IMAGE_SIZE and not use_origin:
-            size_of_2d = INITIAL_IMAGE_SIZE ** 2
+            return np.array([[[k / gray_value for k in j] for j in i] for i in _img])
+
+        def __change_gray_scale(_img):
+            return np.array([[[j[0]] for j in i] for i in _img])
+
+        img = Image.open(path)
+        img.load()
+
+        if to_img:
+            if IMAGE_RESIZE:
+                img = img.resize((IMAGE_RESIZE, IMAGE_RESIZE))
+
+            new_img = np.asarray(img, dtype='int32')
+
+            if DO_NORMALIZE:
+                new_img = __normalize_image(new_img)
+
+            # make a one channel for gray scale
+            if DO_GRAYSCALE:
+                new_img = __change_gray_scale(new_img)
         else:
-            size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)
+            new_img = np.asarray(img, dtype='int32')
+            new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
+            new_img = new_img[0]
 
-        print("\n\nThe matrix size of vector - %d by %d" % (math.sqrt(size_of_2d), math.sqrt(size_of_2d)))
+        return new_img
 
-        for vector_set in vector_set_list:
-            for i, vector in enumerate(vector_set):
-                # expand data for 2d matrix
-                for _ in range(size_of_1d, size_of_2d):
-                    vector.append(0.0)
-
-                vector_set[i] = [v * GRAY_SCALE for v in vector]
+    @staticmethod
+    def reshape_image_for_cnn(x_data):
+        cnt_data = len(x_data)
+        x_data = np.array(x_data)
+        return list(x_data.reshape((cnt_data, -1)))
 
     def __random_forest(self):
         rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features='auto', random_state=0)

@@ -60,7 +60,7 @@ BATCH_SIZE = 128
 
 # Image options #
 # set CT image size
-IMAGE_RESIZE = 128
+IMAGE_RESIZE = 36
 DO_NORMALIZE = False
 DO_GRAYSCALE = True
 

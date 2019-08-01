@@ -76,9 +76,7 @@ class DataClassifier:
 
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
-
-        if VERSION == 1:
-            x_data, y_data = self.__get_total_image_set(x_data, y_data)
+        x_data, y_data = self.__get_total_image_set(x_data, y_data)
 
         if TYPE_OF_MODEL == "tuning":
             nn = TransferLearner()
@@ -88,6 +86,7 @@ class DataClassifier:
                 exit(-1)
         elif TYPE_OF_MODEL == "cnn":
             nn = ConvolutionNet()
+            x_data = self.dataHandler.reshape_image_for_cnn(x_data)
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                 nn.training(x_train, y_train, x_test, y_test, train_ct_image=True)
@@ -112,13 +111,18 @@ class DataClassifier:
         return x_train + x_valid + x_test, y_train + y_valid + y_test
 
     def __get_total_image_set(self, x_data, y_data):
-        n = 40
+        n = 3
         x_img_data = list()
         y_img_data = list()
 
-        for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
-            for image in images:
-                x_img_data.append(image)
+        if VERSION == 1:
+            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+                for image in images:
+                    x_img_data.append(image)
+                    y_img_data.append(y_value)
+        else:
+            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+                x_img_data.append(images)
                 y_img_data.append(y_value)
 
         self.__show_info(y_img_data)

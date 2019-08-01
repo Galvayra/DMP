@@ -1,6 +1,7 @@
 from DMP.utils.arg_fine_tuning import *
 from DMP.learning.score import MyScore
 from DMP.learning.variables import IMAGE_RESIZE, NUM_CHANNEL_OF_IMAGE
+from DMP.learning.neuralNet import TensorModel
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from keras import models, layers
 from keras.applications import VGG19
@@ -16,51 +17,11 @@ DEATH_DIR = 'death'
 BATCH_SIZE = 32
 
 
-class TransferLearner(MyScore):
+class TransferLearner(TensorModel):
     def __init__(self, is_cross_valid=True):
-        super().__init__()
-        self.__name_of_log = str()
-        self.__name_of_tensor = str()
-        self.__is_cross_valid = is_cross_valid
-
-    @property
-    def name_of_log(self):
-        return self.__name_of_log
-
-    @name_of_log.setter
-    def name_of_log(self, name):
-        self.__name_of_log = name
-
-    @property
-    def name_of_tensor(self):
-        return self.__name_of_tensor
-
-    @name_of_tensor.setter
-    def name_of_tensor(self, name):
-        self.__name_of_tensor = name
-
-    @property
-    def is_cross_valid(self):
-        return self.__is_cross_valid
-
-    def __set_name_of_log(self):
-        name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
-
-        if self.is_cross_valid:
-            os.mkdir(name_of_log)
-
-        if DO_SHOW:
-            print("======== Directory for Saving ========")
-            print("   Log File -", name_of_log)
-
-    def __set_name_of_tensor(self):
-        name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
-
-        if self.is_cross_valid:
-            os.mkdir(name_of_tensor)
-
-        if DO_SHOW:
-            print("Tensor File -", name_of_tensor, "\n\n\n")
+        super().__init__(is_cross_valid=is_cross_valid)
+        self.num_of_input_nodes = int()
+        self.num_of_output_nodes = int()
 
     def transfer_learning(self, x_train, y_train, x_test, y_test):
         #
@@ -104,9 +65,8 @@ class TransferLearner(MyScore):
         model.add(Dense(int(MAX_NEURONS), activation='relu'))
         model.add(Dropout(0.25))
         model.add(Dense(int(MAX_NEURONS / 2), activation='relu'))
-        model.add(Dense(2, activation='softmax'))
-
-        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
+        model.add(Dense(1, activation='sigmoid'))
+        model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
 
         print(model.summary())
 
