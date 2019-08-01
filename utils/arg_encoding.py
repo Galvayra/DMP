@@ -5,9 +5,13 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
 def get_arguments():
+    parser.add_argument("-base", "--base", help="set a name of csv file for base to encode(default is None)"
+                                                "\nthe File must be in dataset/parsing dictionary"
+                                                "\nUseAge : python encoding.py -base 'B'\n\n",
+                        default="", type=str)
     parser.add_argument("-input", "--input", help="set a name of input csv file"
-                                                  "\ndefault is 'dataset_parsing'.csv"
-                                                  "\nthe File will be loaded in dataset dictionary"
+                                                  "\ndefault is 'parsing'.csv"
+                                                  "\nthe File must be in dataset/parsing dictionary"
                                                   "\nUseAge : python encoding.py -input 'Name'\n\n")
     parser.add_argument("-output", "--output", help="set vector file name to train or predict (default is 'model')"
                                                     "\nUseAge : python encoding.py -output 'NAME_OF_VECTOR'\n\n")
@@ -88,7 +92,10 @@ else:
     SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_valid" + EXTENSION_FILE
     SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_test" + EXTENSION_FILE
     SAVE_FILE_TOTAL += EXTENSION_FILE
-    
+
+if args.base:
+    SAVE_FILE_TOTAL = args.base + EXTENSION_FILE
+
 if args.w2v:
     try:
         USE_W2V = int(args.w2v)
