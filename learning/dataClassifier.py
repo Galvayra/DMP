@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 from .variables import *
-from .tensorLearner import NeuralNetwork, ConvolutionNet
+from .tensorLearner import NeuralNet, ConvolutionNet
 from .score import MyScore
 from PIL import Image
 
@@ -36,7 +36,7 @@ class DataClassifier:
             x_data, y_data = self.__get_total_set()
 
             if TYPE_OF_MODEL == "ffnn":
-                nn = NeuralNetwork()
+                nn = NeuralNet()
                 for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                     nn.training(x_train, y_train, x_test, y_test)
 
@@ -60,7 +60,7 @@ class DataClassifier:
             y_valid = self.dataHandler.y_valid
 
             if TYPE_OF_MODEL == "ffnn":
-                nn = NeuralNetwork(is_cross_valid=False)
+                nn = NeuralNet(is_cross_valid=False)
                 nn.training(x_train, y_train, x_valid, y_valid)
             elif TYPE_OF_MODEL == "cnn":
                 if IMAGE_PATH:
@@ -187,7 +187,7 @@ class DataClassifier:
                 ocf.show_process_time()
                 ocf.show_plot()
             else:
-                nn = NeuralNetwork()
+                nn = NeuralNet()
                 nn.init_plot()
                 if TYPE_OF_MODEL == "ffnn":
                     for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
@@ -234,7 +234,7 @@ class DataClassifier:
                         self.dataHandler.expand4square_matrix(x_test)
 
                 # initialize Neural Network
-                nn = NeuralNetwork(is_cross_valid=False)
+                nn = NeuralNet(is_cross_valid=False)
                 nn.init_plot()
                 h, y_predict = nn.load_nn(x_test, y_test)
                 nn.predict(h, y_predict, y_test)
@@ -245,7 +245,7 @@ class DataClassifier:
     @staticmethod
     def show_multi_plot():
         # initialize Neural Network
-        nn = NeuralNetwork()
+        nn = NeuralNet()
         nn.init_plot()
         nn.set_multi_plot()
         nn.show_plot()

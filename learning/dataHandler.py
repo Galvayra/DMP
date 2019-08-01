@@ -121,7 +121,7 @@ class DataHandler:
         def __count_mortality(_y_data):
             _count = 0
 
-            if len(_y_data) > 1:
+            if len(_y_data[0]) > 1:
                 death_vector = [0, 1]
             else:
                 death_vector = [1]

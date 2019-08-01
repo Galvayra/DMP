@@ -20,6 +20,8 @@ NAME_PROB = "keep_prob"
 NAME_ACC = "accuracy"
 NAME_LEARNING_RATE = "learning_rate"
 NAME_HIDDEN = "num_of_hidden"
+NAME_SCOPE_COST = "cost"
+NAME_SCOPE_PREDICT = "prediction"
 
 # key of target
 KEY_TRAIN = "training"
@@ -42,7 +44,7 @@ NUM_OF_K_FOLD = 5
 GRAY_SCALE = 255
 
 # initialize a image size for convolution neural networks
-INITIAL_IMAGE_SIZE = 50
+INITIAL_IMAGE_SIZE = 36
 
 # drop out ratio
 KEEP_PROB = 0.7

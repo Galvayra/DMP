@@ -5,9 +5,11 @@ from .neuralNet import TensorModel
 from .variables import *
 
 
-class NeuralNetwork(TensorModel):
+class NeuralNet(TensorModel):
     def __init__(self, is_cross_valid=True):
         super().__init__(is_cross_valid=is_cross_valid)
+        self.num_of_input_nodes = int()
+        self.num_of_output_nodes = int()
 
     def __init_feed_forward_layer(self, num_of_input_nodes, num_of_output_nodes, input_layer):
         if NUM_HIDDEN_DIMENSION:
@@ -57,21 +59,26 @@ class NeuralNetwork(TensorModel):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def training(self, x_train, y_train, x_valid, y_valid):
-        num_of_input_nodes = len(x_train[0])
-        num_of_output_nodes = len(y_train[0])
+        self.init_place_holder(x_train, y_train)
+        self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=self.tf_x)
+
+    def init_place_holder(self, x_train, y_train):
+        self.num_of_input_nodes = len(x_train[0])
+        self.num_of_output_nodes = len(y_train[0])
 
         self.num_of_fold += 1
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_input_nodes],
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_input_nodes],
                                    name=NAME_X + '_' + str(self.num_of_fold))
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, num_of_output_nodes],
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
+    def feed_forward(self, x_train, y_train, x_valid, y_valid, input_layer):
         # initialize neural network
-        hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=num_of_input_nodes,
-                                                    num_of_output_nodes=num_of_output_nodes,
-                                                    input_layer=self.tf_x)
-        h, y_predict, accuracy = self.sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
+        hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
+                                                    num_of_output_nodes=self.num_of_output_nodes,
+                                                    input_layer=input_layer)
+        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
         self.compute_score(y_valid, y_predict, h, accuracy)
 
         if self.is_cross_valid:
@@ -82,7 +89,7 @@ class NeuralNetwork(TensorModel):
         self.set_score(target=key)
         self.show_score(target=key)
 
-    def sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
         if self.do_show:
             print("Layer O -", hypothesis.shape, "\n\n\n")
 
@@ -90,12 +97,12 @@ class NeuralNetwork(TensorModel):
 
         # Use softmax cross entropy
         if num_of_class > 1:
-            with tf.name_scope("cost"):
+            with tf.name_scope(NAME_SCOPE_COST):
                 cost_i = tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y)
                 cost = tf.reduce_mean(cost_i)
                 cost_summ = tf.summary.scalar("cost", cost)
 
-            with tf.name_scope("prediction"):
+            with tf.name_scope(NAME_SCOPE_PREDICT):
                 hypothesis = tf.nn.softmax(hypothesis)
                 predict = tf.argmax(hypothesis, 1)
                 correct_prediction = tf.equal(predict, tf.argmax(self.tf_y, 1))
@@ -107,6 +114,7 @@ class NeuralNetwork(TensorModel):
         # Do not use softmax cross entropy
         else:
             with tf.name_scope("cost"):
+                print(NAME_HYPO + '_' + str(self.num_of_fold))
                 hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
                 cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
                 cost_summ = tf.summary.scalar("cost", cost)
@@ -241,13 +249,14 @@ class NeuralNetwork(TensorModel):
 
             # load tensor
             graph = tf.get_default_graph()
-            tf_x = graph.get_tensor_by_name(NAME_X + "_" + str(self.num_of_fold) + ":0")
-            tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str(self.num_of_fold) + ":0")
-            keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str(self.num_of_fold) + ":0")
-            hypothesis = graph.get_tensor_by_name(NAME_HYPO + "_" + str(self.num_of_fold) + ":0")
-            predict = graph.get_tensor_by_name(NAME_PREDICT + "_" + str(self.num_of_fold) + ":0")
-            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str(self.num_of_fold) + ":0")
-            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str(self.num_of_fold) + ":0")
+            str_n_fold = str(self.num_of_fold)
+            tf_x = graph.get_tensor_by_name(NAME_X + "_" + str_n_fold + ":0")
+            tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str_n_fold + ":0")
+            keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str_n_fold + ":0")
+            hypothesis = graph.get_tensor_by_name(NAME_SCOPE_COST + "/" + NAME_HYPO + "_" + str_n_fold + ":0")
+            predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
+            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
+            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             h, y_predict = sess.run([hypothesis, predict], feed_dict={tf_x: x_test, tf_y: y_test, keep_prob: 1})
@@ -264,7 +273,7 @@ class NeuralNetwork(TensorModel):
                 for _y in _y_labels:
                     _y_labels_reverse.append([1 - _y[0]])
             else:
-                if _y_labels[0] > 1:
+                if len(_y_labels[0]) > 1:
                     for _y in _y_labels:
                         if _y == [0, 1]:
                             _y_labels_reverse.append([1, 0])
@@ -297,33 +306,33 @@ class NeuralNetwork(TensorModel):
 
         self.set_plot(self.num_of_fold)
 
-    def set_multi_plot(self):
-
-        title = "FFNN_baseline"
-
-        fpr = [0., 0., 0.26246719, 0.26246719, 0.52493438,
-               0.52493438, 1.04986877, 1.04986877, 1.31233596, 1.31233596,
-               3.1496063, 3.1496063, 3.67454068, 3.67454068, 3.93700787,
-               3.93700787, 4.72440945, 4.72440945, 5.24934383, 5.24934383,
-               5.77427822, 5.77427822, 6.56167979, 6.56167979, 7.34908136,
-               7.34908136, 7.61154856, 7.61154856, 17.32283465, 17.32283465,
-               18.37270341, 18.37270341, 21.52230971, 21.52230971, 22.04724409,
-               22.04724409, 22.83464567, 22.83464567, 24.67191601, 24.67191601,
-               36.22047244, 36.22047244, 49.08136483, 49.08136483, 50.1312336,
-               50.1312336, 65.09186352, 65.09186352, 100.]
-
-        tpr = [2.7027027, 5.40540541, 5.40540541, 16.21621622, 16.21621622,
-               18.91891892, 18.91891892, 24.32432432, 24.32432432, 32.43243243,
-               32.43243243, 35.13513514, 35.13513514, 48.64864865, 48.64864865,
-               51.35135135, 51.35135135, 54.05405405, 54.05405405, 56.75675676,
-               56.75675676, 62.16216216, 62.16216216, 64.86486486, 64.86486486,
-               70.27027027, 70.27027027, 72.97297297, 72.97297297, 75.67567568,
-               75.67567568, 78.37837838, 78.37837838, 81.08108108, 81.08108108,
-               83.78378378, 83.78378378, 86.48648649, 86.48648649, 89.18918919,
-               89.18918919, 91.89189189, 91.89189189, 94.59459459, 94.59459459,
-               97.2972973, 97.2972973, 100., 100.]
-
-        self.set_plot(fpr=fpr, tpr=tpr, title=title)
+    # def set_multi_plot(self):
+    #
+    #     title = "FFNN_baseline"
+    #
+    #     fpr = [0., 0., 0.26246719, 0.26246719, 0.52493438,
+    #            0.52493438, 1.04986877, 1.04986877, 1.31233596, 1.31233596,
+    #            3.1496063, 3.1496063, 3.67454068, 3.67454068, 3.93700787,
+    #            3.93700787, 4.72440945, 4.72440945, 5.24934383, 5.24934383,
+    #            5.77427822, 5.77427822, 6.56167979, 6.56167979, 7.34908136,
+    #            7.34908136, 7.61154856, 7.61154856, 17.32283465, 17.32283465,
+    #            18.37270341, 18.37270341, 21.52230971, 21.52230971, 22.04724409,
+    #            22.04724409, 22.83464567, 22.83464567, 24.67191601, 24.67191601,
+    #            36.22047244, 36.22047244, 49.08136483, 49.08136483, 50.1312336,
+    #            50.1312336, 65.09186352, 65.09186352, 100.]
+    #
+    #     tpr = [2.7027027, 5.40540541, 5.40540541, 16.21621622, 16.21621622,
+    #            18.91891892, 18.91891892, 24.32432432, 24.32432432, 32.43243243,
+    #            32.43243243, 35.13513514, 35.13513514, 48.64864865, 48.64864865,
+    #            51.35135135, 51.35135135, 54.05405405, 54.05405405, 56.75675676,
+    #            56.75675676, 62.16216216, 62.16216216, 64.86486486, 64.86486486,
+    #            70.27027027, 70.27027027, 72.97297297, 72.97297297, 75.67567568,
+    #            75.67567568, 78.37837838, 78.37837838, 81.08108108, 81.08108108,
+    #            83.78378378, 83.78378378, 86.48648649, 86.48648649, 89.18918919,
+    #            89.18918919, 91.89189189, 91.89189189, 94.59459459, 94.59459459,
+    #            97.2972973, 97.2972973, 100., 100.]
+    #
+    #     self.set_plot(fpr=fpr, tpr=tpr, title=title)
 
     def save(self, data_handler=False):
         # set total score of immortality and mortality
@@ -348,54 +357,24 @@ class NeuralNetwork(TensorModel):
             json.dump(self.show_process_time(), outfile, indent=4)
 
 
-class ConvolutionNet(NeuralNetwork):
+class ConvolutionNet(NeuralNet):
     def __init__(self, is_cross_valid=True):
         super().__init__(is_cross_valid=is_cross_valid)
 
-    def __init_convolution_layer(self, num_of_input_nodes):
-        num_of_image = int(math.sqrt(num_of_input_nodes))
-        num_of_filter = [16, 32]
-        size_of_filter = 3
+    def training(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
+        self.init_place_holder(x_train, y_train)
 
-        tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
+        # concat CNN to Feed Forward NN
+        if train_ct_image:
+            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_for_ct(self.num_of_input_nodes)
+        else:
+            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_2(self.num_of_input_nodes)
 
-        filter_1 = tf.Variable(
-            tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
-            name="cnn_filter_1")
-        layer_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="SAME", name="cnn_layer_1")
-        layer_1 = tf.nn.relu(layer_1)
-        layer_1 = tf.nn.max_pool(layer_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME",
-                                 name="cnn_pooling_1")
-        layer_1 = tf.nn.dropout(layer_1, keep_prob=self.keep_prob, name="cnn_dropout_1")
-        num_of_image = math.ceil(num_of_image / 2)
-
-        filter_2 = tf.Variable(
-            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
-            name="cnn_filter_2")
-        layer_2 = tf.nn.conv2d(layer_1, filter_2, strides=[1, 1, 1, 1], padding="SAME", name="cnn_layer_2")
-        layer_2 = tf.nn.relu(layer_2)
-        layer_2 = tf.nn.max_pool(layer_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME",
-                                 name="cnn_pooling_2")
-        layer_2 = tf.nn.dropout(layer_2, keep_prob=self.keep_prob, name="cnn_dropout_2")
-        num_of_image = math.ceil(num_of_image / 2)
-
-        num_of_dimension = num_of_image * num_of_image * num_of_filter[-1]
-        convolution_layer = tf.reshape(layer_2, [-1, num_of_dimension], name="cnn_span_layer")
-
-        if self.do_show:
-            print("\n\n======== Convolution Layer ========")
-            print("tf_x     -", self.tf_x.shape)
-            print("tf_x_img -", tf_x_img.shape)
-
-            print("\n\nfilter_1 -", filter_1.shape)
-            print(" layer_1 -", layer_1.shape)
-            print("\n\nfilter_2 -", filter_2.shape)
-            print(" layer_2 -", layer_2.shape)
-
-        return convolution_layer, num_of_dimension
+        self.num_of_input_nodes = num_of_dimension
+        self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=convolution_layer)
 
     # The model of Paper 'Deep Learning for the Classification of Lung Nodules'
-    def __init_convolution_layer_model_1(self, num_of_input_nodes):
+    def __init_convolution_layer_model(self, num_of_input_nodes):
         num_of_image = int(math.sqrt(num_of_input_nodes))
         num_of_filter = [20, 50, 500]
         size_of_filter = 7
@@ -601,35 +580,3 @@ class ConvolutionNet(NeuralNetwork):
             print("\n\ncnn_span_layer -", convolution_layer.shape)
 
         return convolution_layer, num_of_filter[-1]
-
-    def training(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
-        num_of_input_nodes = len(x_train[0])
-        num_of_output_nodes = len(y_train[0])
-
-        self.num_of_fold += 1
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, num_of_input_nodes],
-                                   name=NAME_X + '_' + str(self.num_of_fold))
-        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, num_of_output_nodes],
-                                   name=NAME_Y + '_' + str(self.num_of_fold))
-        self.keep_prob = tf.placeholder(tf.float32,
-                                        name=NAME_PROB + '_' + str(self.num_of_fold))
-
-        # concat CNN to Feed Forward NN
-        if train_ct_image:
-            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_for_ct(num_of_input_nodes)
-        else:
-            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_2(num_of_input_nodes)
-
-        hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=num_of_dimension,
-                                                    num_of_output_nodes=num_of_output_nodes,
-                                                    input_layer=convolution_layer)
-        h, y_predict, accuracy = self.sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
-        self.compute_score(y_valid, y_predict, h, accuracy)
-
-        if self.is_cross_valid:
-            key = KEY_TEST
-        else:
-            key = KEY_VALID
-
-        self.set_score(target=key)
-        self.show_score(target=key)
