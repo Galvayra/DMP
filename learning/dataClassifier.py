@@ -5,7 +5,6 @@ from sklearn.model_selection import KFold
 from .variables import *
 from .tensorLearner import NeuralNet, ConvolutionNet
 from .score import MyScore
-from PIL import Image
 
 current_script = sys.argv[0].split('/')[-1]
 

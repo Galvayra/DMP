@@ -165,11 +165,6 @@ if args.version:
 
 def show_options():
     if DO_SHOW:
-        if IS_CLOSED:
-            print("\n\n========== CLOSED DATA SET ==========\n")
-        else:
-            print("\n\n========== OPENED DATA SET ==========\n")
-
         if USE_W2V:
             print("Using word2vec\n")
         else:
