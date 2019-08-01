@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import random
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 from .variables import *
@@ -15,6 +16,8 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.transferLearner import TransferLearner
+
+SEED = 1
 
 
 class DataClassifier:
@@ -75,20 +78,28 @@ class DataClassifier:
 
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
-        x_data, y_data = self.__get_total_image_set(x_data, y_data)
+        x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
+        k_fold = int()
 
         if TYPE_OF_MODEL == "tuning":
             nn = TransferLearner()
 
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+            # load pre trained model adapt input tensor size
+            nn.load_pre_trained_model(input_tensor=x_img_data[0])
+
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
+                k_fold = self.__show_info_during_training(k_fold, y_train, y_test)
                 nn.transfer_learning(np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test))
                 exit(-1)
         elif TYPE_OF_MODEL == "cnn":
             nn = ConvolutionNet()
-            x_data = self.dataHandler.reshape_image_for_cnn(x_data)
 
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                nn.training(x_train, y_train, x_test, y_test, train_ct_image=True)
+            # change num of channel 3 to 1 (because the model's input channel size is 1)
+            x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
+
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
+                k_fold = self.__show_info_during_training(k_fold, y_train, y_test)
+                nn.training(x_train, y_train, x_test, y_test)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -109,8 +120,8 @@ class DataClassifier:
 
         return x_train + x_valid + x_test, y_train + y_valid + y_test
 
-    def __get_total_image_set(self, x_data, y_data):
-        n = 3
+    def __get_total_image_set(self, x_data, y_data, do_random=True):
+        n = 30
         x_img_data = list()
         y_img_data = list()
 
@@ -126,10 +137,24 @@ class DataClassifier:
 
         self.__show_info(y_img_data)
 
+        if do_random:
+            random.seed(SEED)
+            random.shuffle(x_img_data)
+            random.shuffle(y_img_data)
+
         return x_img_data, y_img_data
 
+    def __show_info_during_training(self, k_fold, y_train, y_test):
+        k_fold += 1
+        print("\n\n============================", k_fold, "- fold training ============================")
+        self.__show_info(y_train, keyword="Training")
+        self.__show_info(y_test, keyword="Test    ")
+        print("\n\n\n\n")
+
+        return k_fold
+
     @staticmethod
-    def __show_info(y_img_data):
+    def __show_info(y_img_data, keyword="Total Training"):
         if DO_SHOW:
             cnt = 0
 
@@ -142,14 +167,14 @@ class DataClassifier:
                     if y == [0]:
                         cnt += 1
 
-            print("\nTotal Training Count (alive/death) -", str(len(y_img_data)),
-                  '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')', "\n\n")
+            print("\n" + keyword + " Count (alive/death) -", str(len(y_img_data)),
+                  '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')')
 
     @staticmethod
     def __get_data_matrix(_data, _index_list):
         return [_data[i] for i in _index_list]
 
-    def __data_generator(self, x_data, y_data, do_get_index=False):
+    def __data_generator(self, x_data, y_data, x_img_data=list, do_get_index=False):
         cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
 
         if do_get_index:
@@ -245,13 +270,13 @@ class DataClassifier:
                 nn.show_process_time()
                 nn.show_plot()
 
-    @staticmethod
-    def show_multi_plot():
-        # initialize Neural Network
-        nn = NeuralNet()
-        nn.init_plot()
-        nn.set_multi_plot()
-        nn.show_plot()
+    # @staticmethod
+    # def show_multi_plot():
+    #     # initialize Neural Network
+    #     nn = NeuralNet()
+    #     nn.init_plot()
+    #     nn.set_multi_plot()
+    #     nn.show_plot()
 
 
 class OlderClassifier(MyScore):

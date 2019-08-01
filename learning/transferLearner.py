@@ -1,16 +1,9 @@
 from DMP.utils.arg_fine_tuning import *
-from DMP.learning.score import MyScore
-from DMP.learning.variables import IMAGE_RESIZE, NUM_CHANNEL_OF_IMAGE
 from DMP.learning.neuralNet import TensorModel
-from sklearn.model_selection import train_test_split, StratifiedKFold
-from keras import models, layers
-from keras.applications import VGG19
-from keras.preprocessing.image import ImageDataGenerator, NumpyArrayIterator
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Conv2D, Activation, Dropout, Flatten, MaxPooling2D
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.applications import VGG19, VGG16, ResNet50
+from keras.models import Sequential, Model, Input
+from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 from keras.optimizers import Adam
-import os
 
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
@@ -22,29 +15,46 @@ class TransferLearner(TensorModel):
         super().__init__(is_cross_valid=is_cross_valid)
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = int()
+        self.trained_model = None
+
+    def load_pre_trained_model(self, input_tensor):
+        w_size, h_size, n_channel = input_tensor.shape
+        input_tensor = Input(shape=(w_size, h_size, n_channel))
+        self.trained_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_tensor)
 
     def transfer_learning(self, x_train, y_train, x_test, y_test):
-        #
-        # train_gen = ImageDataGenerator()
-        # valid_gen = ImageDataGenerator()
+        # Creating dictionary that maps layer names to the layers
+        layer_dict = dict([(layer.name, layer) for layer in self.trained_model.layers])
 
-        model = self.__cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, NUM_CHANNEL_OF_IMAGE), num_cnn_layers=2)
-        model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
+        # Getting output tensor of the last VGG layer that we want to include
+        x = layer_dict['block2_pool'].output
 
-        print(model.evaluate(x_test, y_test))
+        # Stacking a new simple convolutional network on top of it
+        x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu')(x)
+        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = Flatten()(x)
+        x = Dense(256, activation='relu')(x)
+        x = Dropout(0.7)(x)
+        x = Dense(1, activation='sigmoid')(x)
 
-        # pre_trained_vgg = VGG19(weights='imagenet', include_top=False, input_shape=(img_size, img_size, 3))
-        # pre_trained_vgg.trainable = False
-        # pre_trained_vgg.summary()
-        #
-        # additional_model = models.Sequential()
-        # additional_model.add(pre_trained_vgg)
-        # additional_model.add(layers.Flatten())
-        # additional_model.add(layers.Dense(4096, activation='relu'))
-        # additional_model.add(layers.Dense(2048, activation='relu'))
-        # additional_model.add(layers.Dense(1024, activation='relu'))
-        # additional_model.add(layers.Dense(4, activation='softmax'))
-        # additional_model.summary()
+        # Creating new model. Please note that this is NOT a Sequential() model.
+        custom_model = Model(input=self.trained_model.input, output=x)
+
+        if DO_SHOW:
+            print(custom_model.summary())
+
+        # Make sure that the pre-trained bottom layers are not trainable
+        for layer in custom_model.layers[:7]:
+            layer.trainable = False
+
+        custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
+        custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
+        print(custom_model.evaluate(x_test, y_test))
+
+    # def training_end_to_end(self):
+    #     model = self.__cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, NUM_CHANNEL_OF_IMAGE), num_cnn_layers=2)
+    #     model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
+    #     print(model.evaluate(x_test, y_test))
 
     def __cnn_model(self, img_shape, num_cnn_layers):
         NUM_FILTERS = 32

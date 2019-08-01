@@ -23,7 +23,7 @@ elif current_script == "convert_images.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
-    from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE, DO_GRAYSCALE
+    from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 
 alivePath = 'alive/'
 deathPath = 'death/'
@@ -256,9 +256,6 @@ class DataHandler:
 
             return np.array([[[k / gray_value for k in j] for j in i] for i in _img])
 
-        def __change_gray_scale(_img):
-            return np.array([[[j[0]] for j in i] for i in _img])
-
         img = Image.open(path)
         img.load()
 
@@ -270,11 +267,8 @@ class DataHandler:
 
             if DO_NORMALIZE:
                 new_img = __normalize_image(new_img)
-
-            # make a one channel for gray scale
-            if DO_GRAYSCALE:
-                new_img = __change_gray_scale(new_img)
         else:
+            # img = img.resize((INITIAL_IMAGE_SIZE, INITIAL_IMAGE_SIZE))
             new_img = np.asarray(img, dtype='int32')
             new_img = new_img.transpose([2, 0, 1]).reshape(3, -1)
             new_img = new_img[0]
@@ -283,8 +277,14 @@ class DataHandler:
 
     @staticmethod
     def reshape_image_for_cnn(x_data):
+        def __change_gray_scale(_img):
+            return np.array([[[j[0]] for j in i] for i in _img])
+
         cnt_data = len(x_data)
+
+        x_data = [__change_gray_scale(img) for img in x_data]
         x_data = np.array(x_data)
+
         return list(x_data.reshape((cnt_data, -1)))
 
     def __random_forest(self):
