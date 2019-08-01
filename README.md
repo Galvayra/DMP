@@ -1,8 +1,11 @@
 # DeepPredict
-Deep Learning for mortality
+
+
+
+
+### Training medical data
 
 First of all, import this project using ~/.bash_profile
-
 
 
 step 1) Parsing Dataset to erase noise
@@ -64,15 +67,13 @@ Step 3) Training
     
     
 	3-1) training vector to Neural Network (If you want show options, use -h)
-	Useage) python training.py -model (ffnn|cnn) -image_dir I -vector VECTOR -feature F -target T -epoch E -hidden H -learn L -tensor_dir TENSOR -delete D -show S -ver V 
+	Useage) python training.py -model (ffnn|cnn) -image_dir I -vector VECTOR -epoch E -hidden H -learn L -tensor_dir TENSOR -delete D -show S -ver V 
 	(path of dir,  "vector=modeling/vectors/"  "tensor_dir=logs/ & modeling/save/")
 	(option,  I = set a path of images for CNN (It is necessary when you use CNN))
-	(         F = set a type of feature for training (default is "all" of features)  ex) 'initial', 'history')
-	(         T = set a symptom for training (default is "all" of symptoms)  ex) s(sepsis), b(bateremia), p(pnuemonia))
 	(         TENSOR = save a path of log for tensorboard and tensor for loading)
 	(         D = set a delete log or tensor directory (This is useful when you retrain and rewrite))
 	(         S = show parameters when the model trained in NN)
-	(         V = select a training version)    
+	(         V = select a training version)
 	
 	Training Version (It is same in predict script)
 	version 1 = k cross validation
@@ -89,14 +90,38 @@ Step 4) Get a performance
 
 
     4-1) predict and get a performance by trained model (default is svm) (If you wnat show options, use -h)
-	Useage) python predict.py -model (svm|ffnn|cnn) -image_dir I -vector VECTOR -feature F -target T -tensor_dir TENSOR -save SAVE -plot P -show S -ver V 
+	Useage) python predict.py -model (svm|ffnn|cnn) -image_dir I -vector VECTOR -tensor_dir TENSOR -save SAVE -plot P -show S -ver V 
 	(path of dir,  "vector=modeling/vectors/"  "tensor_dir=modeling/save/"  "save=analysis/")
 	(option,  I = set a path of images for CNN (It is necessary when you use CNN))
-	(         F = set a type of feature for training (default is "all" of features)  ex) 'initial', 'history')
-	(         T = set a symptom for training (default is "all" of symptoms)  ex) s(sepsis), b(bateremia), p(pnuemonia))
 	(         LOG = load a path of tensor)
 	(         SAVE = save a performance of system using csv file)
 	(         P = show a ROC curve of model)
 	(         S = show parameters when the model trained in NN)
-	(         V = select a training version)    
-	
+	(         V = select a training version)
+
+
+
+### Training CT Images
+
+
+
+Step 1) Building vector for ct image
+
+    ./build_image_data.sh --input 'csv file name' --output 'vector name'
+    (path of dir,  "input=dataset/parsing/", "output=modeling/vectors/")
+
+
+Step 2) Training
+
+    You can train images using transfer learning or training CNN model
+    
+    If you want to transfer learning, set a "IMAGE_SIZE" variable to "what you want to set image size"
+    If you want to training CNN model, set a "IMAGE_SIZE" variable to "INITIAL_IMAGE_SIZE"
+    The "IMAGE_SIZE" variable is in learning/variables.py
+    
+    Useage) python fine_tuning.py -model (tuning|cnn) -vector VECTOR -epoch E -hidden H -learn L -tensor_dir TENSOR -delete D -show S -ver V 
+	(path of dir,  "vector=modeling/vectors/"  "tensor_dir=logs/ & modeling/save/")
+	(option,  TENSOR = save a path of log for tensorboard and tensor for loading)
+	(         D = set a delete log or tensor directory (This is useful when you retrain and rewrite))
+	(         S = show parameters when the model trained in NN)
+	(         V = select a training version)
