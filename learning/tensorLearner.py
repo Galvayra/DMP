@@ -114,7 +114,6 @@ class NeuralNet(TensorModel):
         # Do not use softmax cross entropy
         else:
             with tf.name_scope("cost"):
-                print(NAME_HYPO + '_' + str(self.num_of_fold))
                 hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
                 cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
                 cost_summ = tf.summary.scalar("cost", cost)

@@ -6,7 +6,7 @@ NUM_HIDDEN_DIMENSION = 0
 RATIO_HIDDEN = 2
 
 # path of directory for loading and storing
-PATH_LOGS = "./logs/"
+PATH_LOGS = "logs/"
 PATH_TENSOR = "modeling/save/"
 PATH_RESULT = "analysis/"
 FILE_OF_TRAINING_TIME = "run_time"
