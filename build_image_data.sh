@@ -1,5 +1,6 @@
 #/bin/sh
 
+base=""
 input="image"
 output="image_vector"
 softmax=0
@@ -12,5 +13,5 @@ export PYTHONPATH
 python dataset/images/parsing.py -output "$input" -sampling 0 -ratio 0.6
 echo
 echo
-python dataset/images/encoding.py -input "$input" -output "$output" -w2v 0 -ver 1 -softmax "$softmax"
+python dataset/images/encoding.py -base "$base" -input "$input" -output "$output" -w2v 0 -ver 1 -softmax "$softmax"
 echo
