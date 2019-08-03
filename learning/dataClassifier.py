@@ -79,7 +79,6 @@ class DataClassifier:
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
         x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
-        k_fold = int()
 
         if TYPE_OF_MODEL == "tuning":
             nn = TransferLearner()
@@ -87,19 +86,19 @@ class DataClassifier:
             # load pre trained model adapt input tensor size
             nn.load_pre_trained_model(input_tensor=x_img_data[0])
 
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
-                k_fold = self.__show_info_during_training(k_fold, y_train, y_test)
-                nn.transfer_learning(np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test))
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
+                self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
+                nn.transfer_learning(x_train, y_train, x_test, y_test)
                 exit(-1)
         elif TYPE_OF_MODEL == "cnn":
-            nn = ConvolutionNet()
+            nn = TransferLearner()
 
-            # change num of channel 3 to 1 (because the model's input channel size is 1)
-            x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
+            # # change num of channel 3 to 1 (because the model's input channel size is 1)
+            # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
 
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
-                k_fold = self.__show_info_during_training(k_fold, y_train, y_test)
-                nn.training(x_train, y_train, x_test, y_test)
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data,  cast_numpy=True):
+                self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
+                nn.training_end_to_end(x_train, y_train, x_test, y_test)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -145,13 +144,10 @@ class DataClassifier:
         return x_img_data, y_img_data
 
     def __show_info_during_training(self, k_fold, y_train, y_test):
-        k_fold += 1
-        print("\n\n============================", k_fold, "- fold training ============================")
+        print("\n\n============================", k_fold + 1, "- fold training ============================")
         self.__show_info(y_train, keyword="Training")
         self.__show_info(y_test, keyword="Test    ")
         print("\n\n\n\n")
-
-        return k_fold
 
     @staticmethod
     def __show_info(y_img_data, keyword="Total Training"):
@@ -174,7 +170,7 @@ class DataClassifier:
     def __get_data_matrix(_data, _index_list):
         return [_data[i] for i in _index_list]
 
-    def __data_generator(self, x_data, y_data, x_img_data=list, do_get_index=False):
+    def __data_generator(self, x_data, y_data, cast_numpy=False, do_get_index=False):
         cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
 
         if do_get_index:
@@ -192,7 +188,10 @@ class DataClassifier:
                 x_test = self.__get_data_matrix(x_data, test_index_list)
                 y_test = self.__get_data_matrix(y_data, test_index_list)
 
-                yield x_train, y_train, x_test, y_test
+                if cast_numpy:
+                    yield np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test)
+                else:
+                    yield x_train, y_train, x_test, y_test
 
     def predict(self):
         x_test = self.dataHandler.x_test
