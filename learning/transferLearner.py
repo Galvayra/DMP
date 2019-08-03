@@ -43,7 +43,9 @@ class TransferLearner(TensorModel):
         board = TensorBoard(log_dir=self.name_of_log + "/fold_" + str(self.num_of_fold),
                             histogram_freq=0, write_graph=True, write_images=True)
         ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
-        model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH, callbacks=[ckpt])
+
+        model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
+        model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
 
         h = model.predict(x_test, batch_size=BATCH_SIZE)
         y_predict = np.argmax(h, axis=1)
