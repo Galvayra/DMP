@@ -91,7 +91,13 @@ class DataClassifier:
             #     self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
             #     nn.transfer_learning(x_train, y_train, x_test, y_test)
             nn = SlimLearner()
-            nn.run()
+
+            x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
+
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=False):
+
+                nn.run_fine_tuning(x_train, y_train)
+                exit(-1)
 
         elif TYPE_OF_MODEL == "cnn":
             nn = TransferLearner()
@@ -100,7 +106,7 @@ class DataClassifier:
             # # change num of channel 3 to 1 (because the model's input channel size is 1)
             # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
 
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data,  cast_numpy=True):
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
                 nn.training_end_to_end(x_train, y_train, x_test, y_test)
 
@@ -131,20 +137,31 @@ class DataClassifier:
 
         return self.__get_set(x_data, y_data)
 
-    def __get_total_image_set(self, x_data, y_data):
-        n = 30
+    def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
+        n = 3
         x_img_data = list()
         y_img_data = list()
 
-        if VERSION == 1:
-            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:]), y_data[:]):
-                for image in images:
-                    x_img_data.append(image)
+        if has_img_paths:
+            if VERSION == 1:
+                for images, y_value in zip(x_data, y_data):
+                    for img_path in images[1]:
+                        x_img_data.append(img_path)
+                        y_img_data.append(y_value)
+            else:
+                for images, y_value in zip(x_data, y_data):
+                    x_img_data.append(images[1])
                     y_img_data.append(y_value)
         else:
-            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:]), y_data[:]):
-                x_img_data.append(images)
-                y_img_data.append(y_value)
+            if VERSION == 1:
+                for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+                    for image in images:
+                        x_img_data.append(image)
+                        y_img_data.append(y_value)
+            else:
+                for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+                    x_img_data.append(images)
+                    y_img_data.append(y_value)
 
         self.__show_info(y_img_data)
 

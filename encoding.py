@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     if DO_ENCODE_IMAGE:
         vectorMaker.encoding(encode_image=True)
+        vectorMaker.build_tf_records()
     else:
         vectorMaker.encoding()
-    vectorMaker.dump()
+    # vectorMaker.dump()

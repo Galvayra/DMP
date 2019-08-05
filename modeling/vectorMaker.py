@@ -130,6 +130,24 @@ class VectorMaker:
     #     with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
     #         return json.load(r_file)
 
+    def build_tf_records(self):
+        def __get_set(x_path_target, y_target):
+            paths, y_labels = x_path_target, y_target
+            _x_data, _y_data = list(), list()
+
+            for img_paths, y in zip(paths, y_labels):
+                for img_path in img_paths:
+                    _x_data.append(img_path)
+                    _y_data.append(y)
+
+            return _x_data, _y_data
+
+        x_data, y_data = __get_set(self.vector_matrix[KEY_IMG_VALID], self.vector_matrix["y_valid"])
+
+
+
+        print(len(x_data), len(y_data))
+
     def dump(self, do_show=True):
         def __counting_mortality(_data):
             count = 0

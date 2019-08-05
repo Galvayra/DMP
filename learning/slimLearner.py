@@ -1,16 +1,20 @@
-from DMP.utils.arg_fine_tuning import *
 from DMP.learning.neuralNet import TensorModel
-from DMP.learning.variables import IMAGE_RESIZE
-from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
-from DMP.learning.variables import KEY_TEST
-from time import time
+from DMP.modeling.tf_recoder import to_tfrecords
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
+from urllib.request import urlopen
+import sys
+
+SLIM_PATH = '/home/galvayra/Project/models/research/slim'
+sys.path.append(SLIM_PATH)
+
+from preprocessing import vgg_preprocessing
 
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
 BATCH_SIZE = 32
+VGG_PATH = 'dataset/images/save/vgg_16.ckpt'
 
 
 class SlimLearner(TensorModel):
@@ -48,6 +52,45 @@ class SlimLearner(TensorModel):
 
         return (train_x, train_y), (test_x, test_y)
 
+    def run_fine_tuning(self, x_train, y_train):
+        to_tfrecords(x_train, y_train, 'tf_record')
+        # for i, j in zip(x_train, y_train):
+        #     print(i, j)
+            # print(np.array(i).shape, np.array(j).shape)
+        #
+        # image_size = vgg.vgg_16.default_image_size  # image_size = 224
+
+        # exculde = ['vgg_16/fc8']
+        # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
+        #
+        # saver = tf.train.Saver(variables_to_restore)
+        # with tf.Session() as sess:
+        #     saver.restore(sess, VGG_PATH)
+        #
+        #     model_variables = slim.get_model_variables()
+        #
+        #     print(model_variables)
+        #
+        # print(model_variables)
+        # print(x_train.shape)
+        # print(slim.get_model_variables('vgg_16'))
+
+
+        # load_vars = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
+        #
+        # with tf.Session() as sess:
+        #     load_vars(sess)
+
+        # # vgg_preprocessing을 이용해 전처리 수행
+        # processed_img = vgg_preprocessing.preprocess_image(x_train[0],
+        #                                                    image_size,
+        #                                                    image_size,
+        #                                                    is_training=False)
+        #
+        # print(processed_img)
+        #
+        # processed_images = tf.expand_dims(processed_img, 0)
+
     def run(self):
         (train_x, train_y), (test_x, test_y) = self.mnist_load()
 
@@ -57,31 +100,34 @@ class SlimLearner(TensorModel):
         y_ = tf.placeholder(tf.float32, shape=[None, 10])
         is_training = tf.placeholder(tf.bool)
 
-        ########################
-        # 2. TF-Slim을 이용한 CNN 모델 구현
-        with slim.arg_scope([slim.conv2d],
-                            padding='SAME',
-                            activation_fn=tf.nn.elu,
-                            weights_initializer=tf.truncated_normal_initializer(stddev=0.01)):
-            inputs = tf.reshape(x, [-1, 28, 28, 1])
+        # ########################
+        # # 2. TF-Slim을 이용한 CNN 모델 구현
+        # with slim.arg_scope([slim.conv2d],
+        #                     padding='SAME',
+        #                     activation_fn=tf.nn.elu,
+        #                     weights_initializer=tf.truncated_normal_initializer(stddev=0.01)):
+        #     inputs = tf.reshape(x, [-1, 28, 28, 1])
+        #
+        #     net = slim.conv2d(inputs=inputs, num_outputs=32, kernel_size=[5, 5], scope='conv1')
+        #     net = slim.max_pool2d(inputs=net, kernel_size=[2, 2], scope='pool1')
+        #     net = slim.conv2d(net, 64, [5, 5], scope='conv2')
+        #     net = slim.max_pool2d(net, [2, 2], scope='pool2')
+        #     net = slim.flatten(net, scope='flatten3')
+        #
+        # with slim.arg_scope([slim.fully_connected],
+        #                     weights_initializer=tf.truncated_normal_initializer(stddev=0.01)):
+        #     net = slim.fully_connected(net, 1024, activation_fn=tf.nn.relu, scope='fc3')
+        #     net = slim.dropout(net, is_training=is_training, scope='dropout3')
+        #     outputs = slim.fully_connected(net, 10, activation_fn=None)
 
-            net = slim.conv2d(inputs=inputs, num_outputs=32, kernel_size=[5, 5], scope='conv1')
-            net = slim.max_pool2d(inputs=net, kernel_size=[2, 2], scope='pool1')
-            net = slim.conv2d(net, 64, [5, 5], scope='conv2')
-            net = slim.max_pool2d(net, [2, 2], scope='pool2')
-            net = slim.flatten(net, scope='flatten3')
-
-        with slim.arg_scope([slim.fully_connected],
-                            weights_initializer=tf.truncated_normal_initializer(stddev=0.01)):
-            net = slim.fully_connected(net, 1024, activation_fn=tf.nn.relu, scope='fc3')
-            net = slim.dropout(net, is_training=is_training, scope='dropout3')
-            outputs = slim.fully_connected(net, 10, activation_fn=None)
+        inputs = tf.reshape(x, [-1, 28, 28, 1])
+        outputs = self.vgg16(inputs)
+        outputs = slim.fully_connected(net, 10, activation_fn=None)
 
         ########################
         # 3. loss, optimizer, accuracy
         # loss
-        cross_entropy = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits_v2(logits=outputs, labels=y_))
+        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=outputs, labels=y_))
         # optimizer
         train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
         # accuracy
@@ -110,9 +156,9 @@ class SlimLearner(TensorModel):
                 batch_xs, batch_ys = sess.run(next_batch)
                 _, cost_val = sess.run([train_step, cross_entropy], feed_dict={x: batch_xs['image'],
                                                                                y_: batch_ys,
-                                                                           is_training: True})
+                                                                               is_training: True})
 
-            if (step + 1) % 500 == 0:
+            if (step + 1) % 10 == 0:
                 train_accuracy = sess.run(accuracy, feed_dict={x: batch_xs['image'],
                                                                y_: batch_ys,
                                                                is_training: False})
@@ -126,3 +172,27 @@ class SlimLearner(TensorModel):
                 [sess.run(accuracy, feed_dict={x: X[i], y_: Y[i], is_training: False}) for i in range(10)])
 
         print("test accuracy: {:.5f}".format(test_accuracy))
+
+    # @staticmethod
+    # def vgg16(inputs):
+    #     with slim.arg_scope([slim.conv2d, slim.fully_connected],
+    #                          activation_fn=tf.nn.relu,
+    #                          weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+    #                          weights_regularizer=slim.l2_regularizer(0.0005)):
+    #         net = slim.repeat(inputs, 2, slim.conv2d, 64, [3, 3], scope='conv1')
+    #         net = slim.max_pool2d(net, [2, 2], scope='pool1')
+    #         net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv2')
+    #         net = slim.max_pool2d(net, [2, 2], scope='pool2')
+    #         net = slim.repeat(net, 3, slim.conv2d, 256, [3, 3], scope='conv3')
+    #         net = slim.max_pool2d(net, [2, 2], scope='pool3')
+    #         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')
+    #         net = slim.max_pool2d(net, [2, 2], scope='pool4')
+    #         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')
+    #         net = slim.max_pool2d(net, [2, 2], scope='pool5')
+    #         net = slim.fully_connected(net, 4096, scope='fc6')
+    #         net = slim.dropout(net, 0.5, scope='dropout6')
+    #         net = slim.fully_connected(net, 4096, scope='fc7')
+    #         net = slim.dropout(net, 0.5, scope='dropout7')
+    #         net = slim.fully_connected(net, 10, activation_fn=None, scope='fc8')
+    #         # net = slim.fully_connected(net, 1000, activation_fn=None, scope='fc8')
+    #         return net
