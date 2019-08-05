@@ -16,8 +16,8 @@ BATCH_SIZE = 32
 
 
 class TransferLearner(TensorModel):
-    def __init__(self, is_cross_valid=True):
-        super().__init__(is_cross_valid=is_cross_valid)
+    def __init__(self):
+        super().__init__(is_cross_valid=True)
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = int()
         self.trained_model = None

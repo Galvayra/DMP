@@ -16,6 +16,7 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.transferLearner import TransferLearner
+    from DMP.learning.slimLearner import SlimLearner
 
 SEED = 1
 DO_SHUFFLE = True
@@ -79,21 +80,23 @@ class DataClassifier:
 
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
-        x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
 
         if TYPE_OF_MODEL == "tuning":
-            nn = TransferLearner()
-
-            # load pre trained model adapt input tensor size
-            nn.load_pre_trained_model(input_tensor=x_img_data[0])
-
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-                self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-                nn.transfer_learning(x_train, y_train, x_test, y_test)
+            # nn = TransferLearner()
+            #
+            # # load pre trained model adapt input tensor size
+            # nn.load_pre_trained_model(input_tensor=x_img_data[0])
+            #
+            # for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
+            #     self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
+            #     nn.transfer_learning(x_train, y_train, x_test, y_test)
+            nn = SlimLearner()
+            nn.run()
 
         elif TYPE_OF_MODEL == "cnn":
             nn = TransferLearner()
 
+            x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
             # # change num of channel 3 to 1 (because the model's input channel size is 1)
             # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
 
