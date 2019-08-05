@@ -18,6 +18,7 @@ elif current_script == "fine_tuning.py":
     from DMP.learning.transferLearner import TransferLearner
 
 SEED = 1
+DO_SHUFFLE = True
 
 
 class DataClassifier:
@@ -117,9 +118,17 @@ class DataClassifier:
         y_valid = self.dataHandler.y_valid
         y_test = self.dataHandler.y_test
 
-        return x_train + x_valid + x_test, y_train + y_valid + y_test
+        x_data = x_train + x_valid + x_test
+        y_data = y_train + y_valid + y_test
 
-    def __get_total_image_set(self, x_data, y_data, do_random=True):
+        if DO_SHUFFLE:
+            random.seed(SEED)
+            random.shuffle(x_data)
+            random.shuffle(y_data)
+
+        return self.__get_set(x_data, y_data)
+
+    def __get_total_image_set(self, x_data, y_data):
         n = 30
         x_img_data = list()
         y_img_data = list()
@@ -136,12 +145,21 @@ class DataClassifier:
 
         self.__show_info(y_img_data)
 
-        if do_random:
+        if DO_SHUFFLE:
             random.seed(SEED)
             random.shuffle(x_img_data)
             random.shuffle(y_img_data)
 
-        return x_img_data, y_img_data
+        return self.__get_set(x_img_data, y_img_data)
+
+    @staticmethod
+    def __get_set(x_data, y_data):
+        if DO_SHUFFLE:
+            random.seed(SEED)
+            random.shuffle(x_data)
+            random.shuffle(y_data)
+
+        return x_data, y_data
 
     def __show_info_during_training(self, k_fold, y_train, y_test):
         print("\n\n============================", k_fold + 1, "- fold training ============================")
