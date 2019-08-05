@@ -5,8 +5,8 @@ from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KE
     KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY
 from os import path
-from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH
-from DMP.dataset.variables import DATA_PATH, IMAGE_PATH
+from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
+from DMP.dataset.variables import DATA_PATH
 import json
 
 

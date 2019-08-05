@@ -33,6 +33,10 @@ def get_arguments():
                                                       "\n1 - make output node for softmax cross entropy"
                                                       "\nUseAge : python encoding.py -cross_entropy 'C'\n\n",
                         default=0, type=int)
+    parser.add_argument("-encode_image", "--encode_image",
+                        help="set whether encode ct images or not(default is 0)"
+                             "\nUseAge : python encoding.py -encode_image 'E'\n\n",
+                        default=0, type=int)
     _args = parser.parse_args()
 
     return _args
@@ -56,9 +60,14 @@ NUM_OF_FEATURES = get_num_of_features()
 NUM_OF_IMPORTANT = NUM_OF_FEATURES
 
 DO_CROSS_ENTROPY = args.softmax
+DO_ENCODE_IMAGE = args.encode_image
 
 if DO_CROSS_ENTROPY != 1 and DO_CROSS_ENTROPY != 0:
     print("\nInput Error softmax option!\n")
+    exit(-1)
+
+if DO_ENCODE_IMAGE != 1 and DO_ENCODE_IMAGE != 0:
+    print("\nInput Error encode_image option!\n")
     exit(-1)
 
 if args.input:

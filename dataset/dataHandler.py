@@ -6,7 +6,7 @@ import sys
 import json
 from os import path, listdir
 from .variables import *
-from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, CT_IMAGE_TARGET_PATH
+from DMP.dataset.images.variables import *
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
     from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO

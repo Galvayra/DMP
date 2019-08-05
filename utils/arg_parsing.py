@@ -19,6 +19,10 @@ def get_arguments():
                                                     "\nUseAge : python parsing.py -target 'symptom'\n\n")
     parser.add_argument("-sampling", "--sampling", help="set whether sampling or not (default is 1)"
                                                         "\nUseAge : python parsing.py -sampling 1\n\n")
+    parser.add_argument("-parsing_image", "--parsing_image",
+                        help="set whether removing which doesn't have ct images or not (default is 0)"
+                             "\nUseAge : python parsing.py -parsing_image 1\n\n",
+                        default=0, type=int)
 
     _args = parser.parse_args()
 
@@ -38,6 +42,12 @@ SAVE_FILE_VALID = "parsing_valid"
 SAVE_FILE_TEST = "parsing_test"
 
 DO_SAMPLING = True
+DO_PARSING_IMAGE = args.parsing_image
+
+if DO_PARSING_IMAGE != 1 and DO_PARSING_IMAGE != 0:
+    print("\nInput Error parsing_image option!\n")
+    exit(-1)
+
 RATIO = 0.8
 
 if args.input:

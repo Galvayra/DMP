@@ -1,9 +1,9 @@
 dataset/parsing/
 dataset/origin/
 dataset/images/ct_images/
+dataset/images/ct_dict/
 dataset/images/image_data/
 dataset/images/csv_data/
-dataset/images/log/
 dataset/images/cs/
 dataset/images/save/
 learning/model/

@@ -4,9 +4,6 @@ from collections import OrderedDict
 DATA_PATH = "dataset/"
 ORIGIN_PATH = "origin/"
 PARSING_PATH = "parsing/"
-IMAGE_PATH = "images/"
-IMAGE_LOG_PATH = "logs/"
-IMAGE_LOG_NAME = "patient_dict"
 DUMP_PATH = "vectors"
 
 POSITION_OF_ROW = 2
