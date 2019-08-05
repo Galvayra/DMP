@@ -12,7 +12,7 @@ import numpy as np
 
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
 
 class TransferLearner(TensorModel):
