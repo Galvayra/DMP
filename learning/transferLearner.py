@@ -74,8 +74,8 @@ class TransferLearner(TensorModel):
         # Creating new model. Please note that this is NOT a Sequential() model.
         self.custom_model = Model(input=self.trained_model.input, output=x)
 
-        if DO_SHOW:
-            print(self.custom_model.summary())
+        # if DO_SHOW:
+        #     print(self.custom_model.summary())
 
     def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
@@ -90,7 +90,7 @@ class TransferLearner(TensorModel):
                             histogram_freq=0, write_graph=True, write_images=True)
         ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
         self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
-        self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH, callbacks=[ckpt])
+        self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
 
     def __predict_model(self, x_test, y_test):
         h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)

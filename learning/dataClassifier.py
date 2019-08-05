@@ -90,7 +90,7 @@ class DataClassifier:
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
                 nn.transfer_learning(x_train, y_train, x_test, y_test)
-                exit(-1)
+
         elif TYPE_OF_MODEL == "cnn":
             nn = TransferLearner()
 
@@ -134,12 +134,12 @@ class DataClassifier:
         y_img_data = list()
 
         if VERSION == 1:
-            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:]), y_data[:]):
                 for image in images:
                     x_img_data.append(image)
                     y_img_data.append(y_value)
         else:
-            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+            for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:]), y_data[:]):
                 x_img_data.append(images)
                 y_img_data.append(y_value)
 
