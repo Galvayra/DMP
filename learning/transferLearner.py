@@ -1,5 +1,6 @@
 from DMP.utils.arg_fine_tuning import *
 from DMP.learning.neuralNet import TensorModel
+from DMP.learning.variables import IMAGE_RESIZE
 from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
@@ -11,8 +12,7 @@ import numpy as np
 
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
-BATCH_SIZE = 32
-IMAGE_RESIZE = 36
+BATCH_SIZE = 128
 
 
 class TransferLearner(TensorModel):
@@ -80,7 +80,7 @@ class TransferLearner(TensorModel):
     def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
         for layer in self.custom_model.layers[:7]:
-            layer.trainable = False
+            layer.trainable = True
 
         # set file names for saving
         self.set_name_of_log()
