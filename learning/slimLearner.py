@@ -119,10 +119,10 @@ class SlimLearner(TensorModel):
                 print("Step : {}, cost : {:.5f}, training accuracy: {:.5f}".format(step + 1, cost_val,
                                                                                    train_accuracy))
 
-        X = test_x.reshape([10, 1000, 28, 28])
-        Y = test_y.reshape([10, 1000, 10])
+            X = test_x.reshape([10, 1000, 28, 28])
+            Y = test_y.reshape([10, 1000, 10])
 
-        test_accuracy = np.mean(
-            [sess.run(accuracy, feed_dict={x: X[i], y_: Y[i], is_training: False}) for i in range(10)])
+            test_accuracy = np.mean(
+                [sess.run(accuracy, feed_dict={x: X[i], y_: Y[i], is_training: False}) for i in range(10)])
 
         print("test accuracy: {:.5f}".format(test_accuracy))
