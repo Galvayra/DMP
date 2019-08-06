@@ -17,9 +17,13 @@ elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.transferLearner import TransferLearner
     from DMP.learning.slimLearner import SlimLearner
+    from sklearn.preprocessing import StandardScaler
 
 SEED = 1
 DO_SHUFFLE = True
+DO_IMG_SCALING = True
+IMG_D_TYPE = np.float32
+n = 91
 
 
 class DataClassifier:
@@ -82,22 +86,41 @@ class DataClassifier:
         x_data, y_data = self.__get_total_set(has_img_paths=True)
 
         if TYPE_OF_MODEL == "tuning":
-            # nn = TransferLearner()
+            nn = TransferLearner()
+
+            x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
+            # load pre trained model adapt input tensor size
+            nn.load_pre_trained_model(input_tensor=x_img_data[0])
+
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
+                self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
+
+                if DO_IMG_SCALING:
+                    scaler = StandardScaler()
+
+                    n, w, h, k = x_train.shape
+                    x_list = list(x_train.reshape([n, -1]))
+
+                    scaler.fit(x_list)
+                    x_transformed = scaler.transform(x_list)
+                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
+                    n, w, h, k = x_test.shape
+                    x_list = list(x_test.reshape([n, -1]))
+
+                    x_transformed = scaler.transform(x_list)
+                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
+                nn.transfer_learning(x_train, y_train, x_test, y_test)
+
+            # nn = SlimLearner()
             #
-            # # load pre trained model adapt input tensor size
-            # nn.load_pre_trained_model(input_tensor=x_img_data[0])
+            # x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
             #
-            # for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-            #     self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-            #     nn.transfer_learning(x_train, y_train, x_test, y_test)
-            nn = SlimLearner()
-
-            x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
-
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=False):
-
-                nn.run_fine_tuning(x_train, y_train)
-                exit(-1)
+            # for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=False):
+            #
+            #     nn.run_fine_tuning(x_train, y_train)
+            #     exit(-1)
 
         elif TYPE_OF_MODEL == "cnn":
             nn = TransferLearner()
@@ -108,7 +131,25 @@ class DataClassifier:
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
+
+                if DO_IMG_SCALING:
+                    scaler = StandardScaler()
+
+                    n, w, h, k = x_train.shape
+                    x_list = list(x_train.reshape([n, -1]))
+
+                    scaler.fit(x_list)
+                    x_transformed = scaler.transform(x_list)
+                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
+                    n, w, h, k = x_test.shape
+                    x_list = list(x_test.reshape([n, -1]))
+
+                    x_transformed = scaler.transform(x_list)
+                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
                 nn.training_end_to_end(x_train, y_train, x_test, y_test)
+                exit(-1)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -138,18 +179,17 @@ class DataClassifier:
         return self.__get_set(x_data, y_data)
 
     def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
-        n = 3
         x_img_data = list()
         y_img_data = list()
 
         if has_img_paths:
             if VERSION == 1:
-                for images, y_value in zip(x_data, y_data):
+                for images, y_value in zip(x_data[:n], y_data[:n]):
                     for img_path in images[1]:
                         x_img_data.append(img_path)
                         y_img_data.append(y_value)
             else:
-                for images, y_value in zip(x_data, y_data):
+                for images, y_value in zip(x_data[:n], y_data[:n]):
                     x_img_data.append(images[1])
                     y_img_data.append(y_value)
         else:
@@ -169,6 +209,15 @@ class DataClassifier:
             random.seed(SEED)
             random.shuffle(x_img_data)
             random.shuffle(y_img_data)
+
+        # if DO_IMG_SCALING:
+        #     scaler = StandardScaler()
+        #     scaler.fit(x_img_data)
+        #     x_img_data = scaler.transform(x_img_data)
+        #
+        #     for i in x_img_data:
+        #         print(i)
+        #     exit(-1)
 
         return self.__get_set(x_img_data, y_img_data)
 
@@ -227,7 +276,8 @@ class DataClassifier:
                 y_test = self.__get_data_matrix(y_data, test_index_list)
 
                 if cast_numpy:
-                    yield np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test)
+                    yield np.array(x_train, dtype=IMG_D_TYPE), np.array(y_train, dtype=IMG_D_TYPE), \
+                          np.array(x_test, dtype=IMG_D_TYPE), np.array(y_test, dtype=IMG_D_TYPE)
                 else:
                     yield x_train, y_train, x_test, y_test
 

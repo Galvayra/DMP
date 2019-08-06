@@ -4,6 +4,7 @@ import numpy as np
 import json
 import math
 import sys
+import cv2
 
 current_script = sys.argv[0].split('/')[-1]
 

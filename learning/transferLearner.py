@@ -32,6 +32,7 @@ class TransferLearner(TensorModel):
         self.__init_custom_model()
         self.__fine_tuning(x_train, y_train, x_test, y_test)
         self.__predict_model(x_test, y_test)
+        exit(-1)
         # print(custom_model.evaluate(x_test, y_test))
 
     def training_end_to_end(self, x_train, y_train, x_test, y_test):
@@ -64,7 +65,7 @@ class TransferLearner(TensorModel):
         x = layer_dict['block2_pool'].output
 
         # Stacking a new simple convolutional network on top of it
-        x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu')(x)
+        x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(2, 2))(x)
         x = Flatten()(x)
         x = Dense(256, activation='relu')(x)
@@ -80,7 +81,7 @@ class TransferLearner(TensorModel):
     def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
         for layer in self.custom_model.layers[:7]:
-            layer.trainable = True
+            layer.trainable = False
 
         # set file names for saving
         self.set_name_of_log()
@@ -96,6 +97,8 @@ class TransferLearner(TensorModel):
         h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)
         y_predict = np.argmax(h, axis=1)
 
+        # for i, j in zip(y_test, y_predict):
+        #     print(i, j)
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
@@ -116,11 +119,25 @@ class TransferLearner(TensorModel):
                 model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
 
         model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        for i in range(1, num_cnn_layers + 1):
+            model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        for i in range(1, num_cnn_layers + 1):
+            model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        
         model.add(Flatten())
         model.add(Dense(int(MAX_NEURONS), activation='relu'))
         model.add(Dropout(0.25))
         model.add(Dense(int(MAX_NEURONS / 2), activation='relu'))
         model.add(Dense(1, activation='sigmoid'))
         model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
+
+        if DO_SHOW:
+            model.summary()
 
         return model

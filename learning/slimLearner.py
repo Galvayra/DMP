@@ -5,8 +5,8 @@ import tensorflow.contrib.slim as slim
 import tensorflow as tf
 from urllib.request import urlopen
 import sys
-
-SLIM_PATH = '/home/galvayra/Project/models/research/slim'
+import cv2
+SLIM_PATH = '/home/nlp207/Project/models/research/slim'
 sys.path.append(SLIM_PATH)
 
 from preprocessing import vgg_preprocessing
@@ -34,7 +34,6 @@ class SlimLearner(TensorModel):
             weights = sess.run(weights)
             print(weights)
 
-
     # 0. mnist 불러오기
     @staticmethod
     def mnist_load():
@@ -53,7 +52,48 @@ class SlimLearner(TensorModel):
         return (train_x, train_y), (test_x, test_y)
 
     def run_fine_tuning(self, x_train, y_train):
-        to_tfrecords(x_train, y_train, 'tf_record')
+        def _int64_feature(value):
+            return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+        def _bytes_feature(value):
+            return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+        print(len(x_train))
+        print(len(y_train))
+        # to_tfrecords(x_train, y_train, 'tf_record')
+
+        train_filename = 'train.tfrecords'  # address to save the TFRecords file
+        # open the TFRecords file
+        writer = tf.python_io.TFRecordWriter(train_filename)
+        for i in range(len(x_train)):
+            # print how many images are saved every 1000 images
+            'Train data: {}/{}'.format(i, len(x_train))
+            sys.stdout.flush()
+
+            # Load the image
+            img = self.load_image(x_train[i])
+            label = y_train[i][0]
+            # Create a feature
+            feature = {'train/label': _int64_feature(label),
+                       'train/image': _bytes_feature(tf.compat.as_bytes(img.tostring()))}
+            # Create an example protocol buffer
+            example = tf.train.Example(features=tf.train.Features(feature=feature))
+
+            # Serialize to string and write on the file
+            writer.write(example.SerializeToString())
+
+        writer.close()
+        sys.stdout.flush()
+
+    @staticmethod
+    def load_image(addr):
+        # read an image and resize to (224, 224)
+        # cv2 load images as BGR, convert it to RGB
+        img = cv2.imread(addr)
+        img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = img.astype(np.float32)
+        return img
         # for i, j in zip(x_train, y_train):
         #     print(i, j)
             # print(np.array(i).shape, np.array(j).shape)
