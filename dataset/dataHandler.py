@@ -78,31 +78,28 @@ class DataHandler:
         # [ y_1, y_2, ... y_n ]
         self.y_column = Y_COLUMN
         self.y_data = self.__set_labels()
-
         self.__do_sampling = do_sampling
-        
-        # set a log dict
-        if LOG_NAME:
-            self.__log_path = self.data_path + PARSING_PATH + LOG_NAME
-            try:
-                with open(self.log_path, 'r') as infile:
-                    self.__log_dict = json.load(infile)
-            except FileNotFoundError:
-                print("\nPlease make sure a path of log name -", self.log_path)
-                exit(-1)
-
-            print("Read log file -", self.log_path, "\n")
-        else:
-            self.__log_path = self.data_path + PARSING_PATH + SAVE_FILE_TOTAL.split(EXTENSION_FILE)[0]
-            self.__log_dict = dict()
                 
         if self.do_parsing:
             # except for data which is not necessary
             # [ position 1, ... position n ]
 
             if LOG_NAME:
+                self.__log_path = self.data_path + PARSING_PATH + LOG_NAME
+
+                try:
+                    with open(self.log_path, 'r') as infile:
+                        self.__log_dict = json.load(infile)
+                except FileNotFoundError:
+                    print("\nPlease make sure a path of log name -", self.log_path)
+                    exit(-1)
+                print("Read log file -", self.log_path, "\n")
+
                 self.__erase_index_list = self.__get_items_in_log_dict(target_key=KEY_ERASE_INDEX)
             else:
+                self.__log_path = self.data_path + PARSING_PATH + SAVE_FILE_TOTAL.split(EXTENSION_FILE)[0]
+                self.__log_dict = dict()
+
                 if ct_image_path:
                     self.__ct_image_path = self.data_path + IMAGE_PATH + ct_image_path
                     self.__erase_index_list = self.__init_erase_index_list_for_ct_image()

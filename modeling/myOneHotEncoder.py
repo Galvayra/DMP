@@ -31,10 +31,10 @@ class MyOneHotEncoder(W2vReader):
         self.__num_of_important = num_of_important
 
         if self.version == 1:
-            print("========= Version is Making vector for training!! =========\n\n")
+            print("\n========= Version is Making vector for training!! =========\n\n")
             self.__set_importance(log_name)
         elif self.version == 2:
-            print("========= Version is Making vector for Feature Selection!! =========\n\n")
+            print("\n========= Version is Making vector for Feature Selection!! =========\n\n")
 
         if USE_QUANTIZATION:
             print("Using Vector Quantization!!\n")
