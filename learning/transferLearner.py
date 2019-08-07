@@ -131,9 +131,12 @@ class TransferLearner(TensorModel):
         model.add(MaxPooling2D(pool_size=(2, 2)))
         
         model.add(Flatten())
-        model.add(Dense(int(MAX_NEURONS), activation='relu'))
+        model.add(Dense(2048, activation='relu'))
         model.add(Dropout(0.25))
-        model.add(Dense(int(MAX_NEURONS / 2), activation='relu'))
+        model.add(Dense(1024, activation='relu'))
+        model.add(Dropout(0.25))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dropout(0.25))
         model.add(Dense(1, activation='sigmoid'))
         model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
 
