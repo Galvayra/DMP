@@ -442,7 +442,7 @@ class DataHandler:
         if not LOG_NAME:
             with open(self.log_path, 'w') as outfile:
                 json.dump(self.log_dict, outfile, indent=4)
-                print("Write log file -", self.log_path)
+                print("Write log file -", self.log_path, "\n\n")
 
     def save_log(self):
         """

@@ -95,6 +95,7 @@ class DataClassifier:
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
 
+                # Using standard scaling
                 if DO_IMG_SCALING:
                     scaler = StandardScaler()
 
@@ -171,11 +172,7 @@ class DataClassifier:
         x_data = x_train + x_valid + x_test
         y_data = y_train + y_valid + y_test
 
-        if DO_SHUFFLE:
-            random.seed(SEED)
-            random.shuffle(x_data)
-            random.shuffle(y_data)
-
+        # return x_data, y_data
         return self.__get_set(x_data, y_data)
 
     def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
@@ -205,19 +202,18 @@ class DataClassifier:
 
         self.__show_info(y_img_data)
 
-        if DO_SHUFFLE:
-            random.seed(SEED)
-            random.shuffle(x_img_data)
-            random.shuffle(y_img_data)
+        # sampling
+        erase_index_list = list()
+        cnt_of_death = int()
 
-        # if DO_IMG_SCALING:
-        #     scaler = StandardScaler()
-        #     scaler.fit(x_img_data)
-        #     x_img_data = scaler.transform(x_img_data)
-        #
-        #     for i in x_img_data:
-        #         print(i)
-        #     exit(-1)
+        for i in range(len(y_img_data)):
+            if y_img_data[i] == [0]:
+                erase_index_list.append(i)
+            else:
+                cnt_of_death += 1
+
+        random.shuffle(erase_index_list)
+        random.sample(erase_index_list, cnt_of_death * 2)
 
         return self.__get_set(x_img_data, y_img_data)
 
@@ -226,6 +222,7 @@ class DataClassifier:
         if DO_SHUFFLE:
             random.seed(SEED)
             random.shuffle(x_data)
+            random.seed(SEED)
             random.shuffle(y_data)
 
         return x_data, y_data

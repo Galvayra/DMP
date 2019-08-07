@@ -4,6 +4,10 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 
 def get_arguments():
+    parser.add_argument("-base", "--base",
+                        help="set a path of log file name for restore(default is None)"
+                             "\nUseAge : python encoding.py -base 'B'\n\n",
+                        default="", type=str)
     parser.add_argument("-input", "--input", help="set a name of input csv file"
                                                   "\ndefault is 'dataset'.csv"
                                                   "\nthe File will be loaded in dataset dictionary"
@@ -23,10 +27,6 @@ def get_arguments():
                         help="set whether removing which doesn't have ct images or not (default is 0)"
                              "\nUseAge : python parsing.py -parsing_image 1\n\n",
                         default=0, type=int)
-    parser.add_argument("-log_name", "--log_name",
-                        help="set a path of log file name for restore(default is None)"
-                             "\nUseAge : python encoding.py -log_path 'L'\n\n",
-                        default="", type=str)
     _args = parser.parse_args()
 
     return _args
@@ -51,7 +51,7 @@ if DO_PARSING_IMAGE != 1 and DO_PARSING_IMAGE != 0:
     print("\nInput Error parsing_image option!\n")
     exit(-1)
 
-LOG_NAME = args.log_name
+LOG_NAME = args.base
 RATIO = 0.8
 
 if args.input:
