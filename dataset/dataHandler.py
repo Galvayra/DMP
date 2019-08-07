@@ -9,11 +9,17 @@ from .variables import *
 from DMP.dataset.images.variables import *
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
-    from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO
+    from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO, \
+        EXTENSION_FILE, LOG_NAME
 
 
 HAVE_SYMPTOM = 1
 PROPOSITION = 10
+
+# keys for log file
+KEY_DOWN_SAMPLING = "down_sampling"
+KEY_ERASE_INDEX = "erase_index"
+KEY_SPLIT_RATIO = "split_ratio"
 
 
 # ### refer to reference file ###
@@ -36,7 +42,7 @@ class DataHandler:
         # read csv file
         try:
             self.__raw_data = pd.read_csv(data_path + read_csv)
-            print("Read csv file -", data_path + read_csv, "\n")
+            print("Read csv file -", data_path + read_csv)
         except FileNotFoundError:
             print("FileNotFoundError]", data_path + read_csv, "\n")
             exit(-1)
@@ -74,15 +80,34 @@ class DataHandler:
         self.y_data = self.__set_labels()
 
         self.__do_sampling = do_sampling
+        
+        # set a log dict
+        if LOG_NAME:
+            self.__log_path = self.data_path + PARSING_PATH + LOG_NAME
+            try:
+                with open(self.log_path, 'r') as infile:
+                    self.__log_dict = json.load(infile)
+            except FileNotFoundError:
+                print("\nPlease make sure a path of log name -", self.log_path)
+                exit(-1)
 
+            print("Read log file -", self.log_path, "\n")
+        else:
+            self.__log_path = self.data_path + PARSING_PATH + SAVE_FILE_TOTAL.split(EXTENSION_FILE)[0]
+            self.__log_dict = dict()
+                
         if self.do_parsing:
             # except for data which is not necessary
             # [ position 1, ... position n ]
-            if ct_image_path:
-                self.__ct_image_path = self.data_path + IMAGE_PATH + ct_image_path
-                self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
+
+            if LOG_NAME:
+                self.__erase_index_list = self.__get_items_in_log_dict(target_key=KEY_ERASE_INDEX)
             else:
-                self.__erase_index_list = self.__init_erase_index_list()
+                if ct_image_path:
+                    self.__ct_image_path = self.data_path + IMAGE_PATH + ct_image_path
+                    self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
+                else:
+                    self.__erase_index_list = self.__init_erase_index_list()
 
             if self.column_target:
                 self.__append_target_in_erase_index_list()
@@ -146,6 +171,14 @@ class DataHandler:
     def save_dict(self):
         return self.__save_dict
 
+    @property
+    def log_path(self):
+        return self.__log_path
+
+    @property
+    def log_dict(self):
+        return self.__log_dict
+    
     def __get_head_dict_key(self, index):
 
         alpha_dict = {
@@ -240,7 +273,7 @@ class DataHandler:
         self.do_set_data = True
 
     def __summary(self, down_sampling_count=0):
-        print("# of     all data set -", str(self.x_data_count).rjust(5),
+        print("\n\n# of     all data set -", str(self.x_data_count).rjust(5),
               "\t# of mortality -", str(self.y_data_count).rjust(5))
         print("# of parsing data set -", str(len(self.y_data) - down_sampling_count).rjust(5),
               "\t# of mortality -", str(self.counting_mortality(self.y_data)).rjust(5))
@@ -261,7 +294,6 @@ class DataHandler:
             del self.y_data[index - POSITION_OF_ROW]
 
     def __init_erase_index_list(self):
-
         # header keys 조건이 모두 만족 할 때
         def __condition(header_key, condition):
             _erase_index_dict = {i + POSITION_OF_ROW: 0 for i in range(self.x_data_count)}
@@ -315,8 +347,11 @@ class DataHandler:
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
 
+        erase_index_list = sorted(list(set(erase_index_list)), reverse=False)
+        self.__add_to_log_dict(target=erase_index_list, target_key=KEY_ERASE_INDEX)
+
         # return list()
-        return sorted(list(set(erase_index_list)), reverse=False)
+        return erase_index_list
 
     def __init_erase_index_list_for_ct_image(self):
         erase_index_list = list()
@@ -327,6 +362,8 @@ class DataHandler:
         for index, num_id in enumerate(self.__get_raw_data(COLUMN_NUMBER)):
             if num_id not in patient_list:
                 erase_index_list.append(index + POSITION_OF_ROW)
+
+        self.__add_to_log_dict(target=erase_index_list, target_key=KEY_ERASE_INDEX)
 
         return erase_index_list
 
@@ -405,6 +442,11 @@ class DataHandler:
                   "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
                   "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
 
+        if not LOG_NAME:
+            with open(self.log_path, 'w') as outfile:
+                json.dump(self.log_dict, outfile, indent=4)
+                print("Write log file -", self.log_path)
+
     def save_log(self):
         """
         init dict of patient who have ct images
@@ -446,16 +488,22 @@ class DataHandler:
         return _raw_data_list
 
     def __init_down_sampling_list(self, down_sampling_count):
-        _down_sampling_list = list()
+        down_sampling_list = list()
 
         for _index, y in enumerate(self.y_data):
             if y == [0]:
-                _down_sampling_list.append(_index)
+                down_sampling_list.append(_index)
 
-        return sorted(random.sample(_down_sampling_list, down_sampling_count), reverse=True)
+        down_sampling_list = sorted(random.sample(down_sampling_list, down_sampling_count), reverse=True)
+        self.__add_to_log_dict(target=down_sampling_list, target_key=KEY_DOWN_SAMPLING)
+
+        return down_sampling_list
 
     def __down_sampling(self, down_sampling_count):
-        down_sampling_list = self.__init_down_sampling_list(down_sampling_count)
+        if LOG_NAME:
+            down_sampling_list = self.__get_items_in_log_dict(target_key=KEY_DOWN_SAMPLING)
+        else:
+            down_sampling_list = self.__init_down_sampling_list(down_sampling_count)
 
         for header, header_key in self.raw_header_dict.items():
             if header in self.header_list:
@@ -468,13 +516,19 @@ class DataHandler:
 
             self.save_dict[header_key] = raw_data_list
 
-    # set save dictionary for csv file
-    # {
-    #   header_1 : [ data_1 , ... , data_N ], ... , h
-    #   header_I
-    # }
-    def __set_save_dict(self):
+    def __add_to_log_dict(self, target, target_key):
+        if not LOG_NAME:
+            self.log_dict[target_key] = target
+    
+    def __get_items_in_log_dict(self, target_key):
+        return self.log_dict[target_key]
 
+    def __set_save_dict(self):
+        # set save dictionary for csv file
+        # {
+        #   header_1 : [ data_1 , ... , data_N ], ... , h
+        #   header_I
+        # }
         down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * PROPOSITION)
 
         # apply down sampling
@@ -497,7 +551,7 @@ class DataHandler:
     # if ratio == 0.8   --> 8 :   1 :   1
     def __init_index_dict(self):
         index_dict = dict()
-        data_dict = {
+        split_ratio_dict = {
             "train": list(),
             "test": list(),
             "valid": list()
@@ -509,16 +563,29 @@ class DataHandler:
             else:
                 return False
 
-        for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
-            if __is_choice(RATIO):
-                index_dict[index] = "train"
-                data_dict["train"].append(index)
-            elif __is_choice():
-                index_dict[index] = "test"
-                data_dict["test"].append(index)
-            else:
-                index_dict[index] = "valid"
-                data_dict["valid"].append(index)
+        if LOG_NAME:
+            split_ratio_dict = self.__get_items_in_log_dict(target_key=KEY_SPLIT_RATIO)
+
+            for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
+                if index in split_ratio_dict["train"]:
+                    index_dict[index] = "train"
+                elif index in split_ratio_dict["test"]:
+                    index_dict[index] = "test"
+                else:
+                    index_dict[index] = "valid"
+        else:
+            for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
+                if __is_choice(RATIO):
+                    index_dict[index] = "train"
+                    split_ratio_dict["train"].append(index)
+                elif __is_choice():
+                    index_dict[index] = "test"
+                    split_ratio_dict["test"].append(index)
+                else:
+                    index_dict[index] = "valid"
+                    split_ratio_dict["valid"].append(index)
+
+        self.__add_to_log_dict(target=split_ratio_dict, target_key=KEY_SPLIT_RATIO)
 
         return index_dict
 
