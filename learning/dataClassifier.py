@@ -16,7 +16,7 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.transferLearner import TransferLearner
-    from DMP.learning.slimLearner import SlimLearner
+    # from DMP.learning.slimLearner import SlimLearner
     from sklearn.preprocessing import StandardScaler
 
 SEED = 1
@@ -95,22 +95,22 @@ class DataClassifier:
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
 
-                # Using standard scaling
-                if DO_IMG_SCALING:
-                    scaler = StandardScaler()
-
-                    n, w, h, k = x_train.shape
-                    x_list = list(x_train.reshape([n, -1]))
-
-                    scaler.fit(x_list)
-                    x_transformed = scaler.transform(x_list)
-                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-                    n, w, h, k = x_test.shape
-                    x_list = list(x_test.reshape([n, -1]))
-
-                    x_transformed = scaler.transform(x_list)
-                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+                # # Using standard scaling
+                # if DO_IMG_SCALING:
+                #     scaler = StandardScaler()
+                #
+                #     n, w, h, k = x_train.shape
+                #     x_list = list(x_train.reshape([n, -1]))
+                #
+                #     scaler.fit(x_list)
+                #     x_transformed = scaler.transform(x_list)
+                #     x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+                #
+                #     n, w, h, k = x_test.shape
+                #     x_list = list(x_test.reshape([n, -1]))
+                #
+                #     x_transformed = scaler.transform(x_list)
+                #     x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
 
                 nn.transfer_learning(x_train, y_train, x_test, y_test)
 
@@ -133,21 +133,21 @@ class DataClassifier:
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
 
-                if DO_IMG_SCALING:
-                    scaler = StandardScaler()
-
-                    n, w, h, k = x_train.shape
-                    x_list = list(x_train.reshape([n, -1]))
-
-                    scaler.fit(x_list)
-                    x_transformed = scaler.transform(x_list)
-                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-                    n, w, h, k = x_test.shape
-                    x_list = list(x_test.reshape([n, -1]))
-
-                    x_transformed = scaler.transform(x_list)
-                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+                # if DO_IMG_SCALING:
+                #     scaler = StandardScaler()
+                #
+                #     n, w, h, k = x_train.shape
+                #     x_list = list(x_train.reshape([n, -1]))
+                #
+                #     scaler.fit(x_list)
+                #     x_transformed = scaler.transform(x_list)
+                #     x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+                #
+                #     n, w, h, k = x_test.shape
+                #     x_list = list(x_test.reshape([n, -1]))
+                #
+                #     x_transformed = scaler.transform(x_list)
+                #     x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
 
                 nn.training_end_to_end(x_train, y_train, x_test, y_test)
                 exit(-1)
@@ -172,8 +172,8 @@ class DataClassifier:
         x_data = x_train + x_valid + x_test
         y_data = y_train + y_valid + y_test
 
-        # return x_data, y_data
-        return self.__get_set(x_data, y_data)
+        return x_data, y_data
+        # return self.__get_set(x_data, y_data)
 
     def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
         x_img_data = list()
