@@ -213,8 +213,8 @@ class DataClassifier:
         random.seed(9)
         erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * 2))
 
-        # for i in sorted(erase_index_list, reverse=True):
-        #     del x_img_data[i], y_img_data[i]
+        for i in sorted(erase_index_list, reverse=True):
+            del x_img_data[i], y_img_data[i]
 
         self.__show_info(y_img_data)
 
