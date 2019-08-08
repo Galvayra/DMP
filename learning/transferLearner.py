@@ -53,7 +53,7 @@ class TransferLearner(TensorModel):
 
         for i, j in zip(y_test, y_predict):
             print(i, j)
-            
+
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
