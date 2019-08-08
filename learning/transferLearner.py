@@ -51,6 +51,9 @@ class TransferLearner(TensorModel):
         h = model.predict(x_test, batch_size=BATCH_SIZE)
         y_predict = np.argmax(h, axis=1)
 
+        for i, j in zip(y_test, y_predict):
+            print(i, j)
+            
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
@@ -97,8 +100,8 @@ class TransferLearner(TensorModel):
         h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)
         y_predict = np.argmax(h, axis=1)
 
-        # for i, j in zip(y_test, y_predict):
-        #     print(i, j)
+        for i, j in zip(y_test, y_predict):
+            print(i, j)
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)

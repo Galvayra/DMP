@@ -84,11 +84,10 @@ class DataClassifier:
 
     def transfer_learning(self):
         x_data, y_data = self.__get_total_set(has_img_paths=True)
+        x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
 
         if TYPE_OF_MODEL == "tuning":
             nn = TransferLearner()
-
-            x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
             # load pre trained model adapt input tensor size
             nn.load_pre_trained_model(input_tensor=x_img_data[0])
 
@@ -126,7 +125,6 @@ class DataClassifier:
         elif TYPE_OF_MODEL == "cnn":
             nn = TransferLearner()
 
-            x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
             # # change num of channel 3 to 1 (because the model's input channel size is 1)
             # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
 
