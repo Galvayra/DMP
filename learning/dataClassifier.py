@@ -22,6 +22,8 @@ elif current_script == "fine_tuning.py":
 SEED = 1
 DO_SHUFFLE = True
 DO_IMG_SCALING = True
+DO_SAMPLING = False
+SAMPLE_RATIO = 5
 IMG_D_TYPE = np.float32
 n = 91
 
@@ -93,25 +95,9 @@ class DataClassifier:
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-
-                # Using standard scaling
-                if DO_IMG_SCALING:
-                    scaler = StandardScaler()
-
-                    n, w, h, k = x_train.shape
-                    x_list = list(x_train.reshape([n, -1]))
-
-                    scaler.fit(x_list)
-                    x_transformed = scaler.transform(x_list)
-                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-                    n, w, h, k = x_test.shape
-                    x_list = list(x_test.reshape([n, -1]))
-
-                    x_transformed = scaler.transform(x_list)
-                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
+                x_train, y_train = self.__img_scaling(x_train, y_train)
                 nn.transfer_learning(x_train, y_train, x_test, y_test)
+                exit(-1)
 
             # nn = SlimLearner()
             #
@@ -130,25 +116,29 @@ class DataClassifier:
 
             for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-
-                if DO_IMG_SCALING:
-                    scaler = StandardScaler()
-
-                    n, w, h, k = x_train.shape
-                    x_list = list(x_train.reshape([n, -1]))
-
-                    scaler.fit(x_list)
-                    x_transformed = scaler.transform(x_list)
-                    x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-                    n, w, h, k = x_test.shape
-                    x_list = list(x_test.reshape([n, -1]))
-
-                    x_transformed = scaler.transform(x_list)
-                    x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
+                x_train, y_train = self.__img_scaling(x_train, y_train)
                 nn.training_end_to_end(x_train, y_train, x_test, y_test)
                 exit(-1)
+
+    @staticmethod
+    def __img_scaling(x_train, x_test):
+        if DO_IMG_SCALING:
+            scaling = StandardScaler()
+
+            n, w, h, k = x_train.shape
+            x_list = list(x_train.reshape([n, -1]))
+
+            scaling.fit(x_list)
+            x_transformed = scaling.transform(x_list)
+            x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
+            n, w, h, k = x_test.shape
+            x_list = list(x_test.reshape([n, -1]))
+
+            x_transformed = scaling.transform(x_list)
+            x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+
+            return x_train, x_test
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
@@ -197,27 +187,30 @@ class DataClassifier:
                     x_img_data.append(images)
                     y_img_data.append(y_value)
 
-        # # sampling
-        # erase_index_list = list()
-        # cnt_of_death = int()
-        #
-        # for i in range(len(y_img_data)):
-        #     if y_img_data[i] == [0]:
-        #         erase_index_list.append(i)
-        #     else:
-        #         cnt_of_death += 1
-        #
-        # random.seed(5)
-        # random.shuffle(erase_index_list)
-        # random.seed(9)
-        # erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * 2))
-        #
-        # for i in sorted(erase_index_list, reverse=True):
-        #     del x_img_data[i], y_img_data[i]
-
+        self.__sampling(x_img_data, y_img_data)
         self.__show_info(y_img_data)
 
         return self.__get_set(x_img_data, y_img_data)
+
+    @staticmethod
+    def __sampling(x_img_data, y_img_data):
+        if DO_SAMPLING:
+            erase_index_list = list()
+            cnt_of_death = int()
+
+            for i in range(len(y_img_data)):
+                if y_img_data[i] == [0]:
+                    erase_index_list.append(i)
+                else:
+                    cnt_of_death += 1
+
+            random.seed(5)
+            random.shuffle(erase_index_list)
+            random.seed(9)
+            erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * SAMPLE_RATIO))
+
+            for i in sorted(erase_index_list, reverse=True):
+                del x_img_data[i], y_img_data[i]
 
     @staticmethod
     def __get_set(x_data, y_data):

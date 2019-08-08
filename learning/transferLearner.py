@@ -5,7 +5,6 @@ from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 from keras.optimizers import Adam
-from sklearn.metrics import confusion_matrix
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from DMP.learning.variables import KEY_TEST
 from time import time
@@ -14,6 +13,7 @@ import numpy as np
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
 BATCH_SIZE = 32
+DO_FINE_TUNING = True
 
 
 class TransferLearner(TensorModel):
@@ -33,8 +33,6 @@ class TransferLearner(TensorModel):
         self.__init_custom_model()
         self.__fine_tuning(x_train, y_train, x_test, y_test)
         self.__predict_model(x_test, y_test)
-        exit(-1)
-        # print(custom_model.evaluate(x_test, y_test))
 
     def training_end_to_end(self, x_train, y_train, x_test, y_test):
         model = self.__cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, 3), num_cnn_layers=2)
@@ -60,12 +58,8 @@ class TransferLearner(TensorModel):
 
         y_predict = np.array(y_predict)
 
-        cm = confusion_matrix(y_test, y_predict)
-        print(cm)
-
-        #
-        # for i, j, regress in zip(y_test, y_predict, h):
-        #     print(i, j, regress)
+        for i, j, regress in zip(y_test, y_predict, h):
+            print(i, j, regress)
 
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
@@ -97,7 +91,7 @@ class TransferLearner(TensorModel):
     def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
         for layer in self.custom_model.layers[:7]:
-            layer.trainable = False
+            layer.trainable = DO_FINE_TUNING
 
         # set file names for saving
         self.set_name_of_log()
@@ -114,10 +108,9 @@ class TransferLearner(TensorModel):
         # y_predict = np.argmax(h, axis=1)
         y_predict = (h > 0.5)
 
-        # for i, j, regress in zip(y_test, y_predict, h):
-        #     print(i, j, regress)
-        cm = confusion_matrix(y_test, y_predict)
-        print(cm)
+        for i, j, regress in zip(y_test, y_predict, h):
+            print(i, j, regress)
+
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
