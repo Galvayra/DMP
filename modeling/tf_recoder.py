@@ -1,7 +1,6 @@
-import os
-import numpy as np
 from PIL import Image
 import tensorflow as tf
+from .variables import EXTENSION_OF_IMAGE, EXTENSION_OF_TF_RECORD
 
 
 def _int64_feature(value):
@@ -35,28 +34,34 @@ def _validate_text(text):
         return str(text)
 
 
-def to_tfrecords(image_list, label_list, tfrecords_name):
-    print("Start converting")
-    options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
-    writer = tf.python_io.TFRecordWriter(path=tfrecords_name, options=options)
+def to_tf_records(image_list, label_list, tf_record_path):
+    for i in range(len(image_list)):
+        img_path = image_list[i]
+        save_tf_record_path = tf_record_path + get_tf_record_path(img_path)
 
-    for image_path, label_path in zip(image_list, label_list):
-        image = Image.open(image_path)
-        label = Image.open(label_path)
-        _binary_image = image.tostring()
-        _binary_label = label.tostring()
-        filename = os.path.basename(image_path)
+        with tf.python_io.TFRecordWriter(save_tf_record_path) as writer:
+            img = __get_img(img_path)
+            label = label_list[i][0]
 
-        string_set = tf.train.Example(features=tf.train.Features(feature={
-            'height': _int64_feature(image.shape[0]),
-            'width': _int64_feature(image.shape[1]),
-            'Image': _bytes_feature(_binary_image),
-            'Label': _bytes_feature(_binary_label),
-            'mean': _float_feature(image.mean().astype(np.float32)),
-            'std': _float_feature(image.std().astype(np.float32)),
-            'filename': _bytes_feature(str.encode(filename)),
-        }))
+            # Create a feature
+            feature = {'label': _int64_feature(label),
+                       'image': _bytes_feature(tf.compat.as_bytes(img.tobytes()))}
 
-        writer.write(string_set.SerializeToString())
+            # Create an example protocol buffer
+            example = tf.train.Example(features=tf.train.Features(feature=feature))
 
-    writer.close()
+            # Serialize to string and write on the file
+            writer.write(example.SerializeToString())
+
+
+def get_tf_record_path(img_path):
+    image_path_list = img_path.split('/')
+    folder_name = image_path_list[-2]
+    file_name = image_path_list[-1].split(EXTENSION_OF_IMAGE)[0]
+
+    return folder_name + "_" + file_name + EXTENSION_OF_TF_RECORD
+
+
+# Load the image
+def __get_img(img_path):
+    return Image.open(img_path)

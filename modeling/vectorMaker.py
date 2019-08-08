@@ -2,12 +2,15 @@ import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
-    KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
+    KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID, TF_RECORD_PATH
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
+from DMP.modeling.tf_recoder import to_tf_records
 import json
+import os
+import shutil
 
 
 ###
@@ -42,6 +45,7 @@ class VectorMaker:
 
         self.__dump_path = path.dirname(path.abspath(__file__)) + "/" + DUMP_PATH
         self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
+        self.__tf_record_path = path.dirname(path.abspath(__file__)) + "/" + TF_RECORD_PATH + op.FILE_VECTOR + "/"
 
     @property
     def y_data(self):
@@ -63,6 +67,10 @@ class VectorMaker:
     def image_path(self):
         return self.__image_path
 
+    @property
+    def tf_record_path(self):
+        return self.__tf_record_path
+
     def encoding(self, encode_image=False):
         ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
 
@@ -82,8 +90,6 @@ class VectorMaker:
         self.__set_vector_matrix(matrix_dict)
 
         if encode_image:
-            # ct_dict = self.__load_ct_dict()
-
             image_matrix_dict = {
                 KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
                 KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
@@ -126,27 +132,29 @@ class VectorMaker:
         for key, matrix in matrix_dict.items():
             self.vector_matrix[key] = matrix
 
-    # def __load_ct_dict(self):
-    #     with open(self.image_path + IMAGE_LOG_PATH + IMAGE_LOG_NAME, 'r') as r_file:
-    #         return json.load(r_file)
-
     def build_tf_records(self):
-        def __get_set(x_path_target, y_target):
-            paths, y_labels = x_path_target, y_target
-            _x_data, _y_data = list(), list()
+        if os.path.isdir(self.tf_record_path):
+            shutil.rmtree(self.tf_record_path)
+        os.mkdir(self.tf_record_path)
 
-            for img_paths, y in zip(paths, y_labels):
-                for img_path in img_paths:
-                    _x_data.append(img_path)
-                    _y_data.append(y)
+        for key_x, key_y in zip([KEY_IMG_TRAIN, KEY_IMG_VALID, KEY_IMG_TEST], ['y_train', 'y_valid', 'y_test']):
+            x_data, y_data = self.__get_set(self.vector_matrix[key_x], self.vector_matrix[key_y])
+            to_tf_records(x_data, y_data, self.tf_record_path)
 
-            return _x_data, _y_data
+        print("\n=========================================================\n")
+        print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
 
-        x_data, y_data = __get_set(self.vector_matrix[KEY_IMG_VALID], self.vector_matrix["y_valid"])
+    @staticmethod
+    def __get_set(x_path_target, y_target):
+        paths, y_labels = x_path_target, y_target
+        _x_data, _y_data = list(), list()
 
+        for img_paths, y in zip(paths, y_labels):
+            for img_path in img_paths:
+                _x_data.append(img_path)
+                _y_data.append(y)
 
-
-        print(len(x_data), len(y_data))
+        return _x_data, _y_data
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):

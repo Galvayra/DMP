@@ -37,4 +37,4 @@ if __name__ == '__main__':
         vectorMaker.build_tf_records()
     else:
         vectorMaker.encoding()
-    vectorMaker.dump()
+    # vectorMaker.dump()

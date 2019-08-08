@@ -4,7 +4,7 @@ import numpy as np
 import json
 import math
 import sys
-import cv2
+from DMP.modeling.variables import EXTENSION_OF_IMAGE
 
 current_script = sys.argv[0].split('/')[-1]
 
@@ -26,9 +26,9 @@ elif current_script == "fine_tuning.py":
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
     from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 
+
 alivePath = 'alive/'
 deathPath = 'death/'
-EXTENSION_OF_IMAGE = '.jpg'
 
 
 class DataHandler:

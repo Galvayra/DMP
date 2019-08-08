@@ -12,6 +12,7 @@ modeling/save/
 modeling/embedding/
 modeling/parsing_result/
 modeling/fsResult/
+modeling/tf_records/
 reference/
 result/
 make/
