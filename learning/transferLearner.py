@@ -49,7 +49,7 @@ class TransferLearner(TensorModel):
         model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
 
         h = model.predict(x_test, batch_size=BATCH_SIZE)
-        y_predict = np.argmax(h, axis=1)
+        y_predict = (h > 0.5)
 
         for i, j, regress in zip(y_test, y_predict, h):
             print(i, j, regress)
@@ -98,7 +98,8 @@ class TransferLearner(TensorModel):
 
     def __predict_model(self, x_test, y_test):
         h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)
-        y_predict = np.argmax(h, axis=1)
+        # y_predict = np.argmax(h, axis=1)
+        y_predict = (h > 0.5)
 
         for i, j, regress in zip(y_test, y_predict, h):
             print(i, j, regress)
