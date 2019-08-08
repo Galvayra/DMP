@@ -5,7 +5,8 @@ from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 from keras.optimizers import Adam
-from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+# from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from DMP.learning.variables import KEY_TEST
 from time import time
 import numpy as np
@@ -87,7 +88,7 @@ class TransferLearner(TensorModel):
                             histogram_freq=0, write_graph=True, write_images=True)
         ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
         self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
-        self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH, validation_data=(x_train, y_train), callbacks=[board])
+        self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH, callbacks=[board])
         # self.custom_model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
 
     def __predict_model(self, x_test, y_test):
