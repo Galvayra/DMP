@@ -5,6 +5,7 @@ from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 from keras.optimizers import Adam
+from sklearn.metrics import confusion_matrix
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from DMP.learning.variables import KEY_TEST
 from time import time
@@ -49,10 +50,22 @@ class TransferLearner(TensorModel):
         model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
 
         h = model.predict(x_test, batch_size=BATCH_SIZE)
-        y_predict = (h > 0.5)
+        y_predict = list()
 
-        for i, j, regress in zip(y_test, y_predict, h):
-            print(i, j, regress)
+        for regress in h:
+            if regress > 0.5:
+                y_predict.append(1.0)
+            else:
+                y_predict.append(0.0)
+
+        y_predict = np.array(y_predict)
+
+        cm = confusion_matrix(y_test, y_predict)
+        print(cm)
+
+        #
+        # for i, j, regress in zip(y_test, y_predict, h):
+        #     print(i, j, regress)
 
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
@@ -84,7 +97,7 @@ class TransferLearner(TensorModel):
     def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
         for layer in self.custom_model.layers[:7]:
-            layer.trainable = True
+            layer.trainable = False
 
         # set file names for saving
         self.set_name_of_log()
@@ -101,8 +114,10 @@ class TransferLearner(TensorModel):
         # y_predict = np.argmax(h, axis=1)
         y_predict = (h > 0.5)
 
-        for i, j, regress in zip(y_test, y_predict, h):
-            print(i, j, regress)
+        # for i, j, regress in zip(y_test, y_predict, h):
+        #     print(i, j, regress)
+        cm = confusion_matrix(y_test, y_predict)
+        print(cm)
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)

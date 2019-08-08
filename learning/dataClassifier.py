@@ -171,7 +171,6 @@ class DataClassifier:
         y_data = y_train + y_valid + y_test
 
         return x_data, y_data
-        # return self.__get_set(x_data, y_data)
 
     def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
         x_img_data = list()
@@ -198,23 +197,23 @@ class DataClassifier:
                     x_img_data.append(images)
                     y_img_data.append(y_value)
 
-        # sampling
-        erase_index_list = list()
-        cnt_of_death = int()
-
-        for i in range(len(y_img_data)):
-            if y_img_data[i] == [0]:
-                erase_index_list.append(i)
-            else:
-                cnt_of_death += 1
-
-        random.seed(5)
-        random.shuffle(erase_index_list)
-        random.seed(9)
-        erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * 2))
-
-        for i in sorted(erase_index_list, reverse=True):
-            del x_img_data[i], y_img_data[i]
+        # # sampling
+        # erase_index_list = list()
+        # cnt_of_death = int()
+        #
+        # for i in range(len(y_img_data)):
+        #     if y_img_data[i] == [0]:
+        #         erase_index_list.append(i)
+        #     else:
+        #         cnt_of_death += 1
+        #
+        # random.seed(5)
+        # random.shuffle(erase_index_list)
+        # random.seed(9)
+        # erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * 2))
+        #
+        # for i in sorted(erase_index_list, reverse=True):
+        #     del x_img_data[i], y_img_data[i]
 
         self.__show_info(y_img_data)
 
