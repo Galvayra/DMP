@@ -31,39 +31,25 @@ class TransferLearner(TensorModel):
 
     def transfer_learning(self, x_train, y_train, x_test, y_test):
         self.__init_custom_model()
-        self.__fine_tuning(x_train, y_train, x_test, y_test)
+        self.__training(x_train, y_train)
         self.__predict_model(x_test, y_test)
 
     def training_end_to_end(self, x_train, y_train, x_test, y_test):
-        model = self.__cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, 3), num_cnn_layers=2)
-        # set file names for saving
-        self.set_name_of_log()
-        self.set_name_of_tensor()
+        self.__init_cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, 3), num_cnn_layers=2)
+        self.__training(x_train, y_train)
+        self.__predict_model(x_test, y_test)
 
-        board = TensorBoard(log_dir=self.name_of_log + "/fold_" + str(self.num_of_fold),
-                            histogram_freq=0, write_graph=True, write_images=True)
-        ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
-
-        model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
-        model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
-
-        h = model.predict(x_test, batch_size=BATCH_SIZE)
+    @staticmethod
+    def __get_y_predict(history):
         y_predict = list()
 
-        for regress in h:
+        for regress in history:
             if regress > 0.5:
                 y_predict.append(1.0)
             else:
                 y_predict.append(0.0)
 
-        y_predict = np.array(y_predict)
-
-        for i, j, regress in zip(y_test, y_predict, h):
-            print(i, j, regress)
-
-        self.compute_score(y_test, y_predict, h)
-        self.set_score(target=KEY_TEST)
-        self.show_score(target=KEY_TEST)
+        return np.array(y_predict)
 
     def __init_custom_model(self):
         self.num_of_fold += 1
@@ -85,14 +71,14 @@ class TransferLearner(TensorModel):
         # Creating new model. Please note that this is NOT a Sequential() model.
         self.custom_model = Model(input=self.trained_model.input, output=x)
 
-        # if DO_SHOW:
-        #     print(self.custom_model.summary())
-
-    def __fine_tuning(self, x_train, y_train, x_test, y_test):
         # Make sure that the pre-trained bottom layers are not trainable
         for layer in self.custom_model.layers[:7]:
             layer.trainable = DO_FINE_TUNING
 
+        # if DO_SHOW:
+        #     print(self.custom_model.summary())
+
+    def __training(self, x_train, y_train):
         # set file names for saving
         self.set_name_of_log()
         self.set_name_of_tensor()
@@ -102,57 +88,53 @@ class TransferLearner(TensorModel):
         ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
         self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
         self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH)
+        # self.custom_model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
 
     def __predict_model(self, x_test, y_test):
         h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)
-        # y_predict = np.argmax(h, axis=1)
-        y_predict = (h > 0.5)
-
-        for i, j, regress in zip(y_test, y_predict, h):
-            print(i, j, regress)
+        y_predict = self.__get_y_predict(h)
 
         self.compute_score(y_test, y_predict, h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
 
-    def __cnn_model(self, img_shape, num_cnn_layers):
+    def __init_cnn_model(self, img_shape, num_cnn_layers):
         self.num_of_fold += 1
         NUM_FILTERS = 32
         KERNEL = (3, 3)
-        # MIN_NEURONS = 20
-        MAX_NEURONS = 120
 
-        model = Sequential()
+        self.custom_model = Sequential()
 
+        # feature map 1
         for i in range(1, num_cnn_layers + 1):
             if i == 1:
-                model.add(Conv2D(NUM_FILTERS * i, KERNEL, input_shape=img_shape, activation='relu', padding='same'))
+                self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, input_shape=img_shape, activation='relu',
+                                             padding='same'))
             else:
-                model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+                self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
 
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-
+        # feature map 2
         for i in range(1, num_cnn_layers + 1):
-            model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+            self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
 
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-
+        # feature map 3
         for i in range(1, num_cnn_layers + 1):
-            model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+            self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
+        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
 
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        
-        model.add(Flatten())
-        model.add(Dense(2048, activation='relu'))
-        model.add(Dropout(0.25))
-        model.add(Dense(1024, activation='relu'))
-        model.add(Dropout(0.25))
-        model.add(Dense(256, activation='relu'))
-        model.add(Dropout(0.25))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
+        # FC
+        self.custom_model.add(Flatten())
+        self.custom_model.add(Dense(2048, activation='relu'))
+        self.custom_model.add(Dropout(0.25))
+        self.custom_model.add(Dense(1024, activation='relu'))
+        self.custom_model.add(Dropout(0.25))
+        self.custom_model.add(Dense(256, activation='relu'))
+        self.custom_model.add(Dropout(0.25))
+        self.custom_model.add(Dense(1, activation='sigmoid'))
+        self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
 
         if DO_SHOW:
-            model.summary()
+            self.custom_model.summary()
 
-        return model

@@ -97,7 +97,7 @@ class DataClassifier:
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
                 x_train, x_test = self.__img_scaling(x_train, x_test)
                 nn.transfer_learning(x_train, y_train, x_test, y_test)
-                # exit(-1)
+                exit(-1)
 
             # nn = SlimLearner()
             #
@@ -118,7 +118,7 @@ class DataClassifier:
                 self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
                 x_train, x_test = self.__img_scaling(x_train, x_test)
                 nn.training_end_to_end(x_train, y_train, x_test, y_test)
-                # exit(-1)
+                exit(-1)
 
     @staticmethod
     def __img_scaling(x_train, x_test):
