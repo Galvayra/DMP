@@ -1,13 +1,15 @@
 from DMP.utils.arg_fine_tuning import *
 from DMP.learning.neuralNet import TensorModel
-from DMP.learning.variables import IMAGE_RESIZE
+from DMP.learning.variables import IMAGE_RESIZE, N_CHANNEL
 from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 from keras.optimizers import Adam
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+import tensorflow as tf
 from DMP.learning.variables import KEY_TEST
 import numpy as np
+from DMP.modeling.tf_recoder import get_img_from_tf_records, EXTENSION_OF_TF_RECORD
 
 ALIVE_DIR = 'alive'
 DEATH_DIR = 'death'
@@ -33,10 +35,43 @@ class TransferLearner(TensorModel):
         self.__training(x_train, y_train)
         self.__predict_model(x_test, y_test)
 
-    def training_end_to_end(self, x_train, y_train, x_test, y_test):
-        self.__init_cnn_model(img_shape=(IMAGE_RESIZE, IMAGE_RESIZE, 3), num_cnn_layers=2)
-        self.__training(x_train, y_train)
-        self.__predict_model(x_test, y_test)
+    def training_end_to_end(self, tf_record_path):
+        self.num_of_fold += 1
+        train_tf_record_path = tf_record_path + "train_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+        test_tf_record_path = tf_record_path + "test_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+
+        x_train_tensor, y_train_tensor = get_img_from_tf_records(train_tf_record_path)
+        x_test_tensor, y_test_tensor = get_img_from_tf_records(test_tf_record_path)
+
+        x_train, y_train = tf.train.shuffle_batch([x_train_tensor, y_train_tensor], batch_size=16,
+                                                  capacity=30, num_threads=2, min_after_dequeue=10)
+        x_test, y_test = tf.train.shuffle_batch([x_test_tensor, y_test_tensor], batch_size=16,
+                                                capacity=30, num_threads=2, min_after_dequeue=10)
+
+        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+
+        with tf.Session() as sess:
+            sess.run(init_op)
+
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(coord=coord)
+            n_iter = int()
+            try:
+                while not coord.should_stop():
+                    n_iter += 1
+                    x_batch, y_batch = sess.run([x_train, y_train])
+                    print(n_iter, type(x_batch), x_batch.shape, len(y_batch), y_batch.shape)
+            except tf.errors.OutOfRangeError:
+                pass
+            finally:
+                coord.request_stop()
+                coord.join(threads)
+
+        tf.reset_default_graph()
+
+        # print(images.shape, labels.shape)
+        #
+        # self.transfer_learning(images, labels, list(), list())
 
     @staticmethod
     def __get_y_predict(history):
@@ -136,4 +171,3 @@ class TransferLearner(TensorModel):
 
         if DO_SHOW:
             self.custom_model.summary()
-
