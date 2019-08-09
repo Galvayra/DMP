@@ -8,6 +8,8 @@ from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
 from DMP.modeling.tf_recoder import to_tf_records
+from sklearn.model_selection import KFold
+from DMP.learning.variables import NUM_OF_K_FOLD
 import json
 import os
 import shutil
@@ -137,9 +139,15 @@ class VectorMaker:
             shutil.rmtree(self.tf_record_path)
         os.mkdir(self.tf_record_path)
 
-        for key_x, key_y in zip([KEY_IMG_TRAIN, KEY_IMG_VALID, KEY_IMG_TEST], ['y_train', 'y_valid', 'y_test']):
-            x_data, y_data = self.__get_set(self.vector_matrix[key_x], self.vector_matrix[key_y])
-            to_tf_records(x_data, y_data, self.tf_record_path)
+        x_train, y_train = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+        x_valid, y_valid = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+        x_test, y_test = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+
+        x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
+
+        for n_fold, x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+            to_tf_records(x_train, y_train, self.tf_record_path + "train_" + str(n_fold))
+            to_tf_records(x_test, y_test, self.tf_record_path + "test_" + str(n_fold))
 
         print("\n=========================================================\n")
         print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
@@ -155,6 +163,23 @@ class VectorMaker:
                 _y_data.append(y)
 
         return _x_data, _y_data
+
+    @staticmethod
+    def __get_data_matrix(_data, _index_list):
+        return [_data[i] for i in _index_list]
+
+    def __data_generator(self, x_data, y_data):
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
+        n_fold = int()
+
+        for train_index_list, test_index_list in cv.split(x_data, y_data):
+            n_fold += 1
+            x_train = self.__get_data_matrix(x_data, train_index_list)
+            y_train = self.__get_data_matrix(y_data, train_index_list)
+            x_test = self.__get_data_matrix(x_data, test_index_list)
+            y_test = self.__get_data_matrix(y_data, test_index_list)
+
+            yield n_fold, x_train, y_train, x_test, y_test
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):

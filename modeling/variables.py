@@ -15,9 +15,10 @@ KEY_IMG_TEST = "img_test"
 W2V_PATH = "embedding/"
 W2V_FILE = "model.txt"
 
+MODELING_PATH = "modeling/"
 TF_RECORD_PATH = "tf_records/"
 EXTENSION_OF_IMAGE = '.jpg'
-EXTENSION_OF_TF_RECORD = ".tfrecords"
+# NAME_OF_TF_RECORD = "images"
 
 KEY_NAME_OF_MERGE_VECTOR = "merge"
 
