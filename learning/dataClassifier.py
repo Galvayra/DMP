@@ -15,8 +15,8 @@ elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH, VERSION
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
-    from DMP.learning.transferLearner import TransferLearner
-    # from DMP.learning.slimLearner import SlimLearner
+    # from DMP.learning.transferLearner import TransferLearner
+    from DMP.learning.slimLearner import SlimLearner
     from sklearn.preprocessing import StandardScaler
     from DMP.learning.variables import NUM_OF_K_FOLD
 
@@ -86,79 +86,12 @@ class DataClassifier:
         nn.save_process_time()
 
     def transfer_learning(self):
-        nn = TransferLearner()
+        nn = SlimLearner(self.dataHandler.tf_record_path)
+        x_data, y_data = self.__get_total_set(has_img_paths=True)
+        x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
 
-        for _ in range(NUM_OF_K_FOLD):
-            nn.training_end_to_end(self.dataHandler.tf_record_path)
-
-
-        # if TYPE_OF_MODEL == "tuning":
-        #     nn = TransferLearner()
-        #     # load pre trained model adapt input tensor size
-        #     nn.load_pre_trained_model(input_tensor=x_img_data[0])
-        #
-        #     for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-        #         self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-        #         x_train, x_test = self.__img_scaling(x_train, x_test)
-        #         nn.transfer_learning(x_train, y_train, x_test, y_test)
-        #         exit(-1)
-        #
-        #     # nn = SlimLearner()
-        #     #
-        #     # x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
-        #     #
-        #     # for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=False):
-        #     #
-        #     #     nn.run_fine_tuning(x_train, y_train)
-        #     #     exit(-1)
-        #
-        # elif TYPE_OF_MODEL == "cnn":
-        #     nn = TransferLearner()
-        #
-        #     # # change num of channel 3 to 1 (because the model's input channel size is 1)
-        #     # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
-        #
-        #     for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-        #         self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-        #         x_train, x_test = self.__img_scaling(x_train, x_test)
-        #         nn.training_end_to_end(x_train, y_train, x_test, y_test)
-        #         exit(-1)
-
-    # def transfer_learning(self):
-    #     x_data, y_data = self.__get_total_set(has_img_paths=True)
-    #     x_img_data, y_data = self.__get_total_image_set(x_data, y_data)
-    #
-    #     if TYPE_OF_MODEL == "tuning":
-    #         nn = TransferLearner()
-    #         # load pre trained model adapt input tensor size
-    #         nn.load_pre_trained_model(input_tensor=x_img_data[0])
-    #
-    #         for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-    #             self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-    #             x_train, x_test = self.__img_scaling(x_train, x_test)
-    #             nn.transfer_learning(x_train, y_train, x_test, y_test)
-    #             exit(-1)
-    #
-    #         # nn = SlimLearner()
-    #         #
-    #         # x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
-    #         #
-    #         # for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=False):
-    #         #
-    #         #     nn.run_fine_tuning(x_train, y_train)
-    #         #     exit(-1)
-    #
-    #     elif TYPE_OF_MODEL == "cnn":
-    #         nn = TransferLearner()
-    #
-    #         # # change num of channel 3 to 1 (because the model's input channel size is 1)
-    #         # x_img_data = self.dataHandler.reshape_image_for_cnn(x_img_data)
-    #
-    #         for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data, cast_numpy=True):
-    #             self.__show_info_during_training(nn.num_of_fold, y_train, y_test)
-    #             x_train, x_test = self.__img_scaling(x_train, x_test)
-    #             nn.training_end_to_end(x_train, y_train, x_test, y_test)
-    #             exit(-1)
+        for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
+            nn.run_fine_tuning(x_train, x_test)
 
     @staticmethod
     def __img_scaling(x_train, x_test):

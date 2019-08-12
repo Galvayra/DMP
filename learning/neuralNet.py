@@ -67,3 +67,6 @@ class TensorModel(MyScore):
     def get_name_of_tensor(self):
         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
+    def clear_tensor(self):
+        self.tf_x = None
+        self.tf_y = None

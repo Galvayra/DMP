@@ -1,135 +1,71 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tf_recoder import to_tfrecords
+from DMP.modeling.tfRecorder import TfRecorder
+from .variables import *
+from DMP.utils.progress_bar import show_progress_bar
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
-from urllib.request import urlopen
 import sys
-import cv2
-SLIM_PATH = '/home/nlp207/Project/models/research/slim'
+from os import path, getcwd
+import matplotlib.pyplot as plt
+
+SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
 
 from preprocessing import vgg_preprocessing
 
-ALIVE_DIR = 'alive'
-DEATH_DIR = 'death'
-BATCH_SIZE = 32
 VGG_PATH = 'dataset/images/save/vgg_16.ckpt'
 
 
 class SlimLearner(TensorModel):
-    def __init__(self):
+    def __init__(self, tf_record_path):
         super().__init__(is_cross_valid=True)
+        self.__tf_record_path = tf_record_path
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = int()
+        self.tf_recorder = TfRecorder(tf_record_path)
 
-    def show(self):
-        weights = slim.variable('weights',
-                                shape=[10, 10, 3, 3],
-                                initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                regularizer=slim.l2_regularizer(0.05),
-                                device='/CPU:0')
+    @property
+    def tf_record_path(self):
+        return self.__tf_record_path
 
-        with tf.Session() as sess:
-            weights = sess.run(weights)
-            print(weights)
+    def __concat_tensor(self, target, prefix):
+        for i, img_path in enumerate(sorted(target)):
+            tf_img, tf_label = self.tf_recorder.get_img_from_tf_records(img_path)
+            tf_img = tf.expand_dims(tf_img, 0)
+            tf_label = tf.expand_dims(tf_label, 0)
 
-    # 0. mnist 불러오기
-    @staticmethod
-    def mnist_load():
-        (train_x, train_y), (test_x, test_y) = tf.keras.datasets.mnist.load_data()
+            if i + 1 == 1:
+                self.tf_x = tf_img
+                self.tf_y = tf_label
+            elif i + 1 == len(target):
+                self.tf_x = tf.concat([self.tf_x, tf_img], 0, name=NAME_X + '_' + str(self.num_of_fold))
+                self.tf_y = tf.concat([self.tf_y, tf_label], 0, name=NAME_Y + '_' + str(self.num_of_fold))
+            else:
+                self.tf_x = tf.concat([self.tf_x, tf_img], 0)
+                self.tf_y = tf.concat([self.tf_y, tf_label], 0)
 
-        # Train - Image
-        train_x = train_x.astype('float32') / 255
-        # Train - Label(OneHot)
-        train_y = tf.keras.utils.to_categorical(train_y, num_classes=10)
+            show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
 
-        # Test - Image
-        test_x = test_x.astype('float32') / 255
-        # Test - Label(OneHot)
-        test_y = tf.keras.utils.to_categorical(test_y, num_classes=10)
+    def run_fine_tuning(self, x_train, x_test):
+        self.num_of_fold += 1
+        self.__concat_tensor(x_test, prefix="test ")
 
-        return (train_x, train_y), (test_x, test_y)
+        # set file names for saving
+        self.set_name_of_log()
+        self.set_name_of_tensor()
+        tf.Variable(self.learning_rate, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
+        tf.Variable(self.num_of_hidden, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
 
-    def run_fine_tuning(self, x_train, y_train):
-        def _int64_feature(value):
-            return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 
-        def _bytes_feature(value):
-            return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-        print(len(x_train))
-        print(len(y_train))
-        # to_tfrecords(x_train, y_train, 'tf_record')
-
-        train_filename = 'train.tfrecords'  # address to save the TFRecords file
-        # open the TFRecords file
-        writer = tf.python_io.TFRecordWriter(train_filename)
-        for i in range(len(x_train)):
-            # print how many images are saved every 1000 images
-            'Train data: {}/{}'.format(i, len(x_train))
-            sys.stdout.flush()
-
-            # Load the image
-            img = self.load_image(x_train[i])
-            label = y_train[i][0]
-            # Create a feature
-            feature = {'train/label': _int64_feature(label),
-                       'train/image': _bytes_feature(tf.compat.as_bytes(img.tostring()))}
-            # Create an example protocol buffer
-            example = tf.train.Example(features=tf.train.Features(feature=feature))
-
-            # Serialize to string and write on the file
-            writer.write(example.SerializeToString())
-
-        writer.close()
-        sys.stdout.flush()
-
-    @staticmethod
-    def load_image(addr):
-        # read an image and resize to (224, 224)
-        # cv2 load images as BGR, convert it to RGB
-        img = cv2.imread(addr)
-        img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = img.astype(np.float32)
-        return img
-        # for i, j in zip(x_train, y_train):
-        #     print(i, j)
-            # print(np.array(i).shape, np.array(j).shape)
-        #
-        # image_size = vgg.vgg_16.default_image_size  # image_size = 224
-
-        # exculde = ['vgg_16/fc8']
-        # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
-        #
-        # saver = tf.train.Saver(variables_to_restore)
-        # with tf.Session() as sess:
-        #     saver.restore(sess, VGG_PATH)
-        #
-        #     model_variables = slim.get_model_variables()
-        #
-        #     print(model_variables)
-        #
-        # print(model_variables)
-        # print(x_train.shape)
-        # print(slim.get_model_variables('vgg_16'))
+        ################# 신경망 만들기
 
 
-        # load_vars = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
-        #
-        # with tf.Session() as sess:
-        #     load_vars(sess)
-
-        # # vgg_preprocessing을 이용해 전처리 수행
-        # processed_img = vgg_preprocessing.preprocess_image(x_train[0],
-        #                                                    image_size,
-        #                                                    image_size,
-        #                                                    is_training=False)
-        #
-        # print(processed_img)
-        #
-        # processed_images = tf.expand_dims(processed_img, 0)
+        print("finish")
+        exit(-1)
+        tf.reset_default_graph()
+        self.clear_tensor()
 
     def run(self):
         (train_x, train_y), (test_x, test_y) = self.mnist_load()

@@ -56,11 +56,9 @@ NUM_OF_LOSS_OVER_FIT = 3
 NUM_OF_SAVE_EPOCH = 50
 
 # mini-batch size
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
 # Image options #
 # set CT image size
-# IMAGE_RESIZE = INITIAL_IMAGE_SIZE
 IMAGE_RESIZE = 224
-N_CHANNEL = 3
 DO_NORMALIZE = False

@@ -7,7 +7,7 @@ from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
-from DMP.modeling.tf_recoder import to_tf_records
+from DMP.modeling.tfRecorder import TfRecorder
 from sklearn.model_selection import KFold
 from DMP.learning.variables import NUM_OF_K_FOLD
 import json
@@ -143,8 +143,8 @@ class VectorMaker:
         x_valid, y_valid = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
         x_test, y_test = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
 
-        x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
-        to_tf_records(x_data, y_data, self.tf_record_path)
+        tf_recorder = TfRecorder(self.tf_record_path)
+        tf_recorder.to_tf_records(x_train + x_valid + x_test, y_train + y_valid + y_test)
 
         print("\n=========================================================\n")
         print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
