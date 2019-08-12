@@ -5,7 +5,6 @@ dataset/images/ct_dict/
 dataset/images/image_data/
 dataset/images/csv_data/
 dataset/images/cs/
-dataset/images/save/
 learning/model/
 modeling/vectors/
 modeling/save/

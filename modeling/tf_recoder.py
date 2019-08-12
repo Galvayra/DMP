@@ -2,7 +2,8 @@ import cv2
 import tensorflow as tf
 import numpy as np
 from .variables import EXTENSION_OF_IMAGE
-from DMP.learning.variables import IMAGE_RESIZE
+from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
+from DMP.utils.progress_bar import show_progress_bar
 
 EXTENSION_OF_TF_RECORD = ".tfrecords"
 
@@ -39,14 +40,15 @@ def _validate_text(text):
 
 
 def to_tf_records(image_list, label_list, tf_record_path):
-    tf_record_path += EXTENSION_OF_TF_RECORD
-    with tf.python_io.TFRecordWriter(tf_record_path) as writer:
-        for i in range(len(image_list)):
-            img_path = image_list[i]
+    for i in range(len(image_list)):
+        img_path = image_list[i]
+        record_name = get_record_name_from_img_path(img_path)
+
+        with tf.python_io.TFRecordWriter(tf_record_path + record_name) as writer:
             img = load_image(img_path)
             label = label_list[i]
-
             # Create a feature
+
             feature = {'label': _int64_feature(label),
                        'image': _bytes_feature(tf.compat.as_bytes(img.tobytes()))}
 
@@ -56,7 +58,16 @@ def to_tf_records(image_list, label_list, tf_record_path):
             # Serialize to string and write on the file
             writer.write(example.SerializeToString())
 
-        print('success converting to the tfrecords -', tf_record_path)
+        show_progress_bar(i, len(image_list), prefix="Save tfRecord")
+        # print('success converting to the tfrecords -', tf_record_path)
+
+
+def get_record_name_from_img_path(img_path):
+    img_path = img_path.split('/')
+    num_of_patient = img_path[-2]
+    num_of_image = img_path[-1].split('.jpg')[0]
+
+    return num_of_patient + "_" + num_of_image  + EXTENSION_OF_TF_RECORD
 
 
 def get_img_from_tf_records(tf_record_path):
@@ -74,14 +85,16 @@ def get_img_from_tf_records(tf_record_path):
 
     # Convert the image data from string back to the numbers
     image = tf.decode_raw(features['image'], tf.float32)
-    image = tf.reshape(image, [IMAGE_RESIZE, IMAGE_RESIZE, 3])
+    image = tf.reshape(image, [256, 256, 3])
+    # image = tf.reshape(image, [IMAGE_RESIZE, IMAGE_RESIZE, 3])
 
     # Cast label data into int32
     label = tf.cast(features['label'], tf.int32)
 
-    print('success read to the tfrecords -', tf_record_path)
-
-    return image, label
+    if DO_NORMALIZE:
+        return image / 255, label
+    else:
+        return image, label
 
 
 def get_tf_record_path(img_path):
@@ -96,7 +109,8 @@ def load_image(img_path):
     # read an image and resize to (224, 224)
     # cv2 load images as BGR, convert it to RGB
     img = cv2.imread(img_path)
-    img = cv2.resize(img, (IMAGE_RESIZE, IMAGE_RESIZE), interpolation=cv2.INTER_CUBIC)
+    # img = cv2.resize(img, (IMAGE_RESIZE, IMAGE_RESIZE), interpolation=cv2.INTER_CUBIC)
+    # img = cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = img.astype(np.float32)
 
