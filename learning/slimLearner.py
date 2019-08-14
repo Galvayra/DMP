@@ -1,12 +1,13 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tfRecorder import TfRecorder
-from .variables import *
+from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
 from DMP.utils.progress_bar import show_progress_bar
+from .variables import *
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
 import sys
 from os import path, getcwd
+from PIL import Image
 import matplotlib.pyplot as plt
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
@@ -29,38 +30,58 @@ class SlimLearner(TensorModel):
     def tf_record_path(self):
         return self.__tf_record_path
 
-    def __concat_tensor(self, target, prefix):
-        for i, img_path in enumerate(sorted(target)):
-            tf_img, tf_label = self.tf_recorder.get_img_from_tf_records(img_path)
-            tf_img = tf.expand_dims(tf_img, 0)
-            tf_label = tf.expand_dims(tf_label, 0)
+    # def __concat_tensor(self, target, prefix):
+    #     for i, img_path in enumerate(sorted(target)):
+    #         tf_img, tf_label = self.tf_recorder.get_img_from_tf_records(img_path)
+    #         tf_img = tf.expand_dims(tf_img, 0)
+    #         tf_label = tf.expand_dims(tf_label, 0)
+    #
+    #         if i + 1 == 1:
+    #             self.tf_x = tf_img
+    #             self.tf_y = tf_label
+    #         elif i + 1 == len(target):
+    #             self.tf_x = tf.concat([self.tf_x, tf_img], 0, name=NAME_X + '_' + str(self.num_of_fold))
+    #             self.tf_y = tf.concat([self.tf_y, tf_label], 0, name=NAME_Y + '_' + str(self.num_of_fold))
+    #         else:
+    #             self.tf_x = tf.concat([self.tf_x, tf_img], 0)
+    #             self.tf_y = tf.concat([self.tf_y, tf_label], 0)
+    #
+    #         show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
+    #     tf.reset_default_graph()
 
-            if i + 1 == 1:
-                self.tf_x = tf_img
-                self.tf_y = tf_label
-            elif i + 1 == len(target):
-                self.tf_x = tf.concat([self.tf_x, tf_img], 0, name=NAME_X + '_' + str(self.num_of_fold))
-                self.tf_y = tf.concat([self.tf_y, tf_label], 0, name=NAME_Y + '_' + str(self.num_of_fold))
-            else:
-                self.tf_x = tf.concat([self.tf_x, tf_img], 0)
-                self.tf_y = tf.concat([self.tf_y, tf_label], 0)
-
-            show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
-
-    def run_fine_tuning(self, x_train, x_test):
+    def run_fine_tuning(self):
         self.num_of_fold += 1
-        self.__concat_tensor(x_test, prefix="test ")
+        tf_record_path = self.tf_record_path + "train_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+        tensor_image, tensor_label, tensor_name = self.tf_recorder.get_img_from_tf_records(tf_record_path)
 
-        # set file names for saving
-        self.set_name_of_log()
-        self.set_name_of_tensor()
-        tf.Variable(self.learning_rate, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
-        tf.Variable(self.num_of_hidden, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
+        x_train, y_train, name_train = tf.train.batch([tensor_image, tensor_label, tensor_name],
+                                                      batch_size=16, capacity=30, num_threads=2)
 
         init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 
-        ################# 신경망 만들기
+        with tf.Session() as sess:
+            sess.run(init_op)
 
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(coord=coord)
+            n_iter = int()
+            try:
+                while not coord.should_stop():
+                    n_iter += 1
+                    x_batch, y_batch, name_batch = sess.run([x_train, y_train, name_train])
+            except tf.errors.OutOfRangeError:
+                pass
+            finally:
+                coord.request_stop()
+                coord.join(threads)
+
+        tf.reset_default_graph()
+
+        # for n in tf.get_default_graph().as_graph_def().node:
+        #     print(n)
+        # # aa = [n.name for n in tf.get_default_graph().as_graph_def().node]
+
+        # ################# 신경망 만들기
 
         print("finish")
         exit(-1)

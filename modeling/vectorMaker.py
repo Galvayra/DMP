@@ -136,18 +136,22 @@ class VectorMaker:
 
     def build_tf_records(self):
         if os.path.isdir(self.tf_record_path):
-            shutil.rmtree(self.tf_record_path)
-        os.mkdir(self.tf_record_path)
+            print("\nThe directory for tfrecord is already existed -", self.tf_record_path, "   \n\n")
+        else:
+            os.mkdir(self.tf_record_path)
 
-        x_train, y_train = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
-        x_valid, y_valid = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
-        x_test, y_test = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+            x_train, y_train = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+            x_valid, y_valid = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+            x_test, y_test = self.__get_set(self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+            x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
 
-        tf_recorder = TfRecorder(self.tf_record_path)
-        tf_recorder.to_tf_records(x_train + x_valid + x_test, y_train + y_valid + y_test)
+            tf_recorder = TfRecorder(self.tf_record_path)
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
+                break
 
-        print("\n=========================================================\n")
-        print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
+            print("\n=========================================================\n")
+            print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
 
     @staticmethod
     def __get_set(x_path_target, y_target):
@@ -165,18 +169,16 @@ class VectorMaker:
     def __get_data_matrix(_data, _index_list):
         return [_data[i] for i in _index_list]
 
-    # def __data_generator(self, x_data, y_data):
-    #     cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
-    #     n_fold = int()
-    #
-    #     for train_index_list, test_index_list in cv.split(x_data, y_data):
-    #         n_fold += 1
-    #         x_train = self.__get_data_matrix(x_data, train_index_list)
-    #         y_train = self.__get_data_matrix(y_data, train_index_list)
-    #         x_test = self.__get_data_matrix(x_data, test_index_list)
-    #         y_test = self.__get_data_matrix(y_data, test_index_list)
-    #
-    #         yield n_fold, x_train, y_train, x_test, y_test
+    def __data_generator(self, x_data, y_data):
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
+
+        for train_index_list, test_index_list in cv.split(x_data, y_data):
+            x_train = self.__get_data_matrix(x_data, train_index_list)
+            y_train = self.__get_data_matrix(y_data, train_index_list)
+            x_test = self.__get_data_matrix(x_data, test_index_list)
+            y_test = self.__get_data_matrix(y_data, test_index_list)
+
+            yield x_train, y_train, x_test, y_test
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):

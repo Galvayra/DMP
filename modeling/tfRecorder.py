@@ -6,6 +6,7 @@ from os import path
 from .variables import EXTENSION_OF_IMAGE
 from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 from DMP.utils.progress_bar import show_progress_bar
+from PIL import Image
 
 EXTENSION_OF_TF_RECORD = ".tfrecords"
 
@@ -15,7 +16,9 @@ class TfRecorder:
         self.__tf_record_path = tf_record_path
         self.shape = None
         self.shape_file_name = "Shape.txt"
+        self.n_fold = int()
         self.__load_shape()
+        self.options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
 
     @property
     def tf_record_path(self):
@@ -29,41 +32,35 @@ class TfRecorder:
         return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
     @staticmethod
-    def _float_feature(value):
-        """Wrapper for inserting float features into Example proto."""
-        if not isinstance(value, list):
-            value = [value]
-        return tf.train.Feature(float_list=tf.train.FloatList(value=value))
-
-    @staticmethod
     def _bytes_feature(value):
         """Wrapper for inserting bytes features into Example proto."""
         if not isinstance(value, list):
             value = [value]
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
-    @staticmethod
-    def _validate_text(text):
-        """If text is not str or unicode, then try to convert it to str."""
-        if isinstance(text, str):
-            return text
-        elif isinstance(text, 'unicode'):
-            return text.encode('utf8', 'ignore')
-        else:
-            return str(text)
+    def to_tf_records(self, train_image_list, train_label_list, test_image_list, test_label_list):
+        self.n_fold += 1
+        self.__to_tf_records(train_image_list, train_label_list, key="train_" + str(self.n_fold))
+        self.__to_tf_records(test_image_list, test_label_list, key="test_" + str(self.n_fold))
+        self.__save_shape()
 
-    def to_tf_records(self, image_list, label_list):
-        for i in range(len(image_list)):
-            img_path = image_list[i]
-            record_name = self.get_record_name_from_img_path(img_path)
+    def __to_tf_records(self, target_image_list, target_label_list, key):
+        tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
+        # options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
+        total_len = len(target_image_list)
 
-            with tf.python_io.TFRecordWriter(self.tf_record_path + record_name) as writer:
+        with tf.python_io.TFRecordWriter(path=tf_record_path, options=self.options) as writer:
+            for i in range(len(target_image_list)):
+                img_path = target_image_list[i]
+                record_name = self.__get_record_name_from_img_path(img_path)
+
                 img = self.__load_image(img_path)
-                label = label_list[i]
+                label = target_label_list[i]
                 # Create a feature
 
                 feature = {'label': self._int64_feature(label),
-                           'image': self._bytes_feature(tf.compat.as_bytes(img.tobytes()))}
+                           'image': self._bytes_feature(tf.compat.as_bytes(img.tostring())),
+                           'name': self._bytes_feature(record_name.encode('utf-8'))}
 
                 # Create an example protocol buffer
                 example = tf.train.Example(features=tf.train.Features(feature=feature))
@@ -71,13 +68,13 @@ class TfRecorder:
                 # Serialize to string and write on the file
                 writer.write(example.SerializeToString())
 
-            show_progress_bar(i + 1, len(image_list), prefix="Save tfRecord")
-
-        self.__save_shape()
+                show_progress_bar(i + 1, total_len, prefix="Save " + key.rjust(8) + EXTENSION_OF_TF_RECORD)
 
     def __save_shape(self):
-        with open(self.tf_record_path + self.shape_file_name, 'w') as w_file:
-            json.dump(list(self.shape), w_file)
+        if self.shape:
+            with open(self.tf_record_path + self.shape_file_name, 'w') as w_file:
+                json.dump(list(self.shape), w_file)
+                self.shape = None
 
     def __load_shape(self):
         tf_shape_path = self.tf_record_path + self.shape_file_name
@@ -94,17 +91,18 @@ class TfRecorder:
 
         return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
 
-    def get_img_from_tf_records(self, img_path):
-        record_name = self.__get_record_name_from_img_path(img_path)
+    def get_img_from_tf_records(self, tf_record_path):
+        # record_name = self.__get_record_name_from_img_path(img_path)
 
         feature = {'image': tf.FixedLenFeature([], tf.string),
-                   'label': tf.FixedLenFeature([], tf.int64)}
+                   'label': tf.FixedLenFeature([], tf.int64),
+                   'name': tf.FixedLenFeature([], tf.string)}
         # Create a list of filenames and pass it to a queue
-        filename_queue = tf.train.string_input_producer([self.tf_record_path + record_name], num_epochs=1)
+        filename_queue = tf.train.string_input_producer([tf_record_path], num_epochs=1)
         # print(filename_queue)
         # Define a reader and read the next record
 
-        reader = tf.TFRecordReader()
+        reader = tf.TFRecordReader(options=self.options)
         _, serialized_example = reader.read(filename_queue)
         # Decode the record read by the reader
         features = tf.parse_single_example(serialized_example, features=feature)
@@ -119,14 +117,16 @@ class TfRecorder:
 
         # Cast label data into int32
         label = tf.cast(features['label'], tf.int32)
+        name = tf.cast(features['name'], tf.string)
 
         if DO_NORMALIZE:
-            return image / 255, label
+            return image / 255, label, name
         else:
-            return image, label
+            return tf.cast(image, tf.uint8), label, name
 
     def __load_image(self, img_path):
         img = cv2.imread(img_path)
+        # img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
 

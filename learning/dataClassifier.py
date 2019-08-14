@@ -26,7 +26,7 @@ DO_IMG_SCALING = True
 DO_SAMPLING = False
 SAMPLE_RATIO = 5
 IMG_D_TYPE = np.float32
-n = 91
+n = 3
 
 
 class DataClassifier:
@@ -87,11 +87,7 @@ class DataClassifier:
 
     def transfer_learning(self):
         nn = SlimLearner(self.dataHandler.tf_record_path)
-        x_data, y_data = self.__get_total_set(has_img_paths=True)
-        x_img_data, y_data = self.__get_total_image_set(x_data, y_data, has_img_paths=True)
-
-        for x_train, y_train, x_test, y_test in self.__data_generator(x_img_data, y_data):
-            nn.run_fine_tuning(x_train, x_test)
+        nn.run_fine_tuning()
 
     @staticmethod
     def __img_scaling(x_train, x_test):
