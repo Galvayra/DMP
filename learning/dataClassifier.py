@@ -26,7 +26,7 @@ DO_IMG_SCALING = True
 DO_SAMPLING = False
 SAMPLE_RATIO = 5
 IMG_D_TYPE = np.float32
-n = 3
+n = 91
 
 
 class DataClassifier:

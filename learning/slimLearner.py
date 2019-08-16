@@ -1,13 +1,14 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
-from DMP.utils.progress_bar import show_progress_bar
+from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD, KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_DIM, \
+    KEY_OF_SHAPE
 from .variables import *
+from PIL import Image
 import numpy as np
 import tensorflow.contrib.slim as slim
+from tensorflow.contrib.slim.nets import vgg
 import tensorflow as tf
 import sys
 from os import path, getcwd
-from PIL import Image
 import matplotlib.pyplot as plt
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
@@ -23,8 +24,9 @@ class SlimLearner(TensorModel):
         super().__init__(is_cross_valid=True)
         self.__tf_record_path = tf_record_path
         self.num_of_input_nodes = int()
-        self.num_of_output_nodes = int()
+        self.num_of_output_nodes = 1
         self.tf_recorder = TfRecorder(tf_record_path)
+        self.tf_name = None
 
     @property
     def tf_record_path(self):
@@ -48,14 +50,54 @@ class SlimLearner(TensorModel):
     #
     #         show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
     #     tf.reset_default_graph()
+    def __init_batch_tensor(self, key):
+        """
+
+        :param key:
+        :return: x_vector_batch, x_img_batch, y_batch, name_of_batch
+        """
+        tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+        tensor_vector, tensor_img, tensor_label, tensor_name = self.tf_recorder.get_img_from_tf_records(tf_record_path)
+
+        return tf.train.batch([tensor_vector, tensor_img, tensor_label, tensor_name],
+                              batch_size=BATCH_SIZE, capacity=30, num_threads=2)
+
+        # return tf.train.shuffle_batch([tensor_vector, tensor_img, tensor_label, tensor_name],
+        #                               batch_size=BATCH_SIZE, capacity=30, num_threads=2, min_after_dequeue=20, seed=4)
 
     def run_fine_tuning(self):
         self.num_of_fold += 1
-        tf_record_path = self.tf_record_path + "train_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
-        tensor_image, tensor_label, tensor_name = self.tf_recorder.get_img_from_tf_records(tf_record_path)
 
-        x_train, y_train, name_train = tf.train.batch([tensor_image, tensor_label, tensor_name],
-                                                      batch_size=16, capacity=30, num_threads=2)
+        shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
+        shape.insert(0, None)
+
+        tensor_vector, tensor_img, tensor_label, tensor_name = self.__init_batch_tensor(key=KEY_OF_TRAIN)
+
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=shape,
+                                   name=NAME_X + '_' + str(self.num_of_fold))
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
+                                   name=NAME_Y + '_' + str(self.num_of_fold))
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
+
+        hypothesis = self.__init_cnn_model()
+        # logits, end_points = self.__init_pre_trained_model()
+        self.__sess_run(hypothesis, tensor_vector, tensor_img, tensor_label, tensor_name)
+
+    def __sess_run(self, hypothesis, tensor_vector, tensor_img, tensor_label, tensor_name=None):
+        # # 체크포인트로부터 파라미터 복원하기
+        # # 마지막 fc8 레이어는 파라미터 복원에서 제외
+        # exculde = ['vgg_16/fc8']
+        # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
+        # saver = tf.train.Saver(variables_to_restore)
+        # with tf.Session() as sess:
+        #     saver.restore(sess, VGG_PATH)
+
+        cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y))
+        # optimizer
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)
+        # accuracy
+        correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(self.tf_y, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 
@@ -63,12 +105,23 @@ class SlimLearner(TensorModel):
             sess.run(init_op)
 
             coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(coord=coord)
-            n_iter = int()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
             try:
-                while not coord.should_stop():
-                    n_iter += 1
-                    x_batch, y_batch, name_batch = sess.run([x_train, y_train, name_train])
+                for epoch in range(self.best_epoch):
+                    n_iter = int()
+                    while not coord.should_stop():
+                        n_iter += 1
+                        x_img, y_batch = sess.run([tensor_img, tensor_label])
+
+                        _, tra_loss = sess.run(
+                            [train_step, cross_entropy],
+                            feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                        )
+
+                        print("epoch -", str(epoch).rjust(4),
+                              "  n_iter -", str(n_iter).rjust(4),
+                              "  train loss -", tra_loss)
             except tf.errors.OutOfRangeError:
                 pass
             finally:
@@ -76,17 +129,44 @@ class SlimLearner(TensorModel):
                 coord.join(threads)
 
         tf.reset_default_graph()
-
-        # for n in tf.get_default_graph().as_graph_def().node:
-        #     print(n)
-        # # aa = [n.name for n in tf.get_default_graph().as_graph_def().node]
-
-        # ################# 신경망 만들기
-
+        self.clear_tensor()
         print("finish")
         exit(-1)
-        tf.reset_default_graph()
-        self.clear_tensor()
+
+    def __init_cnn_model(self):
+        with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                             activation_fn=tf.nn.relu,
+                             weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+                             weights_regularizer=slim.l2_regularizer(0.0005)):
+            net = slim.repeat(self.tf_x, 2, slim.conv2d, 64, [3, 3], scope='conv1')
+            net = slim.max_pool2d(net, [2, 2], scope='pool1')
+            net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv2')
+            net = slim.max_pool2d(net, [2, 2], scope='pool2')
+            net = slim.repeat(net, 3, slim.conv2d, 256, [3, 3], scope='conv3')
+            net = slim.max_pool2d(net, [2, 2], scope='pool3')
+            net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')
+            net = slim.max_pool2d(net, [2, 2], scope='pool4')
+            net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')
+            net = slim.max_pool2d(net, [2, 2], scope='pool5')
+            net = slim.fully_connected(net, 4096, scope='fc6')
+            net = slim.dropout(net, self.keep_prob, scope='dropout6')
+            net = slim.fully_connected(net, 4096, scope='fc7')
+            net = slim.dropout(net, self.keep_prob, scope='dropout7')
+            net = slim.fully_connected(net, 1000, scope='fc8')
+            net = slim.flatten(net, scope='flatten')
+            net = slim.fully_connected(net, self.num_of_output_nodes, activation_fn=tf.nn.sigmoid, scope='output')
+
+            return net
+
+    def __init_pre_trained_model(self):
+        with slim.arg_scope(vgg.vgg_arg_scope()):
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=self.num_of_output_nodes, is_training=True)
+
+            return logits, end_points
+
+    def clear_tensor(self):
+        super().clear_tensor()
+        self.tf_name = None
 
     def run(self):
         (train_x, train_y), (test_x, test_y) = self.mnist_load()
