@@ -9,6 +9,8 @@ from DMP.utils.progress_bar import show_progress_bar
 from PIL import Image
 
 EXTENSION_OF_TF_RECORD = ".tfrecords"
+KEY_OF_TRAIN = "train_"
+KEY_OF_TEST = "test_"
 
 
 class TfRecorder:
@@ -40,13 +42,12 @@ class TfRecorder:
 
     def to_tf_records(self, train_image_list, train_label_list, test_image_list, test_label_list):
         self.n_fold += 1
-        self.__to_tf_records(train_image_list, train_label_list, key="train_" + str(self.n_fold))
-        self.__to_tf_records(test_image_list, test_label_list, key="test_" + str(self.n_fold))
+        self.__to_tf_records(train_image_list, train_label_list, key=KEY_OF_TRAIN + str(self.n_fold))
+        self.__to_tf_records(test_image_list, test_label_list, key=KEY_OF_TEST + str(self.n_fold))
         self.__save_shape()
 
     def __to_tf_records(self, target_image_list, target_label_list, key):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
-        # options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
         total_len = len(target_image_list)
 
         with tf.python_io.TFRecordWriter(path=tf_record_path, options=self.options) as writer:
@@ -104,6 +105,7 @@ class TfRecorder:
 
         reader = tf.TFRecordReader(options=self.options)
         _, serialized_example = reader.read(filename_queue)
+
         # Decode the record read by the reader
         features = tf.parse_single_example(serialized_example, features=feature)
 
@@ -116,8 +118,10 @@ class TfRecorder:
             image = tf.reshape(image, [IMAGE_RESIZE, IMAGE_RESIZE, 3])
 
         # Cast label data into int32
-        label = tf.cast(features['label'], tf.int32)
+        label = tf.cast(features['label'], tf.int8)
         name = tf.cast(features['name'], tf.string)
+
+        print("\nSuccess to read -", tf_record_path, "\n")
 
         if DO_NORMALIZE:
             return image / 255, label, name
@@ -126,7 +130,7 @@ class TfRecorder:
 
     def __load_image(self, img_path):
         img = cv2.imread(img_path)
-        # img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
+        img = cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
 

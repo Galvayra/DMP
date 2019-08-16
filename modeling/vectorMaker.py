@@ -148,7 +148,6 @@ class VectorMaker:
             tf_recorder = TfRecorder(self.tf_record_path)
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                 tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
-                break
 
             print("\n=========================================================\n")
             print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
