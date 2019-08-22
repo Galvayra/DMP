@@ -32,9 +32,6 @@ if __name__ == '__main__':
     # encoding data using dataHandler
     vectorMaker = VectorMaker(dataHandler_dict)
 
-    if DO_ENCODE_IMAGE:
-        vectorMaker.encoding(encode_image=True)
-        vectorMaker.build_tf_records()
-    else:
-        vectorMaker.encoding()
+    vectorMaker.encoding(encode_image=True)
+    vectorMaker.build_tf_records()
     vectorMaker.dump()

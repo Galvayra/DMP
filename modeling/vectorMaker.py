@@ -140,30 +140,42 @@ class VectorMaker:
         else:
             os.mkdir(self.tf_record_path)
 
-            x_train, y_train = self.__get_set(self.vector_matrix["x_train"][KEY_NAME_OF_MERGE_VECTOR],
-                                              self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
-            x_valid, y_valid = self.__get_set(self.vector_matrix["x_valid"][KEY_NAME_OF_MERGE_VECTOR],
-                                              self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
-            x_test, y_test = self.__get_set(self.vector_matrix["x_test"][KEY_NAME_OF_MERGE_VECTOR],
-                                            self.vector_matrix[KEY_IMG_TRAIN], self.vector_matrix["y_train"])
+            x_train, y_train = self.__get_set(key="train")
+            x_valid, y_valid = self.__get_set(key="valid")
+            x_test, y_test = self.__get_set(key="test")
             x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
 
             tf_recorder = TfRecorder(self.tf_record_path)
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                 tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
-                break
 
             tf_recorder.save()
             print("\n=========================================================\n")
             print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
 
-    @staticmethod
-    def __get_set(x_target, x_path_target, y_target):
+    def __get_set(self, key):
         _x_data, _y_data = list(), list()
 
-        for vector, img_paths, y in zip(x_target, x_path_target, y_target):
-            for img_path in img_paths:
-                _x_data.append([vector, img_path])
+        x_target = self.vector_matrix["x_" + key][KEY_NAME_OF_MERGE_VECTOR]
+        y_target = self.vector_matrix["y_" + key]
+
+        if key == "train":
+            img_key = KEY_IMG_TRAIN
+        elif key == "valid":
+            img_key = KEY_IMG_VALID
+        else:
+            img_key = KEY_IMG_TEST
+
+        if img_key in self.vector_matrix:
+            x_path_target = self.vector_matrix[img_key]
+
+            for vector, img_paths, y in zip(x_target, x_path_target, y_target):
+                for img_path in img_paths:
+                    _x_data.append([vector, img_path])
+                    _y_data.append(y)
+        else:
+            for vector, y in zip(x_target, y_target):
+                _x_data.append([vector])
                 _y_data.append(y)
 
         return _x_data, _y_data
