@@ -1,6 +1,7 @@
 import tensorflow as tf
 import math
 import json
+from DMP.modeling.tfRecorder import KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_DIM, KEY_OF_DIM_OUTPUT
 from .neuralNet import TensorModel
 from .variables import *
 
@@ -57,43 +58,78 @@ class NeuralNet(TensorModel):
 
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
+    #
+    # def training(self, x_train, y_train, x_valid, y_valid):
+    #     self.init_place_holder(x_train, y_train)
+    #     self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=self.tf_x)
 
-    def training(self, x_train, y_train, x_valid, y_valid):
-        self.init_place_holder(x_train, y_train)
-        self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=self.tf_x)
+    def training(self):
+        self.init_place_holder()
+        self.feed_forward(input_layer=self.tf_x)
 
-    def init_place_holder(self, x_train, y_train):
-        self.num_of_input_nodes = len(x_train[0])
-        self.num_of_output_nodes = len(y_train[0])
+    # def init_place_holder(self, x_train, y_train):
+    #     self.num_of_input_nodes = len(x_train[0])
+    #     self.num_of_output_nodes = len(y_train[0])
+    #     self.num_of_fold += 1
+    #     self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_input_nodes],
+    #                                name=NAME_X + '_' + str(self.num_of_fold))
+    #     self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
+    #                                name=NAME_Y + '_' + str(self.num_of_fold))
+    #     self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
+    def init_place_holder(self):
         self.num_of_fold += 1
+        self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_DIM + str(self.num_of_fold)]
+        self.num_of_output_nodes = self.tf_recorder.log[KEY_OF_DIM_OUTPUT + str(self.num_of_fold)]
+
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_input_nodes],
                                    name=NAME_X + '_' + str(self.num_of_fold))
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
-    def feed_forward(self, x_train, y_train, x_valid, y_valid, input_layer):
+    # def feed_forward(self, x_train, y_train, x_valid, y_valid, input_layer):
+    #     # initialize neural network
+    #     hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
+    #                                                 num_of_output_nodes=self.num_of_output_nodes,
+    #                                                 input_layer=input_layer)
+    #     h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
+    #     self.compute_score(y_valid, y_predict, h, accuracy)
+    #
+    #     if self.is_cross_valid:
+    #         key = KEY_TEST
+    #     else:
+    #         key = KEY_VALID
+    #
+    #     self.set_score(target=key)
+    #     self.show_score(target=key)
+
+    def feed_forward(self, input_layer):
         # initialize neural network
+
+        # x_train, y_train, _, _ = self.init_batch_tensor(key=KEY_OF_TRAIN)
+        # x_valid, y_valid, _, _ = self.init_batch_tensor(key=KEY_OF_TEST)
+
         hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
                                                     num_of_output_nodes=self.num_of_output_nodes,
                                                     input_layer=input_layer)
-        h, y_predict, accuracy = self.__sess_run(hypothesis, x_train, y_train, x_valid, y_valid)
-        self.compute_score(y_valid, y_predict, h, accuracy)
 
-        if self.is_cross_valid:
-            key = KEY_TEST
-        else:
-            key = KEY_VALID
+        h, y_predict, accuracy = self.__sess_run(hypothesis)
+        # self.compute_score(y_valid, y_predict, h, accuracy)
+        #
+        # if self.is_cross_valid:
+        #     key = KEY_TEST
+        # else:
+        #     key = KEY_VALID
+        #
+        # self.set_score(target=key)
+        # self.show_score(target=key)
 
-        self.set_score(target=key)
-        self.show_score(target=key)
-
-    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    def __sess_run(self, hypothesis):
         if self.do_show:
             print("Layer O -", hypothesis.shape, "\n\n\n")
 
-        num_of_class = len(y_train[0])
+        num_of_class = self.num_of_output_nodes
 
         # Use softmax cross entropy
         if num_of_class > 1:
@@ -131,6 +167,10 @@ class NeuralNet(TensorModel):
         tf.Variable(self.learning_rate, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
         tf.Variable(self.num_of_hidden, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
 
+        tf_record_tensor = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
+        iterator = tf_record_tensor.make_initializable_iterator()
+        next_element = iterator.get_next()
+
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
             print("\n\n\n")
@@ -149,62 +189,103 @@ class NeuralNet(TensorModel):
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
+            sess.run(iterator.initializer)
 
-            batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-            for step in range(1, self.best_epoch + 1):
-                # mini-batch
-                for i in range(batch_iter):
-                    batch_x = x_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
-                    batch_y = y_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+            try:
+                step = int()
+                n_iter = int()
+                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE)
+
+                while not coord.should_stop():
+                    n_iter += 1
+                    x_batch, y_batch, _, _ = sess.run(next_element)
 
                     _, tra_loss = sess.run(
                         [train_op, cost],
-                        feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
+                        feed_dict={self.tf_x: x_batch, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                     )
 
-                # training
-                if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
-                    if self.is_cross_valid:
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                        )
+                    # 1 epoch
+                    if n_iter % batch_iter == 0:
+                        step += 1
 
-                        train_writer.add_summary(train_summary, global_step=step)
-                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+                        if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+                            train_summary, tra_loss, tra_acc = sess.run(
+                                [merged_summary, cost, _accuracy],
+                                feed_dict={self.tf_x: x_batch, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                            )
 
-                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
-                    else:
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                        )
+                            train_writer.add_summary(train_summary, global_step=step)
+                            print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
 
-                        train_writer.add_summary(train_summary, global_step=step)
-                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
-
-                        val_summary, val_loss, val_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
-                        )
-
-                        # write validation curve on tensor board
-                        val_writer.add_summary(val_summary, global_step=step)
-                        print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
-
-                        # save tensor every NUM_OF_SAVE_EPOCH
-                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
-
-                        if self.__is_stopped_training(val_loss):
-                            break
-
-            h, p, acc = sess.run([hypothesis, predict, _accuracy],
-                                 feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
+                            saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+            except tf.errors.OutOfRangeError:
+                pass
+            finally:
+                coord.request_stop()
+                coord.join(threads)
 
         tf.reset_default_graph()
-
-        return h, p, acc
+        self.clear_tensor()
+        exit(-1)
+            # batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
+            #
+            # for step in range(1, self.best_epoch + 1):
+            #     # mini-batch
+            #     for i in range(batch_iter):
+            #         batch_x = x_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+            #         batch_y = y_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+            #
+            #         _, tra_loss = sess.run(
+            #             [train_op, cost],
+            #             feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
+            #         )
+            #
+            #     # training
+            #     if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+            #         if self.is_cross_valid:
+            #             train_summary, tra_loss, tra_acc = sess.run(
+            #                 [merged_summary, cost, _accuracy],
+            #                 feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+            #             )
+            #
+            #             train_writer.add_summary(train_summary, global_step=step)
+            #             print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+            #
+            #             saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+            #         else:
+            #             train_summary, tra_loss, tra_acc = sess.run(
+            #                 [merged_summary, cost, _accuracy],
+            #                 feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+            #             )
+            #
+            #             train_writer.add_summary(train_summary, global_step=step)
+            #             print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+            #
+            #             val_summary, val_loss, val_acc = sess.run(
+            #                 [merged_summary, cost, _accuracy],
+            #                 feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
+            #             )
+            #
+            #             # write validation curve on tensor board
+            #             val_writer.add_summary(val_summary, global_step=step)
+            #             print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
+            #
+            #             # save tensor every NUM_OF_SAVE_EPOCH
+            #             saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+            #
+            #             if self.__is_stopped_training(val_loss):
+            #                 break
+        #
+        #     h, p, acc = sess.run([hypothesis, predict, _accuracy],
+        #                          feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
+        #
+        # tf.reset_default_graph()
+        #
+        # return h, p, acc
 
     def __is_stopped_training(self, val_loss):
         self.loss_list.append(val_loss)

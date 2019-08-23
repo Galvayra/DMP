@@ -1,15 +1,22 @@
 from .variables import *
 from .score import MyScore
+from os import path
 import os
 import shutil
 import sys
+from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
+from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
+import tensorflow as tf
 
 if sys.argv[0].split('/')[-1] == "training.py":
-    from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE
+    from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
+        READ_VECTOR
 elif sys.argv[0].split('/')[-1] == "predict.py":
-    from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, LEARNING_RATE
+    from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, LEARNING_RATE, \
+        READ_VECTOR
 elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
-    from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE
+    from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
+        READ_VECTOR
 
 
 class TensorModel(MyScore):
@@ -31,6 +38,9 @@ class TensorModel(MyScore):
         self.is_cross_valid = is_cross_valid
         self.init_log_and_tensor()
         self.do_show = DO_SHOW
+        project_path = path.dirname(path.dirname(path.abspath(__file__))) + "/"
+        self.tf_record_path = project_path + MODELING_PATH + TF_RECORD_PATH + READ_VECTOR.split('/')[-1] + "/"
+        self.tf_recorder = TfRecorder(self.tf_record_path)
 
     def init_log_and_tensor(self):
         self.name_of_log = PATH_LOGS + TENSOR_DIR_NAME
@@ -66,6 +76,20 @@ class TensorModel(MyScore):
 
     def get_name_of_tensor(self):
         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
+
+    def init_tf_record_tensor(self, key):
+        """
+
+        :param key: KEY_OF_TRAIN or KEY_OF_TEST
+        :return: TFRecordDataset.map(_parsed_func)
+        """
+        tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+
+        dataset = self.tf_recorder.get_img_from_tf_records(tf_record_path)
+        dataset = dataset.repeat(EPOCH)
+        dataset = dataset.batch(BATCH_SIZE)
+
+        return dataset
 
     def clear_tensor(self):
         self.tf_x = None

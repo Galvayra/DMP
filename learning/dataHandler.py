@@ -4,7 +4,7 @@ import numpy as np
 import json
 import math
 import sys
-from DMP.modeling.variables import EXTENSION_OF_IMAGE
+from DMP.modeling.variables import EXTENSION_OF_IMAGE, MODELING_PATH, TF_RECORD_PATH
 
 current_script = sys.argv[0].split('/')[-1]
 
@@ -23,7 +23,7 @@ elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
-    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID, TF_RECORD_PATH, MODELING_PATH
+    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
     from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
     from os import path
 
@@ -81,10 +81,8 @@ class DataHandler:
             self.count_mortality = list()
             self.count_alive = list()
             self.__set_count()
-
-            if current_script == "fine_tuning.py":
-                self.tf_record_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + MODELING_PATH +\
-                                      TF_RECORD_PATH + READ_VECTOR.split('/')[-1] + "/"
+            # self.tf_record_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + MODELING_PATH + \
+            #                       TF_RECORD_PATH + READ_VECTOR.split('/')[-1] + "/"
 
     @property
     def importance(self):

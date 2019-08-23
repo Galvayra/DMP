@@ -43,45 +43,48 @@ class DataClassifier:
     def training(self):
         nn = None
 
-        if VERSION == 1:
-            x_data, y_data = self.__get_total_set()
+        nn = NeuralNet()
+        nn.training()
 
-            if TYPE_OF_MODEL == "ffnn":
-                nn = NeuralNet()
-                for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                    nn.training(x_train, y_train, x_test, y_test)
-
-            elif TYPE_OF_MODEL == "cnn":
-                nn = ConvolutionNet()
-                if IMAGE_PATH:
-                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
-                        self.dataHandler.set_image_path([x_train, x_test],
-                                                        [y_train, y_test],
-                                                        key_list=["train", "test"])
-                        nn.training(x_train, y_train, x_test, y_test)
-                else:
-                    for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                        self.dataHandler.expand4square_matrix(x_train, x_test)
-                        nn.training(x_train, y_train, x_test, y_test)
-
-        elif VERSION == 2:
-            x_train = self.dataHandler.x_train
-            y_train = self.dataHandler.y_train
-            x_valid = self.dataHandler.x_valid
-            y_valid = self.dataHandler.y_valid
-
-            if TYPE_OF_MODEL == "ffnn":
-                nn = NeuralNet(is_cross_valid=False)
-                nn.training(x_train, y_train, x_valid, y_valid)
-            elif TYPE_OF_MODEL == "cnn":
-                if IMAGE_PATH:
-                    self.dataHandler.set_image_path([x_train, x_valid],
-                                                    [y_train, y_valid],
-                                                    key_list=["train", "valid"])
-                else:
-                    self.dataHandler.expand4square_matrix(x_train, x_valid)
-                nn = ConvolutionNet(is_cross_valid=False)
-                nn.training(x_train, y_train, x_valid, y_valid)
+        # if VERSION == 1:
+        #     x_data, y_data = self.__get_total_set()
+        #
+        #     if TYPE_OF_MODEL == "ffnn":
+        #         nn = NeuralNet()
+        #         for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+        #             nn.training(x_train, y_train, x_test, y_test)
+        #
+        #     elif TYPE_OF_MODEL == "cnn":
+        #         nn = ConvolutionNet()
+        #         if IMAGE_PATH:
+        #             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
+        #                 self.dataHandler.set_image_path([x_train, x_test],
+        #                                                 [y_train, y_test],
+        #                                                 key_list=["train", "test"])
+        #                 nn.training(x_train, y_train, x_test, y_test)
+        #         else:
+        #             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+        #                 self.dataHandler.expand4square_matrix(x_train, x_test)
+        #                 nn.training(x_train, y_train, x_test, y_test)
+        #
+        # elif VERSION == 2:
+        #     x_train = self.dataHandler.x_train
+        #     y_train = self.dataHandler.y_train
+        #     x_valid = self.dataHandler.x_valid
+        #     y_valid = self.dataHandler.y_valid
+        #
+        #     if TYPE_OF_MODEL == "ffnn":
+        #         nn = NeuralNet(is_cross_valid=False)
+        #         nn.training(x_train, y_train, x_valid, y_valid)
+        #     elif TYPE_OF_MODEL == "cnn":
+        #         if IMAGE_PATH:
+        #             self.dataHandler.set_image_path([x_train, x_valid],
+        #                                             [y_train, y_valid],
+        #                                             key_list=["train", "valid"])
+        #         else:
+        #             self.dataHandler.expand4square_matrix(x_train, x_valid)
+        #         nn = ConvolutionNet(is_cross_valid=False)
+        #         nn.training(x_train, y_train, x_valid, y_valid)
 
         nn.save_process_time()
 

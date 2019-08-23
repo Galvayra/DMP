@@ -12,6 +12,7 @@ KEY_OF_SHAPE = "shape"
 KEY_OF_TRAIN = "train_"
 KEY_OF_TEST = "test_"
 KEY_OF_DIM = "dim_"
+KEY_OF_DIM_OUTPUT = "dim_output_"
 
 
 class TfRecorder:
@@ -31,6 +32,10 @@ class TfRecorder:
     @property
     def do_encode_image(self):
         return self.__do_encode_image
+
+    @do_encode_image.setter
+    def do_encode_image(self, do_encode_image):
+        self.__do_encode_image = do_encode_image
 
     @staticmethod
     def _float_feature(value):
@@ -55,12 +60,12 @@ class TfRecorder:
         self.n_fold += 1
 
         # set log for training
-        if self.do_encode_image:
-            if KEY_OF_SHAPE not in self.log:
-                self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
-            self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
-            self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
-            self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
+        if self.do_encode_image and KEY_OF_SHAPE not in self.log:
+            self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
+        self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
+        self.log[KEY_OF_DIM_OUTPUT + str(self.n_fold)] = len(y_train[0])
+        self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
+        self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
 
         self.__to_tf_records(x_train, y_train, key=KEY_OF_TRAIN + str(self.n_fold))
         self.__to_tf_records(x_test, y_test, key=KEY_OF_TEST + str(self.n_fold))
@@ -96,7 +101,9 @@ class TfRecorder:
                 else:
                     feature = {
                         'vector': self._float_feature(vector),
-                        'label': self._int64_feature(label)
+                        'label': self._int64_feature(label),
+                        'image': self._int64_feature(0),
+                        'name': self._int64_feature(0)
                     }
 
                 # Create an example protocol buffer
@@ -117,6 +124,11 @@ class TfRecorder:
             with open(tf_log_path, 'r') as r_file:
                 self.log = json.load(r_file)
 
+                if KEY_OF_SHAPE not in self.log:
+                    self.do_encode_image = False
+                else:
+                    self.do_encode_image = True
+
     @staticmethod
     def __get_record_name_from_img_path(img_path):
         img_path = img_path.split('/')
@@ -124,33 +136,79 @@ class TfRecorder:
         num_of_image = img_path[-1].split(EXTENSION_OF_IMAGE)[0]
 
         return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
+    #
+    # def get_img_from_tf_records(self, tf_record_path):
+    #     if self.do_encode_image:
+    #         feature = {
+    #             'vector': tf.VarLenFeature(tf.float32),
+    #             'label': tf.FixedLenFeature([], tf.int8),
+    #             'image': tf.FixedLenFeature([], tf.string),
+    #             'name': tf.FixedLenFeature([], tf.string)
+    #         }
+    #     else:
+    #         feature = {
+    #             'vector': tf.VarLenFeature(tf.float32),
+    #             'label': tf.FixedLenFeature([], tf.int64),
+    #             'image': tf.FixedLenFeature([], tf.int64),
+    #             'name': tf.FixedLenFeature([], tf.int64)
+    #         }
+    #
+    #     # Create a list of filenames and pass it to a queue
+    #     filename_queue = tf.train.string_input_producer([tf_record_path], num_epochs=1)
+    #     print("\nSuccess to read -", tf_record_path, "\n")
+    #     # Define a reader and read the next record
+    #
+    #     reader = tf.TFRecordReader(options=self.options)
+    #     _, serialized_example = reader.read(filename_queue)
+    #
+    #     # Decode the record read by the reader
+    #     features = tf.parse_single_example(serialized_example, features=feature)
+    #
+    #     # because a number of dim is same whenever fold
+    #     # vector = tf.reshape(features['vector'], [self.log[KEY_OF_DIM + "1"]])
+    #     vector = tf.sparse_tensor_to_dense(features['vector'], default_value=0)
+    #     vector = tf.reshape(vector, [self.log[KEY_OF_DIM + "1"]])
+    #
+    #     # Cast label data into
+    #     label = tf.reshape(features['label'], [1])
+    #     label = tf.cast(label, tf.int8)
+    #
+    #     if self.do_encode_image:
+    #         image = tf.decode_raw(features['image'], tf.float32)
+    #         image = tf.reshape(image, self.log[KEY_OF_SHAPE])
+    #
+    #         name = tf.cast(features['name'], tf.string)
+    #
+    #         if DO_NORMALIZE:
+    #             image /= image
+    #         else:
+    #             image = tf.cast(image, tf.uint8)
+    #     else:
+    #         image = tf.reshape(features['image'], [1])
+    #         image = tf.cast(image, tf.int8)
+    #
+    #         name = tf.reshape(features['name'], [1])
+    #         name = tf.cast(name, tf.int8)
+    #
+    #     return vector, label, image, name
 
-    def get_img_from_tf_records(self, tf_record_path):
-        # record_name = self.__get_record_name_from_img_path(img_path)
+    def _parse_func(self, serialized_example):
+        if self.do_encode_image:
+            feature = {
+                'vector': tf.VarLenFeature(tf.float32),
+                'label': tf.FixedLenFeature([], tf.int8),
+                'image': tf.FixedLenFeature([], tf.string),
+                'name': tf.FixedLenFeature([], tf.string)
+            }
+        else:
+            feature = {
+                'vector': tf.VarLenFeature(tf.float32),
+                'label': tf.FixedLenFeature([], tf.int64),
+                'image': tf.FixedLenFeature([], tf.int64),
+                'name': tf.FixedLenFeature([], tf.int64)
+            }
 
-        # feature = {'image': tf.FixedLenFeature([], tf.string),
-        #            'label': tf.FixedLenFeature([], tf.int64),
-        #            'name': tf.FixedLenFeature([], tf.string),
-        #            'vector': tf.FixedLenFeature([], tf.float32)}
-
-        feature = {'image': tf.FixedLenFeature([], tf.string),
-                   'label': tf.FixedLenFeature([], tf.int64),
-                   'name': tf.FixedLenFeature([], tf.string),
-                   'vector': tf.VarLenFeature(tf.float32)}
-        # Create a list of filenames and pass it to a queue
-        filename_queue = tf.train.string_input_producer([tf_record_path], num_epochs=1)
-        # print(filename_queue)
-        # Define a reader and read the next record
-
-        reader = tf.TFRecordReader(options=self.options)
-        _, serialized_example = reader.read(filename_queue)
-
-        # Decode the record read by the reader
         features = tf.parse_single_example(serialized_example, features=feature)
-
-        # Convert the image data from string back to the numbers
-        image = tf.decode_raw(features['image'], tf.float32)
-        image = tf.reshape(image, self.log[KEY_OF_SHAPE])
 
         # because a number of dim is same whenever fold
         # vector = tf.reshape(features['vector'], [self.log[KEY_OF_DIM + "1"]])
@@ -160,14 +218,31 @@ class TfRecorder:
         # Cast label data into
         label = tf.reshape(features['label'], [1])
         label = tf.cast(label, tf.int8)
-        name = tf.cast(features['name'], tf.string)
 
-        print("\nSuccess to read -", tf_record_path, "\n")
+        if self.do_encode_image:
+            image = tf.decode_raw(features['image'], tf.float32)
+            image = tf.reshape(image, self.log[KEY_OF_SHAPE])
 
-        if DO_NORMALIZE:
-            return vector, image / 255, label, name
+            name = tf.cast(features['name'], tf.string)
+
+            if DO_NORMALIZE:
+                image /= image
+            else:
+                image = tf.cast(image, tf.uint8)
         else:
-            return vector, tf.cast(image, tf.uint8), label, name
+            image = tf.reshape(features['image'], [1])
+            image = tf.cast(image, tf.int8)
+
+            name = tf.reshape(features['name'], [1])
+            name = tf.cast(name, tf.int8)
+
+        return vector, label, image, name
+
+        # return tf.parse_single_example(example_proto, feature)
+
+    def get_img_from_tf_records(self, tf_record_path):
+        raw_image_dataset = tf.data.TFRecordDataset(tf_record_path, compression_type="GZIP")
+        return raw_image_dataset.map(self._parse_func)
 
     @staticmethod
     def __load_image(img_path):

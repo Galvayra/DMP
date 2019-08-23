@@ -20,17 +20,12 @@ VGG_PATH = 'dataset/images/save/vgg_16.ckpt'
 
 
 class SlimLearner(TensorModel):
-    def __init__(self, tf_record_path):
+    def __init__(self):
         super().__init__(is_cross_valid=True)
-        self.__tf_record_path = tf_record_path
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = 1
-        self.tf_recorder = TfRecorder(tf_record_path)
+        self.tf_recorder = TfRecorder(self.tf_record_path)
         self.tf_name = None
-
-    @property
-    def tf_record_path(self):
-        return self.__tf_record_path
 
     # def __concat_tensor(self, target, prefix):
     #     for i, img_path in enumerate(sorted(target)):
@@ -50,28 +45,13 @@ class SlimLearner(TensorModel):
     #
     #         show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
     #     tf.reset_default_graph()
-    def __init_batch_tensor(self, key):
-        """
-
-        :param key:
-        :return: x_vector_batch, x_img_batch, y_batch, name_of_batch
-        """
-        tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
-        tensor_vector, tensor_img, tensor_label, tensor_name = self.tf_recorder.get_img_from_tf_records(tf_record_path)
-
-        return tf.train.batch([tensor_vector, tensor_img, tensor_label, tensor_name],
-                              batch_size=BATCH_SIZE, capacity=30, num_threads=2)
-
-        # return tf.train.shuffle_batch([tensor_vector, tensor_img, tensor_label, tensor_name],
-        #                               batch_size=BATCH_SIZE, capacity=30, num_threads=2, min_after_dequeue=20, seed=4)
-
     def run_fine_tuning(self):
         self.num_of_fold += 1
 
         shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
         shape.insert(0, None)
 
-        tensor_vector, tensor_img, tensor_label, tensor_name = self.__init_batch_tensor(key=KEY_OF_TRAIN)
+        tensor_vector, tensor_img, tensor_label, tensor_name = self.init_batch_tensor(key=KEY_OF_TRAIN)
 
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=shape,
                                    name=NAME_X + '_' + str(self.num_of_fold))
