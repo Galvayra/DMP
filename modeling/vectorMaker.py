@@ -3,7 +3,7 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
     KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID, TF_RECORD_PATH
-from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY
+from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY, DO_ENCODE_IMAGE
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
@@ -73,7 +73,7 @@ class VectorMaker:
     def tf_record_path(self):
         return self.__tf_record_path
 
-    def encoding(self, encode_image=False):
+    def encoding(self):
         ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
 
         # init encoder and fit it
@@ -91,7 +91,7 @@ class VectorMaker:
         self.__set_vector_matrix_feature(encoder.get_feature_dict())
         self.__set_vector_matrix(matrix_dict)
 
-        if encode_image:
+        if DO_ENCODE_IMAGE:
             image_matrix_dict = {
                 KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
                 KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
@@ -136,24 +136,40 @@ class VectorMaker:
 
     def build_tf_records(self):
         if os.path.isdir(self.tf_record_path):
-            print("\nThe directory for tfrecord is already existed -", self.tf_record_path, "   \n\n")
-        else:
-            os.mkdir(self.tf_record_path)
+            print("\nThe directory for tfrecord is already existed -", self.tf_record_path, "\n")
+            while True:
+                do_continue = input("Do you want to re-encoding? (y/n) - ").lower()
+                if do_continue == 'n':
+                    return
+                elif do_continue == 'y':
+                    shutil.rmtree(self.tf_record_path)
+                    break
 
-            x_train, y_train = self.__get_set(key="train")
-            x_valid, y_valid = self.__get_set(key="valid")
-            x_test, y_test = self.__get_set(key="test")
-            x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
+        os.mkdir(self.tf_record_path)
+        x_train, y_train = self.__get_set(key="train")
+        x_valid, y_valid = self.__get_set(key="valid")
+        x_test, y_test = self.__get_set(key="test")
+        x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
 
-            tf_recorder = TfRecorder(self.tf_record_path)
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
+        tf_recorder = TfRecorder(self.tf_record_path)
+        for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+            tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
 
-            tf_recorder.save()
-            print("\n=========================================================\n")
-            print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
+        tf_recorder.save()
+        print("\n=========================================================\n")
+        print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
 
     def __get_set(self, key):
+        """
+
+        :param key:
+        :return:
+        x_data = [
+                    [ vector_1, img_path_1], [ vector_2, img_path_2], ... , [ vector_N, img_path_N]
+                ]
+
+        y_data = [ label_1, label_2, ... , label_N ]
+        """
         _x_data, _y_data = list(), list()
 
         x_target = self.vector_matrix["x_" + key][KEY_NAME_OF_MERGE_VECTOR]

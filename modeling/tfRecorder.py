@@ -15,17 +15,22 @@ KEY_OF_DIM = "dim_"
 
 
 class TfRecorder:
-    def __init__(self, tf_record_path):
+    def __init__(self, tf_record_path, do_encode_image=False):
         self.__tf_record_path = tf_record_path
         self.log = dict()
         self.log_file_name = "Log.txt"
         self.n_fold = int()
         self.__load_log()
         self.options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
+        self.__do_encode_image = do_encode_image
 
     @property
     def tf_record_path(self):
         return self.__tf_record_path
+
+    @property
+    def do_encode_image(self):
+        return self.__do_encode_image
 
     @staticmethod
     def _float_feature(value):
@@ -46,44 +51,59 @@ class TfRecorder:
             value = [value]
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
-    def to_tf_records(self, train_image_list, train_label_list, test_image_list, test_label_list):
+    def to_tf_records(self, x_train, y_train, x_test, y_test):
         self.n_fold += 1
 
         # set log for training
-        if KEY_OF_SHAPE not in self.log:
-            self.log[KEY_OF_SHAPE] = self.__get_shape(train_image_list[0][1])
-        self.log[KEY_OF_DIM + str(self.n_fold)] = len(train_image_list[0][0])
-        self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(train_label_list)
-        self.log[KEY_OF_TEST + str(self.n_fold)] = len(test_label_list)
+        if self.do_encode_image:
+            if KEY_OF_SHAPE not in self.log:
+                self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
+            self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
+            self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
+            self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
 
-        self.__to_tf_records(train_image_list, train_label_list, key=KEY_OF_TRAIN + str(self.n_fold))
-        self.__to_tf_records(test_image_list, test_label_list, key=KEY_OF_TEST + str(self.n_fold))
+        self.__to_tf_records(x_train, y_train, key=KEY_OF_TRAIN + str(self.n_fold))
+        self.__to_tf_records(x_test, y_test, key=KEY_OF_TEST + str(self.n_fold))
 
     def __to_tf_records(self, target_image_list, target_label_list, key):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
         total_len = len(target_image_list)
 
         with tf.python_io.TFRecordWriter(path=tf_record_path, options=self.options) as writer:
+            """
+            feature {
+                'vector': vector of numeric and class from medical data
+                'label': label
+                'image': vector of ct image
+                'name': file name of ct image
+            }
+            """
             for i in range(len(target_image_list)):
                 vector = target_image_list[i][0]
-                img_path = target_image_list[i][1]
-                record_name = self.__get_record_name_from_img_path(img_path)
-
-                img = self.__load_image(img_path)
                 label = target_label_list[i]
-                # Create a feature
 
-                feature = {'label': self._int64_feature(label),
-                           'image': self._bytes_feature(tf.compat.as_bytes(img.tostring())),
-                           'name': self._bytes_feature(record_name.encode('utf-8')),
-                           'vector': self._float_feature(vector)}
+                if self.do_encode_image:
+                    img_path = target_image_list[i][1]
+                    record_name = self.__get_record_name_from_img_path(img_path)
+                    img = self.__load_image(img_path)
+
+                    feature = {
+                        'vector': self._float_feature(vector),
+                        'label': self._int64_feature(label),
+                        'image': self._bytes_feature(tf.compat.as_bytes(img.tostring())),
+                        'name': self._bytes_feature(record_name.encode('utf-8'))
+                    }
+                else:
+                    feature = {
+                        'vector': self._float_feature(vector),
+                        'label': self._int64_feature(label)
+                    }
 
                 # Create an example protocol buffer
                 example = tf.train.Example(features=tf.train.Features(feature=feature))
 
                 # Serialize to string and write on the file
                 writer.write(example.SerializeToString())
-
                 show_progress_bar(i + 1, total_len, prefix="Save " + key.rjust(8) + EXTENSION_OF_TF_RECORD)
 
     def save(self):
