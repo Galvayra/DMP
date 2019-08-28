@@ -82,8 +82,11 @@ class TensorModel(MyScore):
         tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
 
         tf_recode = self.tf_recorder.get_img_from_tf_records(tf_record_path)
-        if not is_test:
-            tf_recode = tf_recode.repeat(10)
+        if is_test:
+            tf_recode = tf_recode.repeat(1)
+        else:
+            tf_recode = tf_recode.repeat(EPOCH)
+
         tf_recode = tf_recode.batch(BATCH_SIZE)
 
         return tf_recode

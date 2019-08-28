@@ -5,8 +5,8 @@ from .variables import *
 from PIL import Image
 import numpy as np
 import tensorflow.contrib.slim as slim
-from tensorflow.contrib.slim.nets import vgg
 import tensorflow as tf
+import tensorflow.contrib.slim.nets
 import sys
 from os import path, getcwd
 import matplotlib.pyplot as plt
@@ -59,18 +59,20 @@ class SlimLearner(TensorModel):
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
         hypothesis = self.__init_cnn_model()
-        # logits, end_points = self.__init_pre_trained_model()
         self.__sess_run(hypothesis)
 
     def __sess_run(self, hypothesis):
         # # 체크포인트로부터 파라미터 복원하기
         # # 마지막 fc8 레이어는 파라미터 복원에서 제외
+
+        logits, end_points = self.__init_pre_trained_model()
+
         # exculde = ['vgg_16/fc8']
         # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
         # saver = tf.train.Saver(variables_to_restore)
         # with tf.Session() as sess:
         #     saver.restore(sess, VGG_PATH)
-
+        # exit(-1)
         tf_train_record = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
         tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
         iterator = tf_train_record.make_initializable_iterator()
@@ -102,36 +104,43 @@ class SlimLearner(TensorModel):
             try:
                 step = int()
                 n_iter = int()
-                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE)
+                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE) + 1
+
                 while not coord.should_stop():
                     n_iter += 1
-                    # x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
-                    #
-                    # print(x_batch.shape, x_img.shape, y_batch.shape)
+                    x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
 
-                    x_batch, y_batch, x_img, x_name = sess.run(next_element)
-
-                    # print(x_batch.shape, y_batch.shape, x_img.shape, x_name)
-                    _, tra_loss = sess.run(
-                        [train_step, cross_entropy],
-                        feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-                    )
+                    # # print(x_batch.shape, y_batch.shape, x_img.shape, x_name)
+                    # _, tra_loss = sess.run(
+                    #     [train_step, cross_entropy],
+                    #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                    # )
 
                     # 1 epoch
                     if n_iter % batch_iter == 0:
                         step += 1
-
-                        # if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
-                        print("Step %5d, train loss =  %.5f" % (step, tra_loss))
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cross_entropy, accuracy],
-                            feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-                        )
-
-                        train_writer.add_summary(train_summary, global_step=step)
+                        # # if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+                        # print("Step %5d, train loss =  %.5f" % (step, tra_loss))
+                        # train_summary, tra_loss, tra_acc = sess.run(
+                        #     [merged_summary, cross_entropy, accuracy],
+                        #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                        # )
+                        #
+                        # train_writer.add_summary(train_summary, global_step=step)
 
             except tf.errors.OutOfRangeError:
-                saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+                try:
+                    x_data, y_data = list(), list()
+                    while True:
+                        x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
+                        x_data += list(x_batch)
+                        y_data += list(y_batch)
+                except tf.errors.OutOfRangeError:
+                    x_data = np.array(x_data)
+                    y_data = np.array(y_data)
+
+                    print(x_data.shape, y_data.shape)
+                    saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
             finally:
                 coord.request_stop()
                 coord.join(threads)
@@ -167,6 +176,7 @@ class SlimLearner(TensorModel):
             return net
 
     def __init_pre_trained_model(self):
+        vgg = tf.contrib.slim.nets.vgg
         with slim.arg_scope(vgg.vgg_arg_scope()):
             logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=self.num_of_output_nodes, is_training=True)
 
