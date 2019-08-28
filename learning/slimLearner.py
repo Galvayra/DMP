@@ -125,7 +125,7 @@ class SlimLearner(TensorModel):
                         print("Step %5d, train loss =  %.5f" % (step, tra_loss))
                         train_summary, tra_loss, tra_acc = sess.run(
                             [merged_summary, cross_entropy, accuracy],
-                            feed_dict={self.tf_x: x_batch, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                            feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                         )
 
                         train_writer.add_summary(train_summary, global_step=step)
