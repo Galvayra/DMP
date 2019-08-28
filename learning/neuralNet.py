@@ -77,19 +77,15 @@ class TensorModel(MyScore):
     def get_name_of_tensor(self):
         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
-    def init_tf_record_tensor(self, key):
-        """
-
-        :param key: KEY_OF_TRAIN or KEY_OF_TEST
-        :return: TFRecordDataset.map(_parsed_func)
-        """
+    def init_tf_record_tensor(self, key, is_test=False):
         tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
 
-        dataset = self.tf_recorder.get_img_from_tf_records(tf_record_path)
-        dataset = dataset.repeat(EPOCH)
-        dataset = dataset.batch(BATCH_SIZE)
+        tf_recode = self.tf_recorder.get_img_from_tf_records(tf_record_path)
+        if not is_test:
+            tf_recode = tf_recode.repeat(10)
+        tf_recode = tf_recode.batch(BATCH_SIZE)
 
-        return dataset
+        return tf_recode
 
     def clear_tensor(self):
         self.tf_x = None
