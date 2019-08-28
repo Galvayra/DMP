@@ -196,7 +196,7 @@ class TfRecorder:
         if self.do_encode_image:
             feature = {
                 'vector': tf.VarLenFeature(tf.float32),
-                'label': tf.FixedLenFeature([], tf.int8),
+                'label': tf.FixedLenFeature([], tf.int64),
                 'image': tf.FixedLenFeature([], tf.string),
                 'name': tf.FixedLenFeature([], tf.string)
             }

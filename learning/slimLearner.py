@@ -26,6 +26,7 @@ class SlimLearner(TensorModel):
         self.num_of_output_nodes = 1
         self.tf_recorder = TfRecorder(self.tf_record_path)
         self.tf_name = None
+        self.tf_recorder.do_encode_image = True
 
     # def __concat_tensor(self, target, prefix):
     #     for i, img_path in enumerate(sorted(target)):
@@ -51,8 +52,6 @@ class SlimLearner(TensorModel):
         shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
         shape.insert(0, None)
 
-        tensor_vector, tensor_img, tensor_label, tensor_name = self.init_batch_tensor(key=KEY_OF_TRAIN)
-
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=shape,
                                    name=NAME_X + '_' + str(self.num_of_fold))
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
@@ -61,9 +60,9 @@ class SlimLearner(TensorModel):
 
         hypothesis = self.__init_cnn_model()
         # logits, end_points = self.__init_pre_trained_model()
-        self.__sess_run(hypothesis, tensor_vector, tensor_img, tensor_label, tensor_name)
+        self.__sess_run(hypothesis)
 
-    def __sess_run(self, hypothesis, tensor_vector, tensor_img, tensor_label, tensor_name=None):
+    def __sess_run(self, hypothesis):
         # # 체크포인트로부터 파라미터 복원하기
         # # 마지막 fc8 레이어는 파라미터 복원에서 제외
         # exculde = ['vgg_16/fc8']
@@ -71,6 +70,13 @@ class SlimLearner(TensorModel):
         # saver = tf.train.Saver(variables_to_restore)
         # with tf.Session() as sess:
         #     saver.restore(sess, VGG_PATH)
+
+        tf_train_record = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
+        tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
+        iterator = tf_train_record.make_initializable_iterator()
+        next_element = iterator.get_next()
+        iterator_test = tf_test_record.make_initializable_iterator()
+        next_test_element = iterator_test.get_next()
 
         cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y))
         # optimizer
@@ -83,27 +89,49 @@ class SlimLearner(TensorModel):
 
         with tf.Session() as sess:
             sess.run(init_op)
+            sess.run(iterator.initializer)
+            sess.run(iterator_test.initializer)
+
+            merged_summary = tf.summary.merge_all()
+            train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
+            saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
 
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
             try:
-                for epoch in range(self.best_epoch):
-                    n_iter = int()
-                    while not coord.should_stop():
-                        n_iter += 1
-                        x_img, y_batch = sess.run([tensor_img, tensor_label])
+                step = int()
+                n_iter = int()
+                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE)
+                while not coord.should_stop():
+                    n_iter += 1
+                    # x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
+                    #
+                    # print(x_batch.shape, x_img.shape, y_batch.shape)
 
-                        _, tra_loss = sess.run(
-                            [train_step, cross_entropy],
-                            feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                    x_batch, y_batch, x_img, x_name = sess.run(next_element)
+
+                    # print(x_batch.shape, y_batch.shape, x_img.shape, x_name)
+                    _, tra_loss = sess.run(
+                        [train_step, cross_entropy],
+                        feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                    )
+
+                    # 1 epoch
+                    if n_iter % batch_iter == 0:
+                        step += 1
+
+                        # if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+                        print("Step %5d, train loss =  %.5f" % (step, tra_loss))
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cross_entropy, accuracy],
+                            feed_dict={self.tf_x: x_batch, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                         )
 
-                        print("epoch -", str(epoch).rjust(4),
-                              "  n_iter -", str(n_iter).rjust(4),
-                              "  train loss -", tra_loss)
+                        train_writer.add_summary(train_summary, global_step=step)
+
             except tf.errors.OutOfRangeError:
-                pass
+                saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
             finally:
                 coord.request_stop()
                 coord.join(threads)

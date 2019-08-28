@@ -151,7 +151,7 @@ class VectorMaker:
         x_test, y_test = self.__get_set(key="test")
         x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
 
-        tf_recorder = TfRecorder(self.tf_record_path)
+        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE)
         for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
             tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
 

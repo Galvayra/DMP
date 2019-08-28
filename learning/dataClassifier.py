@@ -86,7 +86,7 @@ class DataClassifier:
         nn.save_process_time()
 
     def transfer_learning(self):
-        nn = SlimLearner(self.dataHandler.tf_record_path)
+        nn = SlimLearner()
         nn.run_fine_tuning()
 
     @staticmethod

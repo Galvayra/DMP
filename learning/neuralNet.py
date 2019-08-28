@@ -8,13 +8,14 @@ from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
 from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
 import tensorflow as tf
 
-if sys.argv[0].split('/')[-1] == "training.py":
+current_script = sys.argv[0].split('/')[-1]
+if current_script == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
         READ_VECTOR
-elif sys.argv[0].split('/')[-1] == "predict.py":
+elif current_script == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, LEARNING_RATE, \
         READ_VECTOR
-elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
+elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
         READ_VECTOR
 
