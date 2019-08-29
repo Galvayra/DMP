@@ -128,7 +128,7 @@ if args.epoch:
         print("\nInput Error type of epoch option!\n")
         exit(-1)
     else:
-        if EPOCH < 100:
+        if EPOCH < 1:
             print("\nInput Error epoch option!\n")
             exit(-1)
 
