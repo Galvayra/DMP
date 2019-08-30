@@ -13,7 +13,10 @@ from DMP.learning.variables import NUM_OF_K_FOLD
 import json
 import os
 import shutil
+import random
 
+SEED = 1
+DO_SHUFFLE = True
 
 ###
 # list of KEY
@@ -149,7 +152,7 @@ class VectorMaker:
         x_train, y_train = self.__get_set(key="train")
         x_valid, y_valid = self.__get_set(key="valid")
         x_test, y_test = self.__get_set(key="test")
-        x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
+        x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
 
         tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE)
         for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
@@ -195,6 +198,17 @@ class VectorMaker:
                 _y_data.append(y)
 
         return _x_data, _y_data
+
+    @staticmethod
+    def __get_shuffle_set(x_data, y_data):
+        if DO_SHUFFLE:
+            print("\n==== Apply shuffle to the dataset ====\n\n")
+            random.seed(SEED)
+            c = list(zip(x_data, y_data))
+            random.shuffle(c)
+            x_data, y_data = zip(*c)
+
+        return x_data, y_data
 
     @staticmethod
     def __get_data_matrix(_data, _index_list):

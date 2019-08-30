@@ -16,7 +16,7 @@ sys.path.append(SLIM_PATH)
 
 from preprocessing import vgg_preprocessing
 
-VGG_PATH = 'dataset/images/save/vgg_16.ckpt'
+VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
 
 
 class SlimLearner(TensorModel):
@@ -66,13 +66,20 @@ class SlimLearner(TensorModel):
         # # 마지막 fc8 레이어는 파라미터 복원에서 제외
 
         logits, end_points = self.__init_pre_trained_model()
+        fc_7 = end_points['vgg_16/fc7']
 
-        # exculde = ['vgg_16/fc8']
-        # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
-        # saver = tf.train.Saver(variables_to_restore)
-        # with tf.Session() as sess:
-        #     saver.restore(sess, VGG_PATH)
-        # exit(-1)
+        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name='W')
+        b = tf.Variable(tf.random_normal([1], mean=0.0))
+
+        fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]])
+        logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
+        probx = tf.nn.sigmoid(logitx)
+
+        cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logitx, labels=self.tf_y))
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+
+        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
+
         tf_train_record = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
         tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
         iterator = tf_train_record.make_initializable_iterator()
@@ -80,16 +87,8 @@ class SlimLearner(TensorModel):
         iterator_test = tf_test_record.make_initializable_iterator()
         next_test_element = iterator_test.get_next()
 
-        cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y))
-        # optimizer
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)
-        # accuracy
-        correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(self.tf_y, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-
         with tf.Session() as sess:
+            init_op = tf.global_variables_initializer()
             sess.run(init_op)
             sess.run(iterator.initializer)
             sess.run(iterator_test.initializer)
@@ -100,6 +99,7 @@ class SlimLearner(TensorModel):
 
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+            init_fn(sess)
 
             try:
                 step = int()
@@ -108,47 +108,110 @@ class SlimLearner(TensorModel):
 
                 while not coord.should_stop():
                     n_iter += 1
-                    x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
+                    x_batch, y_batch, x_img, x_name = sess.run(next_element)
 
-                    # # print(x_batch.shape, y_batch.shape, x_img.shape, x_name)
-                    # _, tra_loss = sess.run(
-                    #     [train_step, cross_entropy],
-                    #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-                    # )
+                    # print(n_iter, x_batch.shape, y_batch.shape, x_img.shape, x_name)
+                    _, tra_loss = sess.run(
+                        [train_step, cost],
+                        feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                    )
 
                     # 1 epoch
                     if n_iter % batch_iter == 0:
                         step += 1
                         # # if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
-                        # print("Step %5d, train loss =  %.5f" % (step, tra_loss))
+                        print("Step %5d, train loss =  %.5f" % (step, tra_loss))
                         # train_summary, tra_loss, tra_acc = sess.run(
                         #     [merged_summary, cross_entropy, accuracy],
                         #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                         # )
-                        #
+
                         # train_writer.add_summary(train_summary, global_step=step)
 
             except tf.errors.OutOfRangeError:
-                try:
-                    x_data, y_data = list(), list()
-                    while True:
-                        x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
-                        x_data += list(x_batch)
-                        y_data += list(y_batch)
-                except tf.errors.OutOfRangeError:
-                    x_data = np.array(x_data)
-                    y_data = np.array(y_data)
-
-                    print(x_data.shape, y_data.shape)
-                    saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+                x_test_batch, y_test_batch = self.get_total_batch(sess, next_test_element)
+                print(x_test_batch.shape, y_test_batch.shape)
+                prob = sess.run(probx, feed_dict={self.tf_x: x_test_batch, self.tf_y: y_test_batch})
+                out_val = (prob > 0.5) * 1
+                print("Accuracy : ", np.sum(out_val == y_test_batch)*100/float(len(y_test_batch)), ' %')
+                saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
             finally:
                 coord.request_stop()
                 coord.join(threads)
 
-        tf.reset_default_graph()
-        self.clear_tensor()
-        print("finish")
-        exit(-1)
+        # # exculde = ['vgg_16/fc8']
+        # # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
+        # # saver = tf.train.Saver(variables_to_restore)
+        # # with tf.Session() as sess:
+        # #     saver.restore(sess, VGG_PATH)
+        # # exit(-1)
+        # tf_train_record = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
+        # tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
+        # iterator = tf_train_record.make_initializable_iterator()
+        # next_element = iterator.get_next()
+        # iterator_test = tf_test_record.make_initializable_iterator()
+        # next_test_element = iterator_test.get_next()
+        #
+        # cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y))
+        # # optimizer
+        # train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cross_entropy)
+        # # accuracy
+        # correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(self.tf_y, 1))
+        # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        #
+        # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+        #
+        # with tf.Session() as sess:
+        #     sess.run(init_op)
+        #     sess.run(iterator.initializer)
+        #     sess.run(iterator_test.initializer)
+        #
+        #     merged_summary = tf.summary.merge_all()
+        #     train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
+        #     saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
+        #
+        #     coord = tf.train.Coordinator()
+        #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+        #
+        #     try:
+        #         step = int()
+        #         n_iter = int()
+        #         batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE) + 1
+        #
+        #         while not coord.should_stop():
+        #             n_iter += 1
+        #             x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
+        #
+        #             # # print(x_batch.shape, y_batch.shape, x_img.shape, x_name)
+        #             # _, tra_loss = sess.run(
+        #             #     [train_step, cross_entropy],
+        #             #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+        #             # )
+        #
+        #             # 1 epoch
+        #             if n_iter % batch_iter == 0:
+        #                 step += 1
+        #                 # # if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+        #                 # print("Step %5d, train loss =  %.5f" % (step, tra_loss))
+        #                 # train_summary, tra_loss, tra_acc = sess.run(
+        #                 #     [merged_summary, cross_entropy, accuracy],
+        #                 #     feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+        #                 # )
+        #                 #
+        #                 # train_writer.add_summary(train_summary, global_step=step)
+        #
+        #     except tf.errors.OutOfRangeError:
+        #         x_test_batch, y_test_batch = self.get_test_batch(sess, next_test_element)
+        #         print(x_test_batch.shape, y_test_batch.shape)
+        #         saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+        #     finally:
+        #         coord.request_stop()
+        #         coord.join(threads)
+        #
+        # tf.reset_default_graph()
+        # self.clear_tensor()
+        # print("finish")
+        # exit(-1)
 
     def __init_cnn_model(self):
         with slim.arg_scope([slim.conv2d, slim.fully_connected],
@@ -178,7 +241,7 @@ class SlimLearner(TensorModel):
     def __init_pre_trained_model(self):
         vgg = tf.contrib.slim.nets.vgg
         with slim.arg_scope(vgg.vgg_arg_scope()):
-            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=self.num_of_output_nodes, is_training=True)
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=False)
 
             return logits, end_points
 

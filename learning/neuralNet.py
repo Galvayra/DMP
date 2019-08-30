@@ -93,7 +93,7 @@ class TensorModel(MyScore):
         return tf_recode
 
     @staticmethod
-    def get_test_batch(sess, next_test_element):
+    def get_total_batch(sess, next_test_element):
         x_data, y_data = list(), list()
         try:
             while True:
