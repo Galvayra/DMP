@@ -7,6 +7,7 @@ import sys
 from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
 from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
 import tensorflow as tf
+import numpy as np
 
 current_script = sys.argv[0].split('/')[-1]
 if current_script == "training.py":
@@ -90,6 +91,20 @@ class TensorModel(MyScore):
         tf_recode = tf_recode.batch(BATCH_SIZE)
 
         return tf_recode
+
+    @staticmethod
+    def get_test_batch(sess, next_test_element):
+        x_data, y_data = list(), list()
+        try:
+            while True:
+                x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
+                x_data += list(x_batch)
+                y_data += list(y_batch)
+        except tf.errors.OutOfRangeError:
+            x_data = np.array(x_data)
+            y_data = np.array(y_data)
+
+        return x_data, y_data
 
     def clear_tensor(self):
         self.tf_x = None

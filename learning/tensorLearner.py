@@ -1,7 +1,6 @@
 import tensorflow as tf
 import math
 import json
-from DMP.modeling.tfRecorder import KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_DIM, KEY_OF_DIM_OUTPUT
 from .neuralNet import TensorModel
 from .variables import *
 
@@ -360,7 +359,7 @@ class NeuralNet(TensorModel):
     #     for _ in range(NUM_OF_K_FOLD):
     #         self.init_place_holder()
     #         self.feed_forward(input_layer=self.tf_x)
-
+    #
     # def init_place_holder(self):
     #     self.num_of_fold += 1
     #     self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_DIM + str(self.num_of_fold)]
@@ -371,49 +370,38 @@ class NeuralNet(TensorModel):
     #     self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
     #                                name=NAME_Y + '_' + str(self.num_of_fold))
     #     self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
-
+    #
     # def feed_forward(self, input_layer):
     #     # initialize neural network
     #     hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
     #                                                 num_of_output_nodes=self.num_of_output_nodes,
     #                                                 input_layer=input_layer)
-    #     self.__sess_run(hypothesis)
-
+    #     h, y_predict, accuracy = self.__sess_run(hypothesis)
+    #     # self.compute_score(y_valid, y_predict, h, accuracy)
+    #     #
+    #     # if self.is_cross_valid:
+    #     #     key = KEY_TEST
+    #     # else:
+    #     #     key = KEY_VALID
+    #     #
+    #     # self.set_score(target=key)
+    #     # self.show_score(target=key)
+    #
     # def __sess_run(self, hypothesis):
     #     if self.do_show:
     #         print("Layer O -", hypothesis.shape, "\n\n\n")
     #
-    #     num_of_class = self.num_of_output_nodes
+    #     with tf.name_scope("cost"):
+    #         hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
+    #         cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
+    #         cost_summ = tf.summary.scalar("cost", cost)
     #
-    #     # Use softmax cross entropy
-    #     if num_of_class > 1:
-    #         with tf.name_scope(NAME_SCOPE_COST):
-    #             cost_i = tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y)
-    #             cost = tf.reduce_mean(cost_i)
-    #             cost_summ = tf.summary.scalar("cost", cost)
+    #     with tf.name_scope("prediction"):
+    #         predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
+    #         _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+    #         accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
     #
-    #         with tf.name_scope(NAME_SCOPE_PREDICT):
-    #             hypothesis = tf.nn.softmax(hypothesis)
-    #             predict = tf.argmax(hypothesis, 1)
-    #             correct_prediction = tf.equal(predict, tf.argmax(self.tf_y, 1))
-    #             _accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
-    #             accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
-    #
-    #         train_op = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(cost)
-    #
-    #     # Do not use softmax cross entropy
-    #     else:
-    #         with tf.name_scope("cost"):
-    #             hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
-    #             cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
-    #             cost_summ = tf.summary.scalar("cost", cost)
-    #
-    #         with tf.name_scope("prediction"):
-    #             predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
-    #             _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
-    #             accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
-    #
-    #         train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cost)
+    #     train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cost)
     #
     #     # set file names for saving
     #     self.set_name_of_log()
@@ -480,14 +468,10 @@ class NeuralNet(TensorModel):
     #                     print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
     #                     saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
     #         except tf.errors.OutOfRangeError:
-    #             pass
-    #             # try:
-    #             #     while True:
-    #             #         x_test_batch, y_test_batch, _, _ = sess.run(next_test_element)
-    #             #
-    #             #         h, p, acc = sess.run([hypothesis, predict, _accuracy],
-    #             #                              feed_dict={self.tf_x: x_test_batch, self.tf_y: y_test_batch,
-    #             #                                         self.keep_prob: 1.0})
+    #             x_test_batch, y_test_batch = self.get_test_batch(sess, next_test_element)
+    #             h, p, acc = sess.run([hypothesis, predict, _accuracy],
+    #                                  feed_dict={self.tf_x: x_test_batch, self.tf_y: y_test_batch,
+    #                                             self.keep_prob: 1.0})
     #
     #         finally:
     #             coord.request_stop()
@@ -495,6 +479,8 @@ class NeuralNet(TensorModel):
     #
     #     tf.reset_default_graph()
     #     self.clear_tensor()
+    #
+    #     return h, p, acc
 
 
 class ConvolutionNet(NeuralNet):

@@ -129,7 +129,7 @@ class DataClassifier:
         x_data = x_train + x_valid + x_test
         y_data = y_train + y_valid + y_test
 
-        return x_data, y_data
+        return self.__get_set(x_data, y_data)
 
     def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
         x_img_data = list()
@@ -184,6 +184,7 @@ class DataClassifier:
     @staticmethod
     def __get_set(x_data, y_data):
         if DO_SHUFFLE:
+            print("\n==== Apply shuffle to the dataset ====\n\n")
             random.seed(SEED)
             c = list(zip(x_data, y_data))
             random.shuffle(c)
