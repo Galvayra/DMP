@@ -93,12 +93,15 @@ class TensorModel(MyScore):
         return tf_recode
 
     @staticmethod
-    def get_total_batch(sess, next_test_element):
+    def get_total_batch(sess, next_test_element, is_get_image=False):
         x_data, y_data = list(), list()
         try:
             while True:
                 x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
-                x_data += list(x_batch)
+                if is_get_image:
+                    x_data += list(x_img)
+                else:
+                    x_data += list(x_batch)
                 y_data += list(y_batch)
         except tf.errors.OutOfRangeError:
             x_data = np.array(x_data)

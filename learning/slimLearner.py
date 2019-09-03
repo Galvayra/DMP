@@ -2,19 +2,15 @@ from DMP.learning.neuralNet import TensorModel
 from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD, KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_DIM, \
     KEY_OF_SHAPE
 from .variables import *
-from PIL import Image
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
 import tensorflow.contrib.slim.nets
 import sys
 from os import path, getcwd
-import matplotlib.pyplot as plt
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
-
-from preprocessing import vgg_preprocessing
 
 VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
 
@@ -27,6 +23,11 @@ class SlimLearner(TensorModel):
         self.tf_recorder = TfRecorder(self.tf_record_path)
         self.tf_name = None
         self.tf_recorder.do_encode_image = True
+
+        # self.shape = (None, Width, Height, channels)
+        shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
+        shape.insert(0, None)
+        self.shape = shape
 
     # def __concat_tensor(self, target, prefix):
     #     for i, img_path in enumerate(sorted(target)):
@@ -48,23 +49,35 @@ class SlimLearner(TensorModel):
     #     tf.reset_default_graph()
     def run_fine_tuning(self):
         self.num_of_fold += 1
-
-        shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
-        shape.insert(0, None)
-
-        self.tf_x = tf.placeholder(dtype=tf.float32, shape=shape,
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=self.shape,
                                    name=NAME_X + '_' + str(self.num_of_fold))
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
-        hypothesis = self.__init_cnn_model()
-        self.__sess_run(hypothesis)
+        h, y_predict, y_test = self.__sess_run()
+        self.compute_score(y_test, y_predict, h)
 
-    def __sess_run(self, hypothesis):
+        if self.is_cross_valid:
+            key = KEY_TEST
+        else:
+            key = KEY_VALID
+
+        self.set_score(target=key)
+        self.show_score(target=key)
+
+    def __init_pre_trained_model(self):
+        vgg = tf.contrib.slim.nets.vgg
+        with slim.arg_scope(vgg.vgg_arg_scope()):
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=False)
+
+            return logits, end_points
+
+    def __sess_run(self):
         # # 체크포인트로부터 파라미터 복원하기
         # # 마지막 fc8 레이어는 파라미터 복원에서 제외
 
+        # hypothesis = self.__init_cnn_model()
         logits, end_points = self.__init_pre_trained_model()
         fc_7 = end_points['vgg_16/fc7']
 
@@ -76,7 +89,7 @@ class SlimLearner(TensorModel):
         probx = tf.nn.sigmoid(logitx)
 
         cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logitx, labels=self.tf_y))
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
 
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
 
@@ -92,6 +105,7 @@ class SlimLearner(TensorModel):
             sess.run(init_op)
             sess.run(iterator.initializer)
             sess.run(iterator_test.initializer)
+            run_opts = tf.RunOptions(report_tensor_allocations_upon_oom=True)
 
             merged_summary = tf.summary.merge_all()
             train_writer = tf.summary.FileWriter(self.name_of_log + "/train", sess.graph)
@@ -113,7 +127,8 @@ class SlimLearner(TensorModel):
                     # print(n_iter, x_batch.shape, y_batch.shape, x_img.shape, x_name)
                     _, tra_loss = sess.run(
                         [train_step, cost],
-                        feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                        feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB},
+                        options=run_opts
                     )
 
                     # 1 epoch
@@ -129,16 +144,33 @@ class SlimLearner(TensorModel):
                         # train_writer.add_summary(train_summary, global_step=step)
 
             except tf.errors.OutOfRangeError:
-                x_test_batch, y_test_batch = self.get_total_batch(sess, next_test_element)
-                print(x_test_batch.shape, y_test_batch.shape)
-                prob = sess.run(probx, feed_dict={self.tf_x: x_test_batch, self.tf_y: y_test_batch})
-                out_val = (prob > 0.5) * 1
-                print("Accuracy : ", np.sum(out_val == y_test_batch)*100/float(len(y_test_batch)), ' %')
-                saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+                # x_test_batch, y_test_batch = self.get_total_batch(sess, next_test_element, is_get_image=True)
+                # print(x_test_batch.shape, y_test_batch.shape)
+                # prob = sess.run(probx, feed_dict={self.tf_x: x_test_batch, self.tf_y: y_test_batch},
+                #                 options=run_opts)
+                hypothesis = list()
+                y_test = list()
+                try:
+                    while True:
+                        x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
+                        prob = sess.run(probx, feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: 1})
+                        for p, y in zip(prob, y_batch):
+                            hypothesis.append(p)
+                            y_test.append(y)
+                except tf.errors.OutOfRangeError:
+                    h = np.array(hypothesis)
+                    y_test = np.array(y_test)
+                    p = (h > 0.5)
+                    # print("\nAccuracy : ", np.sum(p == y_test)*100/float(len(y_test)), '%\n\n\n')
+                    saver.save(sess, save_path=self.get_name_of_tensor() + "/model")
             finally:
                 coord.request_stop()
                 coord.join(threads)
 
+        tf.reset_default_graph()
+        self.clear_tensor()
+
+        return h, p, y_test
         # # exculde = ['vgg_16/fc8']
         # # variables_to_restore = slim.get_variables_to_restore(exclude=exculde)
         # # saver = tf.train.Saver(variables_to_restore)
@@ -237,13 +269,6 @@ class SlimLearner(TensorModel):
             net = slim.fully_connected(net, self.num_of_output_nodes, activation_fn=tf.nn.sigmoid, scope='output')
 
             return net
-
-    def __init_pre_trained_model(self):
-        vgg = tf.contrib.slim.nets.vgg
-        with slim.arg_scope(vgg.vgg_arg_scope()):
-            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=False)
-
-            return logits, end_points
 
     def clear_tensor(self):
         super().clear_tensor()
