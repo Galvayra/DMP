@@ -15,6 +15,7 @@ if sys.argv[0].split('/')[-1] == "parsing.py":
 
 HAVE_SYMPTOM = 1
 PROPOSITION = 10
+SEED = 1
 
 # keys for log file
 KEY_DOWN_SAMPLING = "down_sampling"
@@ -560,10 +561,14 @@ class DataHandler:
             else:
                 return False
 
+        index_list = [i for i in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]]))]
+        random.seed(SEED)
+        random.shuffle(index_list)
+
         if LOG_NAME:
             split_ratio_dict = self.__get_items_in_log_dict(target_key=KEY_SPLIT_RATIO)
 
-            for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
+            for index in index_list:
                 if index in split_ratio_dict["train"]:
                     index_dict[index] = "train"
                 elif index in split_ratio_dict["test"]:
@@ -571,7 +576,7 @@ class DataHandler:
                 else:
                     index_dict[index] = "valid"
         else:
-            for index in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]])):
+            for index in index_list:
                 if __is_choice(RATIO):
                     index_dict[index] = "train"
                     split_ratio_dict["train"].append(index)
