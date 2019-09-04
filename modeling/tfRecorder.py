@@ -140,11 +140,11 @@ class TfRecorder:
               "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
               "\t Death Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH]).rjust(3))
         print("Validation Count -", str(self.log[KEY_OF_VALID]).rjust(4),
-              "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(4),
-              "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(3))
+              "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(4),
+              "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(3))
         print("Test       Count -", str(self.log[KEY_OF_TEST]).rjust(4),
-              "\t Alive Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(4),
-              "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(3))
+              "\t Alive Count -", str(self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(4),
+              "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(3))
 
         with open(self.tf_record_path + self.log_file_name, 'w') as w_file:
             json.dump(self.log, w_file, indent=4)
