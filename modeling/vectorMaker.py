@@ -18,6 +18,7 @@ import random
 SEED = 1
 DO_SHUFFLE = True
 
+
 ###
 # list of KEY
 #   total == train set + validation set + test set
@@ -152,11 +153,20 @@ class VectorMaker:
         x_train, y_train = self.__get_set(key="train")
         x_valid, y_valid = self.__get_set(key="valid")
         x_test, y_test = self.__get_set(key="test")
-        x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
+
+        # shuffle data for avoiding over-fitting
+        if DO_ENCODE_IMAGE:
+            x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
+            i_train, i_valid = len(y_train), len(y_valid)
+            x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_train + i_valid], x_data[i_train + i_valid:]
+            y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_train + i_valid], y_data[i_train + i_valid:]
 
         tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE)
-        for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-            tf_recorder.to_tf_records(x_train, y_train, x_test, y_test)
+        tf_recorder.to_tf_records(x_train, y_train, key="train")
+        tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
+        tf_recorder.to_tf_records(x_test, y_test, key="test")
+
+        # for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
 
         tf_recorder.save()
         print("\n=========================================================\n")
@@ -202,7 +212,7 @@ class VectorMaker:
     @staticmethod
     def __get_shuffle_set(x_data, y_data):
         if DO_SHUFFLE:
-            print("\n==== Apply shuffle to the dataset ====\n\n")
+            print("\nApply shuffle to the dataset for avoiding over-fitting\n\n")
             random.seed(SEED)
             c = list(zip(x_data, y_data))
             random.shuffle(c)
@@ -247,7 +257,7 @@ class VectorMaker:
 
         with open(file_name, 'w') as outfile:
             json.dump(self.vector_matrix, outfile, indent=4)
-            print("\n=========================================================\n\n")
+            print("\n=========================================================\n")
             print("success make dump file! - file name is", file_name)
 
         if do_show:
@@ -260,10 +270,10 @@ class VectorMaker:
             len_y_test = __counting_mortality(self.vector_matrix["y_test"])
 
             print("\nAll   total count -", str(len_x_train + len_x_valid + len_x_test).rjust(4),
-                  "\tmortality count -", str(len_y_train + len_y_valid + len_y_test).rjust(4))
+                  "\tDeath count -", str(len_y_train + len_y_valid + len_y_test).rjust(4))
             print("Train total count -", str(len_x_train).rjust(4),
-                  "\tmortality count -", str(len_y_train).rjust(4))
+                  "\tDeath count -", str(len_y_train).rjust(4))
             print("Valid total count -", str(len_x_valid).rjust(4),
-                  "\tmortality count -", str(len_y_valid).rjust(4))
+                  "\tDeath count -", str(len_y_valid).rjust(4))
             print("Test  total count -", str(len_x_test).rjust(4),
-                  "\tmortality count -", str(len_y_test).rjust(4), "\n\n")
+                  "\tDeath count -", str(len_y_test).rjust(4), "\n\n")

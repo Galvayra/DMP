@@ -89,7 +89,7 @@ class SlimLearner(TensorModel):
         probx = tf.nn.sigmoid(logitx)
 
         cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logitx, labels=self.tf_y))
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
 
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
 

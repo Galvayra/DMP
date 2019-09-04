@@ -9,10 +9,13 @@ from DMP.utils.progress_bar import show_progress_bar
 
 EXTENSION_OF_TF_RECORD = ".tfrecords"
 KEY_OF_SHAPE = "shape"
-KEY_OF_TRAIN = "train_"
-KEY_OF_TEST = "test_"
-KEY_OF_DIM = "dim_"
-KEY_OF_DIM_OUTPUT = "dim_output_"
+KEY_OF_TRAIN = "train"
+KEY_OF_VALID = "valid"
+KEY_OF_TEST = "test"
+KEY_OF_DIM = "dim"
+KEY_OF_DIM_OUTPUT = "dim_output"
+KEY_OF_ALIVE = "alive"
+KEY_OF_DEATH = "death"
 
 
 class TfRecorder:
@@ -20,7 +23,7 @@ class TfRecorder:
         self.__tf_record_path = tf_record_path
         self.log = dict()
         self.log_file_name = "Log.txt"
-        self.n_fold = int()
+        # self.n_fold = int()
         self.__load_log()
         self.options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
         self.__do_encode_image = do_encode_image
@@ -56,19 +59,36 @@ class TfRecorder:
             value = [value]
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
-    def to_tf_records(self, x_train, y_train, x_test, y_test):
-        self.n_fold += 1
-
+    def to_tf_records(self, x_data, y_data, key=KEY_OF_TRAIN):
         # set log for training
         if self.do_encode_image and KEY_OF_SHAPE not in self.log:
-            self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
-        self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
-        self.log[KEY_OF_DIM_OUTPUT + str(self.n_fold)] = len(y_train[0])
-        self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
-        self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
+            self.log[KEY_OF_SHAPE] = self.__get_shape(x_data[0][1])
+        self.log[key + KEY_OF_DIM] = len(x_data[0][0])
+        self.log[key + KEY_OF_DIM_OUTPUT] = len(y_data[0])
+        self.log[key] = len(y_data)
 
-        self.__to_tf_records(x_train, y_train, key=KEY_OF_TRAIN + str(self.n_fold))
-        self.__to_tf_records(x_test, y_test, key=KEY_OF_TEST + str(self.n_fold))
+        death_count = int()
+        for y in y_data:
+            if y == [1]:
+                death_count += 1
+
+        self.log[key + KEY_OF_ALIVE] = self.log[key] - death_count
+        self.log[key + KEY_OF_DEATH] = death_count
+        self.__to_tf_records(x_data, y_data, key=key)
+
+    # def to_tf_records(self, x_train, y_train, x_test, y_test):
+    #     self.n_fold += 1
+    #
+    #     # set log for training
+    #     if self.do_encode_image and KEY_OF_SHAPE not in self.log:
+    #         self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
+    #     self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
+    #     self.log[KEY_OF_DIM_OUTPUT + str(self.n_fold)] = len(y_train[0])
+    #     self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
+    #     self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
+    #
+    #     self.__to_tf_records(x_train, y_train, key=KEY_OF_TRAIN + str(self.n_fold))
+    #     self.__to_tf_records(x_test, y_test, key=KEY_OF_TEST + str(self.n_fold))
 
     def __to_tf_records(self, target_image_list, target_label_list, key):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
@@ -114,6 +134,18 @@ class TfRecorder:
                 show_progress_bar(i + 1, total_len, prefix="Save " + key.rjust(8) + EXTENSION_OF_TF_RECORD)
 
     def save(self):
+        print("\n\n\n======== DataSet Count ========")
+        print("# of dimensions  -", str(self.log[KEY_OF_TRAIN + KEY_OF_DIM]).rjust(4))
+        print("Training   Count -", str(self.log[KEY_OF_TRAIN]).rjust(4),
+              "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
+              "\t Death Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH]).rjust(3))
+        print("Validation Count -", str(self.log[KEY_OF_VALID]).rjust(4),
+              "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(4),
+              "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(3))
+        print("Test       Count -", str(self.log[KEY_OF_TEST]).rjust(4),
+              "\t Alive Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(4),
+              "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(3))
+
         with open(self.tf_record_path + self.log_file_name, 'w') as w_file:
             json.dump(self.log, w_file, indent=4)
 
