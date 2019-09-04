@@ -80,7 +80,7 @@ class TensorModel(MyScore):
         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
 
     def init_tf_record_tensor(self, key, is_test=False):
-        tf_record_path = self.tf_record_path + key + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+        tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
 
         tf_recode = self.tf_recorder.get_img_from_tf_records(tf_record_path)
         if is_test:

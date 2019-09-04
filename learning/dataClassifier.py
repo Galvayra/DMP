@@ -85,10 +85,10 @@ class DataClassifier:
 
         nn.save_process_time()
 
-    def transfer_learning(self):
+    @staticmethod
+    def transfer_learning():
         nn = SlimLearner()
-        for _ in range(NUM_OF_K_FOLD):
-            nn.run_fine_tuning()
+        nn.run_fine_tuning()
 
     @staticmethod
     def __img_scaling(x_train, x_test):

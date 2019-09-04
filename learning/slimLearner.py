@@ -47,8 +47,8 @@ class SlimLearner(TensorModel):
     #
     #         show_progress_bar(i + 1, len(target), prefix="Concatenate tensor for " + prefix)
     #     tf.reset_default_graph()
+
     def run_fine_tuning(self):
-        self.num_of_fold += 1
         self.tf_x = tf.placeholder(dtype=tf.float32, shape=self.shape,
                                    name=NAME_X + '_' + str(self.num_of_fold))
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
@@ -118,7 +118,7 @@ class SlimLearner(TensorModel):
             try:
                 step = int()
                 n_iter = int()
-                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN + str(self.num_of_fold)] / BATCH_SIZE) + 1
+                batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN] / BATCH_SIZE) + 1
 
                 while not coord.should_stop():
                     n_iter += 1

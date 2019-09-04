@@ -245,7 +245,7 @@ class TfRecorder:
         # because a number of dim is same whenever fold
         # vector = tf.reshape(features['vector'], [self.log[KEY_OF_DIM + "1"]])
         vector = tf.sparse_tensor_to_dense(features['vector'], default_value=0)
-        vector = tf.reshape(vector, [self.log[KEY_OF_DIM + "1"]])
+        vector = tf.reshape(vector, [self.log[KEY_OF_TRAIN + KEY_OF_DIM]])
 
         # Cast label data into
         label = tf.reshape(features['label'], [1])
