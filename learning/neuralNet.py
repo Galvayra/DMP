@@ -34,7 +34,6 @@ class TensorModel(MyScore):
         # self.num_of_hidden = int()
         self.learning_rate = LEARNING_RATE
         # self.learning_rate = float()
-        self.loss_list = list()
         self.name_of_log = str()
         self.name_of_tensor = str()
         self.is_cross_valid = is_cross_valid
@@ -58,20 +57,22 @@ class TensorModel(MyScore):
             os.mkdir(self.name_of_tensor)
 
     def set_name_of_log(self):
-        name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
-
         if self.is_cross_valid:
+            name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
             os.mkdir(name_of_log)
+        else:
+            name_of_log = self.name_of_log
 
         if DO_SHOW:
-            print("======== Directory for Saving ========")
+            print("\n======== Directory for Saving ========")
             print("   Log File -", name_of_log)
 
     def set_name_of_tensor(self):
-        name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
-
         if self.is_cross_valid:
+            name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
             os.mkdir(name_of_tensor)
+        else:
+            name_of_tensor = self.name_of_tensor
 
         if DO_SHOW:
             print("Tensor File -", name_of_tensor, "\n\n\n")
@@ -81,6 +82,7 @@ class TensorModel(MyScore):
 
     def init_tf_record_tensor(self, key, is_test=False):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
+        print("Initialize tfRecord -", self.tf_record_path + key + EXTENSION_OF_TF_RECORD)
 
         tf_recode = self.tf_recorder.get_img_from_tf_records(tf_record_path)
         if is_test:
@@ -92,20 +94,29 @@ class TensorModel(MyScore):
 
         return tf_recode
 
-    @staticmethod
-    def get_total_batch(sess, next_test_element, is_get_image=False):
+    def get_total_batch(self, key, is_get_image=False):
         x_data, y_data = list(), list()
-        try:
-            while True:
-                x_batch, y_batch, x_img, tensor_name = sess.run(next_test_element)
-                if is_get_image:
-                    x_data += list(x_img)
-                else:
-                    x_data += list(x_batch)
-                y_data += list(y_batch)
-        except tf.errors.OutOfRangeError:
-            x_data = np.array(x_data)
-            y_data = np.array(y_data)
+
+        tf_train_summary = self.init_tf_record_tensor(key=key, is_test=True)
+        iterator_summary = tf_train_summary.make_initializable_iterator()
+        next_summary_element = iterator_summary.get_next()
+
+        with tf.Session() as sess:
+            sess.run(iterator_summary.initializer)
+            try:
+                while True:
+                    x_batch, y_batch, x_img, tensor_name = sess.run(next_summary_element)
+
+                    for x, x_img, y in zip(x_batch, x_img, y_batch):
+                        if is_get_image:
+                            x_data.append(x_img)
+                        else:
+                            x_data.append(x)
+                        y_data.append(y)
+
+            except tf.errors.OutOfRangeError:
+                x_data = np.array(x_data)
+                y_data = np.array(y_data)
 
         return x_data, y_data
 
