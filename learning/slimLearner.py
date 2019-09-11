@@ -107,7 +107,7 @@ class SlimLearner(TensorModel):
 
         # initialize tfRecord
         tf_train_record = self.init_tf_record_tensor(key=KEY_OF_TRAIN)
-        tf_valid_record = self.init_tf_record_tensor(key=KEY_OF_VALID)
+        tf_valid_record = self.init_tf_record_tensor(key=KEY_OF_VALID, is_test=True)
         tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
 
         # initialize iterators
@@ -165,25 +165,28 @@ class SlimLearner(TensorModel):
                         feed_dict={self.tf_x: x_img, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                     )
 
-                    x_valid_batch, y_valid_batch, x_valid_img, x_valid_name = sess.run(next_valid_element)
-                    valid_summary, val_loss, val_acc = sess.run(
-                        [merged_summary, cost, _accuracy],
-                        feed_dict={self.tf_x: x_valid_img, self.tf_y: y_valid_batch, self.keep_prob: KEEP_PROB}
-                    )
-
                     train_writer.add_summary(train_summary, global_step=n_iter)
-                    valid_writer.add_summary(valid_summary, global_step=n_iter)
 
                     loss_dict["train"].append(tra_loss)
-                    loss_dict["valid"].append(val_loss)
                     acc_dict["train"].append(tra_acc)
-                    acc_dict["valid"].append(val_acc)
 
                     # epoch
                     if n_iter % batch_iter == 0:
                         step += 1
 
-                        print(len(loss_dict["train"]), len(loss_dict["valid"]))
+                        try:
+                            while True:
+                                x_valid_batch, y_valid_batch, x_valid_img, x_valid_name = sess.run(next_valid_element)
+                                valid_summary, val_loss, val_acc = sess.run(
+                                    [merged_summary, cost, _accuracy],
+                                    feed_dict={self.tf_x: x_valid_img, self.tf_y: y_valid_batch,
+                                               self.keep_prob: KEEP_PROB}
+                                )
+                                valid_writer.add_summary(valid_summary, global_step=n_iter)
+                                loss_dict["valid"].append(val_loss)
+                                acc_dict["valid"].append(val_acc)
+                        except tf.errors.OutOfRangeError:
+                            print(step, len(loss_dict["train"]), len(loss_dict["valid"]))
                         self.__set_average_values(step, loss_dict, acc_dict)
 
             except tf.errors.OutOfRangeError:
