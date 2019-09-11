@@ -130,7 +130,6 @@ class SlimLearner(TensorModel):
             init_op = tf.global_variables_initializer()
             sess.run(init_op)
             sess.run(iterator_train.initializer)
-            sess.run(iterator_valid.initializer)
             sess.run(iterator_test.initializer)
 
             merged_summary = tf.summary.merge_all()
@@ -173,6 +172,7 @@ class SlimLearner(TensorModel):
                     # epoch
                     if n_iter % batch_iter == 0:
                         step += 1
+                        sess.run(iterator_valid.initializer)
 
                         try:
                             while True:
