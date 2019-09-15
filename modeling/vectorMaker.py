@@ -3,7 +3,8 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
     KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID, TF_RECORD_PATH
-from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY, DO_ENCODE_IMAGE
+from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY, DO_ENCODE_IMAGE, \
+    IS_CROSS_VALID
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
@@ -166,7 +167,7 @@ class VectorMaker:
             x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
             y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
 
-        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE)
+        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE, is_cross_valid=IS_CROSS_VALID)
         tf_recorder.to_tf_records(x_train, y_train, key="train")
         tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
         tf_recorder.to_tf_records(x_test, y_test, key="test")

@@ -88,7 +88,12 @@ class DataClassifier:
     @staticmethod
     def transfer_learning():
         nn = SlimLearner()
-        nn.run_fine_tuning()
+        if not nn.is_cross_valid:
+            nn.run_fine_tuning()
+        else:
+            pass
+            for _ in range(NUM_OF_K_FOLD):
+                nn.run_fine_tuning()
 
     @staticmethod
     def __img_scaling(x_train, x_test):

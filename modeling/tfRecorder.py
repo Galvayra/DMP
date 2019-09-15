@@ -16,10 +16,11 @@ KEY_OF_DIM = "dim"
 KEY_OF_DIM_OUTPUT = "dim_output"
 KEY_OF_ALIVE = "alive"
 KEY_OF_DEATH = "death"
+KEY_OF_IS_CROSS_VALID = "is_cross_valid"
 
 
 class TfRecorder:
-    def __init__(self, tf_record_path, do_encode_image=False):
+    def __init__(self, tf_record_path, do_encode_image=False, is_cross_valid=False):
         self.__tf_record_path = tf_record_path
         self.log = dict()
         self.log_file_name = "Log.txt"
@@ -27,6 +28,7 @@ class TfRecorder:
         self.__load_log()
         self.options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
         self.__do_encode_image = do_encode_image
+        self.__is_cross_valid = is_cross_valid
 
     @property
     def tf_record_path(self):
@@ -39,6 +41,10 @@ class TfRecorder:
     @do_encode_image.setter
     def do_encode_image(self, do_encode_image):
         self.__do_encode_image = do_encode_image
+
+    @property
+    def is_cross_valid(self):
+        return self.__is_cross_valid
 
     @staticmethod
     def _float_feature(value):
@@ -63,6 +69,10 @@ class TfRecorder:
         # set log for training
         if self.do_encode_image and KEY_OF_SHAPE not in self.log:
             self.log[KEY_OF_SHAPE] = self.__get_shape(x_data[0][1])
+
+        if KEY_OF_IS_CROSS_VALID not in self.log:
+            self.log[KEY_OF_IS_CROSS_VALID] = self.is_cross_valid
+
         self.log[key + KEY_OF_DIM] = len(x_data[0][0])
         self.log[key + KEY_OF_DIM_OUTPUT] = len(y_data[0])
         self.log[key] = len(y_data)
@@ -75,20 +85,6 @@ class TfRecorder:
         self.log[key + KEY_OF_ALIVE] = self.log[key] - death_count
         self.log[key + KEY_OF_DEATH] = death_count
         self.__to_tf_records(x_data, y_data, key=key)
-
-    # def to_tf_records(self, x_train, y_train, x_test, y_test):
-    #     self.n_fold += 1
-    #
-    #     # set log for training
-    #     if self.do_encode_image and KEY_OF_SHAPE not in self.log:
-    #         self.log[KEY_OF_SHAPE] = self.__get_shape(x_train[0][1])
-    #     self.log[KEY_OF_DIM + str(self.n_fold)] = len(x_train[0][0])
-    #     self.log[KEY_OF_DIM_OUTPUT + str(self.n_fold)] = len(y_train[0])
-    #     self.log[KEY_OF_TRAIN + str(self.n_fold)] = len(y_train)
-    #     self.log[KEY_OF_TEST + str(self.n_fold)] = len(y_test)
-    #
-    #     self.__to_tf_records(x_train, y_train, key=KEY_OF_TRAIN + str(self.n_fold))
-    #     self.__to_tf_records(x_test, y_test, key=KEY_OF_TEST + str(self.n_fold))
 
     def __to_tf_records(self, target_image_list, target_label_list, key):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
@@ -139,9 +135,10 @@ class TfRecorder:
         print("Training   Count -", str(self.log[KEY_OF_TRAIN]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
               "\t Death Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH]).rjust(3))
-        print("Validation Count -", str(self.log[KEY_OF_VALID]).rjust(4),
-              "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(4),
-              "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(3))
+        if self.is_cross_valid:
+            print("Validation Count -", str(self.log[KEY_OF_VALID]).rjust(4),
+                  "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(4),
+                  "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(3))
         print("Test       Count -", str(self.log[KEY_OF_TEST]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(4),
               "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(3))
@@ -168,61 +165,6 @@ class TfRecorder:
         num_of_image = img_path[-1].split(EXTENSION_OF_IMAGE)[0]
 
         return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
-    #
-    # def get_img_from_tf_records(self, tf_record_path):
-    #     if self.do_encode_image:
-    #         feature = {
-    #             'vector': tf.VarLenFeature(tf.float32),
-    #             'label': tf.FixedLenFeature([], tf.int8),
-    #             'image': tf.FixedLenFeature([], tf.string),
-    #             'name': tf.FixedLenFeature([], tf.string)
-    #         }
-    #     else:
-    #         feature = {
-    #             'vector': tf.VarLenFeature(tf.float32),
-    #             'label': tf.FixedLenFeature([], tf.int64),
-    #             'image': tf.FixedLenFeature([], tf.int64),
-    #             'name': tf.FixedLenFeature([], tf.int64)
-    #         }
-    #
-    #     # Create a list of filenames and pass it to a queue
-    #     filename_queue = tf.train.string_input_producer([tf_record_path], num_epochs=1)
-    #     print("\nSuccess to read -", tf_record_path, "\n")
-    #     # Define a reader and read the next record
-    #
-    #     reader = tf.TFRecordReader(options=self.options)
-    #     _, serialized_example = reader.read(filename_queue)
-    #
-    #     # Decode the record read by the reader
-    #     features = tf.parse_single_example(serialized_example, features=feature)
-    #
-    #     # because a number of dim is same whenever fold
-    #     # vector = tf.reshape(features['vector'], [self.log[KEY_OF_DIM + "1"]])
-    #     vector = tf.sparse_tensor_to_dense(features['vector'], default_value=0)
-    #     vector = tf.reshape(vector, [self.log[KEY_OF_DIM + "1"]])
-    #
-    #     # Cast label data into
-    #     label = tf.reshape(features['label'], [1])
-    #     label = tf.cast(label, tf.int8)
-    #
-    #     if self.do_encode_image:
-    #         image = tf.decode_raw(features['image'], tf.float32)
-    #         image = tf.reshape(image, self.log[KEY_OF_SHAPE])
-    #
-    #         name = tf.cast(features['name'], tf.string)
-    #
-    #         if DO_NORMALIZE:
-    #             image /= image
-    #         else:
-    #             image = tf.cast(image, tf.uint8)
-    #     else:
-    #         image = tf.reshape(features['image'], [1])
-    #         image = tf.cast(image, tf.int8)
-    #
-    #         name = tf.reshape(features['name'], [1])
-    #         name = tf.cast(name, tf.int8)
-    #
-    #     return vector, label, image, name
 
     def _parse_func(self, serialized_example):
         if self.do_encode_image:

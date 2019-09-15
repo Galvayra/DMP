@@ -37,6 +37,10 @@ def get_arguments():
                         help="set whether encode ct images or not(default is 0)"
                              "\nUseAge : python encoding.py -encode_image 'E'\n\n",
                         default=0, type=int)
+    parser.add_argument("-is_cross_valid", "--is_cross_valid",
+                        help="set whether using cross validation or not(default is 0)"
+                             "\nUseAge : python encoding.py -is_cross_valid 'E'\n\n",
+                        default=0, type=int)
     _args = parser.parse_args()
 
     return _args
@@ -61,6 +65,7 @@ NUM_OF_IMPORTANT = NUM_OF_FEATURES
 
 DO_CROSS_ENTROPY = args.softmax
 DO_ENCODE_IMAGE = args.encode_image
+IS_CROSS_VALID = args.is_cross_valid
 
 if DO_CROSS_ENTROPY != 1 and DO_CROSS_ENTROPY != 0:
     print("\nInput Error softmax option!\n")
@@ -68,6 +73,10 @@ if DO_CROSS_ENTROPY != 1 and DO_CROSS_ENTROPY != 0:
 
 if DO_ENCODE_IMAGE != 1 and DO_ENCODE_IMAGE != 0:
     print("\nInput Error encode_image option!\n")
+    exit(-1)
+
+if IS_CROSS_VALID != 1 and IS_CROSS_VALID != 0:
+    print("\nInput Error is_cross_valid option!\n")
     exit(-1)
 
 if args.input:
