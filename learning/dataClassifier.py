@@ -19,6 +19,10 @@ elif current_script == "fine_tuning.py":
     from DMP.learning.slimLearner import SlimLearner
     from sklearn.preprocessing import StandardScaler
     from DMP.learning.variables import NUM_OF_K_FOLD
+elif current_script == "predict_tfRecord.py":
+    from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
+    # from DMP.learning.transferLearner import TransferLearner
+    from DMP.learning.slimLearner import SlimLearner
 
 SEED = 1
 DO_SHUFFLE = True
@@ -88,12 +92,13 @@ class DataClassifier:
     @staticmethod
     def transfer_learning():
         nn = SlimLearner()
+
         if not nn.is_cross_valid:
             nn.run_fine_tuning()
         else:
             pass
-            for _ in range(NUM_OF_K_FOLD):
-                nn.run_fine_tuning()
+            # for _ in range(NUM_OF_K_FOLD):
+            #     nn.run_fine_tuning()
 
     @staticmethod
     def __img_scaling(x_train, x_test):
@@ -324,6 +329,13 @@ class DataClassifier:
                 nn.save(self.dataHandler)
                 nn.show_process_time()
                 nn.show_plot()
+
+    @staticmethod
+    def predict_tf_record():
+        nn = SlimLearner()
+
+        if not nn.is_cross_valid:
+            nn.load_nn()
 
     # @staticmethod
     # def show_multi_plot():

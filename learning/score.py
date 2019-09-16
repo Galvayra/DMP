@@ -13,6 +13,8 @@ elif sys.argv[0].split('/')[-1] == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
 elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW
+elif sys.argv[0].split('/')[-1] == "predict_tfRecord.py":
+    from DMP.utils.arg_fine_tuning import DO_SHOW
 
 NUM_OF_BLANK = 2
 INDEX_OF_PERFORMANCE = 0

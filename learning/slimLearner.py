@@ -1,5 +1,5 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tfRecorder import TfRecorder, KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_VALID, KEY_OF_SHAPE
+from DMP.modeling.tfRecorder import TfRecorder, KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_VALID, KEY_OF_SHAPE, KEY_OF_DIM
 from .variables import *
 import numpy as np
 import tensorflow.contrib.slim as slim
@@ -22,6 +22,7 @@ class SlimLearner(TensorModel):
         self.tf_recorder = TfRecorder(self.tf_record_path)
         self.tf_name = None
         self.tf_recorder.do_encode_image = True
+        self.is_cross_valid = self.tf_recorder.is_cross_valid
 
         # self.shape = (None, Width, Height, channels)
         shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
@@ -78,9 +79,9 @@ class SlimLearner(TensorModel):
 
         fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]])
         logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
-        hypothesis = tf.nn.sigmoid(logitx)
 
         with tf.name_scope(NAME_SCOPE_COST):
+            hypothesis = tf.nn.sigmoid(logitx, name=NAME_HYPO + '_' + str(self.num_of_fold))
             cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logitx, labels=self.tf_y))
             cost_summary = tf.summary.scalar("cost", cost)
 
@@ -124,9 +125,10 @@ class SlimLearner(TensorModel):
 
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-            init_fn(sess)
-            step = int()
 
+            init_fn(sess)
+
+            step = int()
             try:
                 n_iter = int()
                 batch_iter = int(self.tf_recorder.log[KEY_OF_TRAIN] / BATCH_SIZE) + 1
@@ -190,7 +192,8 @@ class SlimLearner(TensorModel):
                     self.loss_dict["valid"].append(val_loss)
                     self.acc_dict["valid"].append(val_acc)
             except tf.errors.OutOfRangeError:
-                print(len(self.loss_dict["train"]), len(self.loss_dict["valid"]))
+                pass
+                # print(len(self.loss_dict["train"]), len(self.loss_dict["valid"]))
 
     def __set_average_values(self, step):
         tra_loss = float(np.mean(np.array(self.loss_dict["train"])))
@@ -228,6 +231,46 @@ class SlimLearner(TensorModel):
             self.h = np.array(h_list)
             self.p = (self.h > 0.5)
             self.y_test = np.array(y_test)
+
+    def load_nn(self):
+        self.num_of_fold += 1
+        checkpoint = tf.train.get_checkpoint_state(self.get_name_of_tensor())
+        paths = checkpoint.all_model_checkpoint_paths
+        target_path = paths[-1]
+
+        self.best_epoch = int(target_path.split("/")[-1].split("model-")[-1])
+        self.num_of_dimension = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
+        self.__init_var_result()
+
+        tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
+        iterator_test = tf_test_record.make_initializable_iterator()
+
+        with tf.Session() as sess:
+            saver = tf.train.import_meta_graph(target_path + '.meta')
+            saver.restore(sess, target_path)
+
+            print("\n\n\ncheckpoint -", target_path, "\nBest Epoch -", self.best_epoch, "\n")
+
+            # load tensor
+            graph = tf.get_default_graph()
+            str_n_fold = str(self.num_of_fold)
+            self.tf_x = graph.get_tensor_by_name(NAME_X + "_" + str_n_fold + ":0")
+            self.tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str_n_fold + ":0")
+            self.keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str_n_fold + ":0")
+            hypothesis = graph.get_tensor_by_name(NAME_SCOPE_COST + "/" + NAME_HYPO + "_" + str_n_fold + ":0")
+            predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
+            num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
+            learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
+
+            self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
+            self.__set_test_prob(sess, iterator_test, hypothesis)
+
+        tf.reset_default_graph()
+        self.clear_tensor()
+
+        self.compute_score(self.y_test, self.p, self.h)
+        self.set_score(target=KEY_TEST)
+        self.show_score(target=KEY_TEST)
 
     def clear_tensor(self):
         super().clear_tensor()

@@ -25,8 +25,9 @@ elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
     from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
-    from os import path
-
+elif current_script == "predict_tfRecord.py":
+    from DMP.utils.arg_predict_tfRecord import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, \
+        show_options
 
 alivePath = 'alive/'
 deathPath = 'death/'

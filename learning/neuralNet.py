@@ -19,6 +19,9 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
         READ_VECTOR
+elif current_script == "predict_tfRecord.py":
+    from DMP.utils.arg_predict_tfRecord import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, \
+        LEARNING_RATE, READ_VECTOR
 
 
 class TensorModel(MyScore):
@@ -78,7 +81,10 @@ class TensorModel(MyScore):
             print("Tensor File -", name_of_tensor, "\n\n\n")
 
     def get_name_of_tensor(self):
-        return self.name_of_tensor + "fold_" + str(self.num_of_fold)
+        if self.is_cross_valid:
+            return self.name_of_tensor + "fold_" + str(self.num_of_fold)
+        else:
+            return self.name_of_tensor
 
     def init_tf_record_tensor(self, key, is_test=False):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD

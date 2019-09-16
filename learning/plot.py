@@ -45,16 +45,22 @@ class MyPlot:
                 self.my_plot.set_title("Convolution Neural Network")
 
     def save_loss_plot(self, log_path, step_list):
-        plt.plot(step_list, self.tra_loss_list, '-c', label='loss')
-        plt.plot(step_list, self.val_loss_list, '-r', label='loss')
-        plt.plot(step_list, self.tra_acc_list, '-y', label='accuracy')
-        plt.plot(step_list, self.val_acc_list, '-m', label='accuracy')
-
+        plt.plot(step_list, self.tra_loss_list, '-b', label='train loss')
+        plt.plot(step_list, self.val_loss_list, '-r', label='valid loss')
         plt.xlabel("epoch")
         plt.legend(loc='upper left')
-        plt.title("cost/accuracy graph")
-        plt.savefig(log_path + "graph.png")
-        print("\nSuccess to save graph -", log_path + "graph.png")
+        plt.title("loss graph")
+        plt.savefig(log_path + "loss_graph.png")
+        plt.clf()
+
+        plt.plot(step_list, self.tra_acc_list, '-b', label='train acc')
+        plt.plot(step_list, self.val_acc_list, '-r', label='valid acc')
+        plt.xlabel("epoch")
+        plt.legend(loc='upper left')
+        plt.title("accuracy graph")
+        plt.savefig(log_path + "accuracy_graph.png")
+
+        print("\nSuccess to save graphs in the ", log_path)
 
     def set_plot(self, k=None, fpr=None, tpr=None, title=None):
         if DO_SHOW_PLOT:
