@@ -166,6 +166,13 @@ class VectorMaker:
 
         # shuffle data for avoiding over-fitting
         if IS_CROSS_VALID:
+            print("This scope will be implemented")
+            # TODO implement k-fold cross validation
+            exit(-1)
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                tf_recorder.to_tf_records(x_train, y_train, key="train")
+                tf_recorder.to_tf_records(x_test, y_test, key="test")
+        else:
             i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
             x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
             y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
@@ -173,13 +180,6 @@ class VectorMaker:
             tf_recorder.to_tf_records(x_train, y_train, key="train")
             tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
             tf_recorder.to_tf_records(x_test, y_test, key="test")
-        else:
-            print("This scope will be implemented")
-            # TODO implement k-fold cross validation
-            exit(-1)
-            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                tf_recorder.to_tf_records(x_train, y_train, key="train")
-                tf_recorder.to_tf_records(x_test, y_test, key="test")
 
         tf_recorder.save()
         print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")

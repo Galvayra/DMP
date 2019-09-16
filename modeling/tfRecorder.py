@@ -46,6 +46,10 @@ class TfRecorder:
     def is_cross_valid(self):
         return self.__is_cross_valid
 
+    @is_cross_valid.setter
+    def is_cross_valid(self, is_cross_valid):
+        self.__is_cross_valid = is_cross_valid
+
     @staticmethod
     def _float_feature(value):
         """Returns a float_list from a float / double."""
@@ -157,6 +161,8 @@ class TfRecorder:
                     self.do_encode_image = False
                 else:
                     self.do_encode_image = True
+
+                self.is_cross_valid = self.log[KEY_OF_IS_CROSS_VALID]
 
     @staticmethod
     def __get_record_name_from_img_path(img_path):

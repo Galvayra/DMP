@@ -38,9 +38,9 @@ def get_arguments():
                              "\nUseAge : python encoding.py -encode_image 'E'\n\n",
                         default=0, type=int)
     parser.add_argument("-is_cross_valid", "--is_cross_valid",
-                        help="set whether using cross validation or not(default is 1)"
+                        help="set whether using cross validation or not(default is 0)"
                              "\nUseAge : python encoding.py -is_cross_valid 'E'\n\n",
-                        default=1, type=int)
+                        default=0, type=int)
     _args = parser.parse_args()
 
     return _args
