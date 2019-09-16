@@ -159,21 +159,29 @@ class VectorMaker:
         x_train, y_train = self.__get_set(key="train")
         x_valid, y_valid = self.__get_set(key="valid")
         x_test, y_test = self.__get_set(key="test")
+        x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
+
+        # initialize TfRecorder class
+        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE, is_cross_valid=IS_CROSS_VALID)
 
         # shuffle data for avoiding over-fitting
-        if DO_ENCODE_IMAGE:
-            x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
+        if IS_CROSS_VALID:
             i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
             x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
             y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
 
-        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE, is_cross_valid=IS_CROSS_VALID)
-        tf_recorder.to_tf_records(x_train, y_train, key="train")
-        tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
-        tf_recorder.to_tf_records(x_test, y_test, key="test")
+            tf_recorder.to_tf_records(x_train, y_train, key="train")
+            tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
+            tf_recorder.to_tf_records(x_test, y_test, key="test")
+        else:
+            print("This scope will be implemented")
+            # TODO implement k-fold cross validation
+            exit(-1)
+            for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+                tf_recorder.to_tf_records(x_train, y_train, key="train")
+                tf_recorder.to_tf_records(x_test, y_test, key="test")
 
         tf_recorder.save()
-        print("\n=========================================================\n")
         print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
 
     def __get_set(self, key):
@@ -228,16 +236,16 @@ class VectorMaker:
     def __get_data_matrix(_data, _index_list):
         return [_data[i] for i in _index_list]
 
-    # def __data_generator(self, x_data, y_data):
-    #     cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
-    #
-    #     for train_index_list, test_index_list in cv.split(x_data, y_data):
-    #         x_train = self.__get_data_matrix(x_data, train_index_list)
-    #         y_train = self.__get_data_matrix(y_data, train_index_list)
-    #         x_test = self.__get_data_matrix(x_data, test_index_list)
-    #         y_test = self.__get_data_matrix(y_data, test_index_list)
-    #
-    #         yield x_train, y_train, x_test, y_test
+    def __data_generator(self, x_data, y_data):
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
+
+        for train_index_list, test_index_list in cv.split(x_data, y_data):
+            x_train = self.__get_data_matrix(x_data, train_index_list)
+            y_train = self.__get_data_matrix(y_data, train_index_list)
+            x_test = self.__get_data_matrix(x_data, test_index_list)
+            y_test = self.__get_data_matrix(y_data, test_index_list)
+
+            yield x_train, y_train, x_test, y_test
 
     def dump(self, do_show=True):
         def __counting_mortality(_data):

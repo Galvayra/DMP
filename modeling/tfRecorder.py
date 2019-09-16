@@ -130,7 +130,7 @@ class TfRecorder:
                 show_progress_bar(i + 1, total_len, prefix="Save " + key.rjust(8) + EXTENSION_OF_TF_RECORD)
 
     def save(self):
-        print("\n\n\n======== DataSet Count ========")
+        print("\n\n\n======== Set of TfRecord ========\n")
         print("# of dimensions  -", str(self.log[KEY_OF_TRAIN + KEY_OF_DIM]).rjust(4))
         print("Training   Count -", str(self.log[KEY_OF_TRAIN]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
@@ -141,7 +141,7 @@ class TfRecorder:
                   "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(3))
         print("Test       Count -", str(self.log[KEY_OF_TEST]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(4),
-              "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(3))
+              "\t Death Count -", str(self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(3), '\n')
 
         with open(self.tf_record_path + self.log_file_name, 'w') as w_file:
             json.dump(self.log, w_file, indent=4)
