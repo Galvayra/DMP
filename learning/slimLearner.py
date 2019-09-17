@@ -12,6 +12,7 @@ SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
 
 VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
+NAME_FC = "fc"
 
 
 class SlimLearner(TensorModel):
@@ -33,6 +34,7 @@ class SlimLearner(TensorModel):
         elif model == "ffnn":
             self.tf_recorder.do_encode_image = False
 
+        self.early_stopping = EarlyStopping(patience=10, verbose=1)
         self.loss_dict = {
             "train": list(),
             "valid": list()
@@ -135,7 +137,7 @@ class SlimLearner(TensorModel):
         W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name='W')
         b = tf.Variable(tf.random_normal([1], mean=0.0))
 
-        fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]])
+        fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]], name=NAME_FC)
         logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
 
         with tf.name_scope(NAME_SCOPE_COST):
@@ -148,7 +150,8 @@ class SlimLearner(TensorModel):
             acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
             accuracy_summary = tf.summary.scalar("accuracy", acc)
 
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+        # train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
@@ -221,26 +224,29 @@ class SlimLearner(TensorModel):
                     n_iter += 1
                     x_batch, y_batch, x_img, x_name = sess.run(next_train_element)
 
-                    if self.tf_recorder.do_encode_image:
-                        target = x_img
-                    else:
-                        target = x_batch
+                    # early stop for avoid over-fitting
+                    if not self.early_stopping.is_stop:
+                        if self.tf_recorder.do_encode_image:
+                            target = x_img
+                        else:
+                            target = x_batch
 
-                    train_summary, _, tra_loss, tra_acc = sess.run(
-                        [merged_summary, train_step, cost, acc],
-                        feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-                    )
+                        train_summary, _, tra_loss, tra_acc = sess.run(
+                            [merged_summary, train_step, cost, acc],
+                            feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                        )
 
-                    train_writer.add_summary(train_summary, global_step=n_iter)
+                        train_writer.add_summary(train_summary, global_step=n_iter)
 
-                    self.loss_dict["train"].append(tra_loss)
-                    self.acc_dict["train"].append(tra_acc)
+                        self.loss_dict["train"].append(tra_loss)
+                        self.acc_dict["train"].append(tra_acc)
 
-                    # epoch
-                    if n_iter % batch_iter == 0:
-                        step += 1
-                        self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
-                        self.__set_average_values(step)
+                        # epoch
+                        if n_iter % batch_iter == 0:
+                            step += 1
+                            self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
+                            if self.__set_average_values(step):
+                                self.early_stopping.is_stop = True
 
             except tf.errors.OutOfRangeError:
                 # last epoch
@@ -307,6 +313,11 @@ class SlimLearner(TensorModel):
             self.acc_dict["valid"].clear()
             print("             valid loss = %.5f,  accuracy = %.2f" % (val_loss, val_acc * 100))
 
+            if self.early_stopping.validate(val_loss):
+                return True
+
+        return False
+
     def __set_test_prob(self, sess, iterator, hypothesis):
         h_list = list()
         y_test = list()
@@ -354,6 +365,9 @@ class SlimLearner(TensorModel):
             # load tensor
             graph = tf.get_default_graph()
             str_n_fold = str(self.num_of_fold)
+            # for tensor in graph.as_graph_def().node:
+            #     print(tensor)
+
             self.tf_x = graph.get_tensor_by_name(NAME_X + "_" + str_n_fold + ":0")
             self.tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str_n_fold + ":0")
             self.keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str_n_fold + ":0")
@@ -361,6 +375,10 @@ class SlimLearner(TensorModel):
             predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
             num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
             learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
+
+            # fc7 = graph.get_tensor_by_name('vgg_16/fc7:0')
+            # print(fc7)
+            # exit(-1)
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             self.__set_test_prob(sess, iterator_test, hypothesis)
@@ -375,3 +393,25 @@ class SlimLearner(TensorModel):
     def clear_tensor(self):
         super().clear_tensor()
         self.tf_name = None
+
+
+class EarlyStopping:
+    def __init__(self, patience=0, verbose=0):
+        self._step = 0
+        self._loss = float('inf')
+        self.patience = patience
+        self.verbose = verbose
+        self.is_stop = False
+
+    def validate(self, loss):
+        if self._loss < loss:
+            self._step += 1
+            if self._step > self.patience:
+                if self.verbose:
+                    print(f'Training process is stopped early....')
+                return True
+        else:
+            self._step = 0
+            self._loss = loss
+
+        return False
