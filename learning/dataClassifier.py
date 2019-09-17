@@ -15,13 +15,11 @@ elif current_script == "predict.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, IMAGE_PATH, VERSION
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
-    # from DMP.learning.transferLearner import TransferLearner
     from DMP.learning.slimLearner import SlimLearner
     from sklearn.preprocessing import StandardScaler
     from DMP.learning.variables import NUM_OF_K_FOLD
 elif current_script == "predict_tfRecord.py":
-    from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
-    # from DMP.learning.transferLearner import TransferLearner
+    from DMP.utils.arg_predict_tfRecord import TYPE_OF_MODEL, DO_SHOW, VERSION
     from DMP.learning.slimLearner import SlimLearner
 
 SEED = 1
@@ -91,7 +89,7 @@ class DataClassifier:
 
     @staticmethod
     def transfer_learning():
-        nn = SlimLearner()
+        nn = SlimLearner(model=TYPE_OF_MODEL)
 
         if not nn.is_cross_valid:
             nn.run_fine_tuning()
@@ -332,7 +330,7 @@ class DataClassifier:
 
     @staticmethod
     def predict_tf_record():
-        nn = SlimLearner()
+        nn = SlimLearner(model=TYPE_OF_MODEL)
 
         if not nn.is_cross_valid:
             nn.load_nn()

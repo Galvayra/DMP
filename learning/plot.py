@@ -7,6 +7,8 @@ if current_script == "training.py":
     from DMP.utils.arg_training import TYPE_OF_MODEL
 elif current_script == "predict.py" or current_script == "show_multi_plot.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
+elif current_script == "predict_tfRecord.py":
+    from DMP.utils.arg_predict_tfRecord import TYPE_OF_MODEL, DO_SHOW_PLOT
 
 TOP_N = 10
 

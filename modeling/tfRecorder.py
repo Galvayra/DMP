@@ -25,9 +25,9 @@ class TfRecorder:
         self.log = dict()
         self.log_file_name = "Log.txt"
         # self.n_fold = int()
+        self.__do_encode_image = do_encode_image
         self.__load_log()
         self.options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.GZIP)
-        self.__do_encode_image = do_encode_image
         self.__is_cross_valid = is_cross_valid
 
     @property

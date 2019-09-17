@@ -10,7 +10,7 @@ def get_arguments():
                                                     "\nUseAge : python fine_tuning.py -vector 'vector_file_name'\n\n",
                         default="modeling/vectors/image_vector", type=str)
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is tuning)"
-                                                  "\nUseAge : python fine_tuning.py -model (tuning|cnn)\n\n",
+                                                  "\nUseAge : python fine_tuning.py -model (tuning|ffnn)\n\n",
                         default="tuning", type=str)
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
                                                   "\nyou have to use this option more than 100"
@@ -58,8 +58,8 @@ READ_VECTOR = args.vector
 # Model option #
 TYPE_OF_MODEL = args.model
 
-if TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "cnn":
-    print("\nInput Error model option! (You must input - ['tuning', 'cnn'])\n")
+if TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
+    print("\nInput Error model option! (You must input - ['tuning', 'ffnn'])\n")
     exit(-1)
 
 # Target options #

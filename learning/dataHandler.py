@@ -22,7 +22,8 @@ elif current_script == "extract_feature.py" or current_script == "print_feature.
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 elif current_script == "fine_tuning.py":
-    from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
+    from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options, \
+        TYPE_OF_MODEL
     from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
     from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 elif current_script == "predict_tfRecord.py":
@@ -72,9 +73,10 @@ class DataHandler:
             self.y_test = vector_list["y_test"]
 
             if current_script == "fine_tuning.py":
-                self.img_train = vector_list[KEY_IMG_TRAIN]
-                self.img_valid = vector_list[KEY_IMG_VALID]
-                self.img_test = vector_list[KEY_IMG_TEST]
+                if TYPE_OF_MODEL == "tuning":
+                    self.img_train = vector_list[KEY_IMG_TRAIN]
+                    self.img_valid = vector_list[KEY_IMG_VALID]
+                    self.img_test = vector_list[KEY_IMG_TEST]
 
             # count list
             # index == 0, all // index == 1, mortality // index == 2, alive

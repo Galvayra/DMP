@@ -9,7 +9,7 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\nUseAge : python predict_tfRecord.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is tuning)"
-                                                  "\nUseAge : python predict_tfRecord.py -model (tuning|cnn)\n\n",
+                                                  "\nUseAge : python predict_tfRecord.py -model (tuning|ffnn)\n\n",
                         default='tuning', type=str)
     parser.add_argument("-tensor_dir", "--tensor_dir", help="set directory name for log and tensor (default is Null)"
                                                             "\nUseAge : python predict_tfRecord.py -tensor_dir 'dir_name'\n\n")
@@ -37,10 +37,10 @@ else:
     READ_VECTOR = vector_path + vector_name
 
 # Training options #
-TYPE_OF_MODEL = "svm"
 TYPE_OF_FEATURE = KEY_NAME_OF_MERGE_VECTOR
 type_of_features = [TYPE_OF_FEATURE] + [type_of_column for type_of_column in columns_dict]
 IMAGE_PATH = str()
+VERSION = 1
 
 # Target options #
 COLUMN_TARGET = False
@@ -62,8 +62,8 @@ LEARNING_RATE = float()
 
 if args.model:
     TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "cnn":
-        print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
+    if TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
+        print("\nInput Error model option! (You must input (tuning|ffnn))\n")
         exit(-1)
 
 if args.show:

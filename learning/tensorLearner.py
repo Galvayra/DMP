@@ -207,17 +207,17 @@ class NeuralNet(TensorModel):
         return h, p, acc
 
     def __is_stopped_training(self, val_loss):
-        self.loss_list.append(val_loss)
+        self.val_loss_list.append(val_loss)
 
-        cnt_train = len(self.loss_list)
+        cnt_train = len(self.val_loss_list)
 
         if cnt_train < 5:
             return False
         else:
-            loss_default = self.loss_list[cnt_train - (NUM_OF_LOSS_OVER_FIT + 1)]
+            loss_default = self.val_loss_list[cnt_train - (NUM_OF_LOSS_OVER_FIT + 1)]
             cnt_loss_over_fit = int()
 
-            for loss in self.loss_list[cnt_train - NUM_OF_LOSS_OVER_FIT:cnt_train]:
+            for loss in self.val_loss_list[cnt_train - NUM_OF_LOSS_OVER_FIT:cnt_train]:
                 if loss > loss_default:
                     cnt_loss_over_fit += 1
                 # loss_default = loss

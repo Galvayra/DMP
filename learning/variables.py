@@ -53,7 +53,7 @@ KEEP_PROB = 0.7
 NUM_OF_LOSS_OVER_FIT = 3
 
 # save every X epoch
-NUM_OF_SAVE_EPOCH = 50
+NUM_OF_SAVE_EPOCH = 20
 
 # mini-batch size
 BATCH_SIZE = 16
