@@ -98,6 +98,8 @@ class DataClassifier:
             # for _ in range(NUM_OF_K_FOLD):
             #     nn.run_fine_tuning()
 
+        nn.save_process_time()
+
     @staticmethod
     def __img_scaling(x_train, x_test):
         if DO_IMG_SCALING:

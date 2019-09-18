@@ -7,6 +7,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim.nets
 import sys
 from os import path, getcwd
+from sklearn.metrics import confusion_matrix
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
@@ -131,11 +132,11 @@ class SlimLearner(TensorModel):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def __fine_tuning(self):
-        _, end_points = self.__init_pre_trained_model()
+        logtis, end_points = self.__init_pre_trained_model()
         fc_7 = end_points['vgg_16/fc7']
 
         W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name='W')
-        b = tf.Variable(tf.random_normal([1], mean=0.0))
+        b = tf.Variable(tf.random_normal([1], mean=0.0), name='b')
 
         fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]], name=NAME_FC)
         logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
@@ -150,8 +151,8 @@ class SlimLearner(TensorModel):
             acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
             accuracy_summary = tf.summary.scalar("accuracy", acc)
 
-        # train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+        # train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
@@ -321,6 +322,7 @@ class SlimLearner(TensorModel):
     def __set_test_prob(self, sess, iterator, hypothesis):
         h_list = list()
         y_test = list()
+        c = int()
 
         # Test scope
         sess.run(iterator.initializer)
@@ -335,6 +337,13 @@ class SlimLearner(TensorModel):
                     target = x_batch
 
                 h_batch = sess.run(hypothesis, feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: 1})
+
+                # for b in bottleneck:
+                #     c += 1
+                #     print(c, b[-1])
+                #     print()
+                # print()
+
                 for h, y in zip(h_batch, y_batch):
                     h_list.append(h)
                     y_test.append(y)
@@ -342,6 +351,18 @@ class SlimLearner(TensorModel):
             self.h = np.array(h_list)
             self.p = (self.h > 0.5)
             self.y_test = np.array(y_test)
+            self.__show_data_proposition(self.y_test, self.p)
+
+    @staticmethod
+    def __show_data_proposition(y_true, y_predict):
+        death_count = int()
+
+        for data in y_true:
+            if data == [1]:
+                death_count += 1
+
+        print("\n\nTotal = %d (%d / %d)" % (len(y_true), len(y_true) - death_count, death_count), '\n\n')
+        print(confusion_matrix(y_true, y_predict))
 
     def load_nn(self):
         self.num_of_fold += 1
@@ -376,8 +397,8 @@ class SlimLearner(TensorModel):
             num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
             learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
 
-            # fc7 = graph.get_tensor_by_name('vgg_16/fc7:0')
-            # print(fc7)
+            fc = graph.get_tensor_by_name(NAME_FC + ':0')
+
             # exit(-1)
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])

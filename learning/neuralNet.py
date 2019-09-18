@@ -4,6 +4,7 @@ from os import path
 import os
 import shutil
 import sys
+import json
 from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
 from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
 import tensorflow as tf
@@ -125,6 +126,10 @@ class TensorModel(MyScore):
                 y_data = np.array(y_data)
 
         return x_data, y_data
+
+    def save_process_time(self):
+        with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:
+            json.dump(self.show_process_time(), outfile, indent=4)
 
     def clear_tensor(self):
         self.tf_x = None
