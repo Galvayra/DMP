@@ -23,6 +23,8 @@ NAME_HIDDEN = "num_of_hidden"
 NAME_SCOPE_COST = "cost"
 NAME_SCOPE_PREDICT = "prediction"
 NAME_FC = "fc"
+NAME_FC_W = "W"
+NAME_FC_B = "b"
 
 # key of target
 KEY_TRAIN = "training"
@@ -57,7 +59,7 @@ NUM_OF_LOSS_OVER_FIT = 3
 NUM_OF_SAVE_EPOCH = 20
 
 # mini-batch size
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 
 # Image options #
 # set CT image size

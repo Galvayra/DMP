@@ -47,10 +47,12 @@ class TensorModel(MyScore):
         self.tf_record_path = project_path + MODELING_PATH + TF_RECORD_PATH + READ_VECTOR.split('/')[-1] + "/"
         self.tf_recorder = TfRecorder(self.tf_record_path)
 
-        print("\n=============== hyper-parameters ===============")
-        print("Epoch -", self.best_epoch)
-        print("Learning Rate -", self.learning_rate)
-        print("Mini-batch Size -", BATCH_SIZE, '\n\n')
+        if current_script == "training.py" or current_script == "fine_tuning.py":
+            if DO_SHOW:
+                print("\n=============== hyper-parameters ===============")
+                print("Epoch -", self.best_epoch)
+                print("Learning Rate -", self.learning_rate)
+                print("Mini-batch Size -", BATCH_SIZE, '\n\n')
 
     def init_log_and_tensor(self):
         self.name_of_log = PATH_LOGS + TENSOR_DIR_NAME

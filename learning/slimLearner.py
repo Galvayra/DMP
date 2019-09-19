@@ -26,14 +26,15 @@ class SlimLearner(TensorModel):
         self.tf_name = None
         self.tf_name_vector = tf_name_vector
         self.is_cross_valid = self.tf_recorder.is_cross_valid
+        self.model = model
 
-        if model == "tuning":
+        if self.model == "ffnn":
+            self.shape = None
+        else:
             # self.shape = (None, Width, Height, channels)
             shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
             shape.insert(0, None)
             self.shape = shape
-        elif model == "ffnn":
-            self.shape = None
 
         self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
         self.loss_dict = {
@@ -80,7 +81,13 @@ class SlimLearner(TensorModel):
     def __init_pre_trained_model(self):
         vgg = tf.contrib.slim.nets.vgg
         with slim.arg_scope(vgg.vgg_arg_scope()):
-            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=True)
+            if self.model == "tuning" or self.model == "transfer":
+                is_training = True
+            else:
+                is_training = False
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
+            print('Load  Vgg16  Model -', self.model)
+            print('is_training option -', is_training, '\n\n\n')
 
             return logits, end_points
 
@@ -135,8 +142,8 @@ class SlimLearner(TensorModel):
         logtis, end_points = self.__init_pre_trained_model()
         fc_7 = end_points['vgg_16/fc7']
 
-        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name='W')
-        b = tf.Variable(tf.random_normal([1], mean=0.0), name='b')
+        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name=NAME_FC_W)
+        b = tf.Variable(tf.random_normal([1], mean=0.0), name=NAME_FC_B)
 
         fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]], name=NAME_FC)
         logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
@@ -151,8 +158,11 @@ class SlimLearner(TensorModel):
             acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
             accuracy_summary = tf.summary.scalar("accuracy", acc)
 
-        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
-        # train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+        if self.model == "transfer":
+            train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[W, b])
+        else:
+            train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
