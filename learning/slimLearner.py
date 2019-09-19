@@ -14,13 +14,13 @@ sys.path.append(SLIM_PATH)
 
 VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
 NAME_FC = "fc"
+NUM_OF_EARLY_STOPPING = 20
 
 
 class SlimLearner(TensorModel):
     def __init__(self, model):
         super().__init__(is_cross_valid=False)
         self.tf_recorder = TfRecorder(self.tf_record_path)
-        print(self.tf_recorder)
         self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
         self.num_of_output_nodes = 1
         self.tf_name = None
@@ -35,7 +35,7 @@ class SlimLearner(TensorModel):
         elif model == "ffnn":
             self.tf_recorder.do_encode_image = False
 
-        self.early_stopping = EarlyStopping(patience=10, verbose=1)
+        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
         self.loss_dict = {
             "train": list(),
             "valid": list()
@@ -362,6 +362,7 @@ class SlimLearner(TensorModel):
                 death_count += 1
 
         print("\n\nTotal = %d (%d / %d)" % (len(y_true), len(y_true) - death_count, death_count), '\n\n')
+        print("Confusion Matrix")
         print(confusion_matrix(y_true, y_predict))
 
     def load_nn(self):
@@ -386,8 +387,6 @@ class SlimLearner(TensorModel):
             # load tensor
             graph = tf.get_default_graph()
             str_n_fold = str(self.num_of_fold)
-            # for tensor in graph.as_graph_def().node:
-            #     print(tensor)
 
             self.tf_x = graph.get_tensor_by_name(NAME_X + "_" + str_n_fold + ":0")
             self.tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str_n_fold + ":0")
@@ -396,10 +395,6 @@ class SlimLearner(TensorModel):
             predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
             num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
             learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
-
-            fc = graph.get_tensor_by_name(NAME_FC + ':0')
-
-            # exit(-1)
 
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
             self.__set_test_prob(sess, iterator_test, hypothesis)

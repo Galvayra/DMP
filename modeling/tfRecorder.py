@@ -109,7 +109,7 @@ class TfRecorder:
 
                 if self.do_encode_image:
                     img_path = target_image_list[i][1]
-                    record_name = self.__get_record_name_from_img_path(img_path)
+                    record_name = self.get_record_name_from_img_path(img_path)
                     img = self.__load_image(img_path)
 
                     feature = {
@@ -122,8 +122,8 @@ class TfRecorder:
                     feature = {
                         'vector': self._float_feature(vector),
                         'label': self._int64_feature(label),
-                        'image': self._int64_feature(0),
-                        'name': self._int64_feature(0)
+                        'image': self._bytes_feature(''.encode('utf-8')),
+                        'name': self._bytes_feature(''.encode('utf-8'))
                     }
 
                 # Create an example protocol buffer
@@ -165,7 +165,7 @@ class TfRecorder:
                 self.is_cross_valid = self.log[KEY_OF_IS_CROSS_VALID]
 
     @staticmethod
-    def __get_record_name_from_img_path(img_path):
+    def get_record_name_from_img_path(img_path):
         img_path = img_path.split('/')
         num_of_patient = img_path[-2]
         num_of_image = img_path[-1].split(EXTENSION_OF_IMAGE)[0]
@@ -173,20 +173,12 @@ class TfRecorder:
         return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
 
     def _parse_func(self, serialized_example):
-        if self.do_encode_image:
-            feature = {
-                'vector': tf.VarLenFeature(tf.float32),
-                'label': tf.FixedLenFeature([], tf.int64),
-                'image': tf.FixedLenFeature([], tf.string),
-                'name': tf.FixedLenFeature([], tf.string)
-            }
-        else:
-            feature = {
-                'vector': tf.VarLenFeature(tf.float32),
-                'label': tf.FixedLenFeature([], tf.int64),
-                'image': tf.FixedLenFeature([], tf.int64),
-                'name': tf.FixedLenFeature([], tf.int64)
-            }
+        feature = {
+            'vector': tf.VarLenFeature(tf.float32),
+            'label': tf.FixedLenFeature([], tf.int64),
+            'image': tf.FixedLenFeature([], tf.string),
+            'name': tf.FixedLenFeature([], tf.string)
+        }
 
         features = tf.parse_single_example(serialized_example, features=feature)
 
@@ -198,27 +190,20 @@ class TfRecorder:
         # Cast label data into
         label = tf.reshape(features['label'], [1])
         label = tf.cast(label, tf.int8)
+        name = tf.cast(features['name'], tf.string)
 
         if self.do_encode_image:
             image = tf.decode_raw(features['image'], tf.float32)
             image = tf.reshape(image, self.log[KEY_OF_SHAPE])
-
-            name = tf.cast(features['name'], tf.string)
 
             if DO_NORMALIZE:
                 image /= image
             else:
                 image = tf.cast(image, tf.uint8)
         else:
-            image = tf.reshape(features['image'], [1])
-            image = tf.cast(image, tf.int8)
-
-            name = tf.reshape(features['name'], [1])
-            name = tf.cast(name, tf.int8)
+            image = tf.cast(features['image'], tf.string)
 
         return vector, label, image, name
-
-        # return tf.parse_single_example(example_proto, feature)
 
     def get_img_from_tf_records(self, tf_record_path):
         raw_image_dataset = tf.data.TFRecordDataset(tf_record_path, compression_type="GZIP")
