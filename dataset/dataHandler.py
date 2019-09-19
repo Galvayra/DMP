@@ -562,7 +562,7 @@ class DataHandler:
                 return False
 
         index_list = [i for i in range(len(self.save_dict[self.raw_header_dict[ID_COLUMN]]))]
-        random.seed(SEED)
+        # random.seed(SEED)
         random.shuffle(index_list)
 
         if LOG_NAME:
