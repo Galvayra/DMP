@@ -13,17 +13,17 @@ SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
 
 VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
-NAME_FC = "fc"
-NUM_OF_EARLY_STOPPING = 20
+NUM_OF_EARLY_STOPPING = 5
 
 
 class SlimLearner(TensorModel):
-    def __init__(self, model):
+    def __init__(self, model, tf_name_vector):
         super().__init__(is_cross_valid=False)
         self.tf_recorder = TfRecorder(self.tf_record_path)
         self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
         self.num_of_output_nodes = 1
         self.tf_name = None
+        self.tf_name_vector = tf_name_vector
         self.is_cross_valid = self.tf_recorder.is_cross_valid
 
         if model == "tuning":
@@ -31,9 +31,8 @@ class SlimLearner(TensorModel):
             shape = self.tf_recorder.log[KEY_OF_SHAPE][:]
             shape.insert(0, None)
             self.shape = shape
-            self.tf_recorder.do_encode_image = True
         elif model == "ffnn":
-            self.tf_recorder.do_encode_image = False
+            self.shape = None
 
         self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
         self.loss_dict = {
@@ -54,7 +53,7 @@ class SlimLearner(TensorModel):
         self.num_of_fold += 1
 
         # fine tuning
-        if self.tf_recorder.do_encode_image:
+        if self.shape:
             self.tf_x = tf.placeholder(dtype=tf.float32, shape=self.shape,
                                        name=NAME_X + '_' + str(self.num_of_fold))
         else:
@@ -68,7 +67,7 @@ class SlimLearner(TensorModel):
         self.__init_var_result()
 
         # fine tuning
-        if self.tf_recorder.do_encode_image:
+        if self.shape:
             self.__fine_tuning()
         else:
             self.__training()
@@ -224,13 +223,19 @@ class SlimLearner(TensorModel):
                 while not coord.should_stop():
                     n_iter += 1
                     x_batch, y_batch, x_img, x_name = sess.run(next_train_element)
+                    x_array = list()
 
                     # early stop for avoid over-fitting
                     if not self.early_stopping.is_stop:
-                        if self.tf_recorder.do_encode_image:
+                        if self.shape:
                             target = x_img
                         else:
                             target = x_batch
+
+                            # for name, x in zip(x_name, x_batch):
+                            #     x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
+                            #
+                            # target = np.array(x_array)
 
                         train_summary, _, tra_loss, tra_acc = sess.run(
                             [merged_summary, train_step, cost, acc],
@@ -279,7 +284,7 @@ class SlimLearner(TensorModel):
                 while True:
                     x_valid_batch, y_valid_batch, x_valid_img, x_valid_name = sess.run(next_element)
 
-                    if self.tf_recorder.do_encode_image:
+                    if self.shape:
                         target = x_valid_img
                     else:
                         target = x_valid_batch
@@ -331,7 +336,7 @@ class SlimLearner(TensorModel):
             while True:
                 x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
 
-                if self.tf_recorder.do_encode_image:
+                if self.shape:
                     target = x_img
                 else:
                     target = x_batch

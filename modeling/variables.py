@@ -10,6 +10,7 @@ KEY_TEST = "test"
 KEY_IMG_TRAIN = "img_train"
 KEY_IMG_VALID = "img_valid"
 KEY_IMG_TEST = "img_test"
+KEY_TF_NAME = "tf_name"
 
 # word embedding option
 W2V_PATH = "embedding/"

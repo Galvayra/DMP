@@ -87,9 +87,8 @@ class DataClassifier:
 
         nn.save_process_time()
 
-    @staticmethod
-    def transfer_learning():
-        nn = SlimLearner(model=TYPE_OF_MODEL)
+    def transfer_learning(self):
+        nn = SlimLearner(model=TYPE_OF_MODEL, tf_name_vector=self.dataHandler.tf_name_vector)
 
         if not nn.is_cross_valid:
             nn.run_fine_tuning()
@@ -330,9 +329,8 @@ class DataClassifier:
                 nn.show_process_time()
                 nn.show_plot()
 
-    @staticmethod
-    def predict_tf_record():
-        nn = SlimLearner(model=TYPE_OF_MODEL)
+    def predict_tf_record(self):
+        nn = SlimLearner(model=TYPE_OF_MODEL, tf_name_vector=self.dataHandler.tf_name_vector)
 
         if not nn.is_cross_valid:
             nn.load_nn()

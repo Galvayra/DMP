@@ -4,7 +4,7 @@ import numpy as np
 import json
 import math
 import sys
-from DMP.modeling.variables import EXTENSION_OF_IMAGE, MODELING_PATH, TF_RECORD_PATH
+from DMP.modeling.variables import EXTENSION_OF_IMAGE, KEY_TF_NAME
 
 current_script = sys.argv[0].split('/')[-1]
 
@@ -22,9 +22,7 @@ elif current_script == "extract_feature.py" or current_script == "print_feature.
 elif current_script == "convert_images.py":
     from DMP.utils.arg_convert_images import *
 elif current_script == "fine_tuning.py":
-    from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options, \
-        TYPE_OF_MODEL
-    from DMP.modeling.variables import KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID
+    from DMP.utils.arg_fine_tuning import READ_VECTOR, DO_SHOW, VERSION, TYPE_OF_FEATURE, COLUMN_TARGET, show_options
     from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import READ_VECTOR, DO_SHOW, TYPE_OF_FEATURE, COLUMN_TARGET, IMAGE_PATH, \
@@ -72,11 +70,17 @@ class DataHandler:
             self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
 
-            if current_script == "fine_tuning.py":
-                if TYPE_OF_MODEL == "tuning":
-                    self.img_train = vector_list[KEY_IMG_TRAIN]
-                    self.img_valid = vector_list[KEY_IMG_VALID]
-                    self.img_test = vector_list[KEY_IMG_TEST]
+            # TODO: erase if
+            if KEY_TF_NAME in vector_list:
+                self.tf_name_vector = vector_list[KEY_TF_NAME]
+            else:
+                self.tf_name_vector = None
+
+            # if current_script == "fine_tuning.py":
+            #     if TYPE_OF_MODEL == "tuning":
+            #         self.img_train = vector_list[KEY_IMG_TRAIN]
+            #         self.img_valid = vector_list[KEY_IMG_VALID]
+            #         self.img_test = vector_list[KEY_IMG_TEST]
 
             # count list
             # index == 0, all // index == 1, mortality // index == 2, alive

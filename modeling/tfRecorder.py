@@ -111,7 +111,6 @@ class TfRecorder:
                     img_path = target_image_list[i][1]
                     record_name = self.get_record_name_from_img_path(img_path)
                     img = self.__load_image(img_path)
-
                     feature = {
                         'vector': self._float_feature(vector),
                         'label': self._int64_feature(label),
@@ -119,11 +118,12 @@ class TfRecorder:
                         'name': self._bytes_feature(record_name.encode('utf-8'))
                     }
                 else:
+                    tf_name = target_image_list[i][1]
                     feature = {
                         'vector': self._float_feature(vector),
                         'label': self._int64_feature(label),
                         'image': self._bytes_feature(''.encode('utf-8')),
-                        'name': self._bytes_feature(''.encode('utf-8'))
+                        'name': self._bytes_feature(tf_name.encode('utf-8'))
                     }
 
                 # Create an example protocol buffer

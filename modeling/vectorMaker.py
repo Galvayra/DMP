@@ -1,8 +1,7 @@
 import DMP.utils.arg_encoding as op
 from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
-from .variables import DUMP_FILE, DUMP_PATH, KEY_TOTAL, KEY_TRAIN, KEY_VALID, KEY_TEST, KEY_NAME_OF_MERGE_VECTOR, \
-    KEY_IMG_TEST, KEY_IMG_TRAIN, KEY_IMG_VALID, TF_RECORD_PATH
+from .variables import *
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY, DO_ENCODE_IMAGE, \
     IS_CROSS_VALID
 from os import path
@@ -58,6 +57,11 @@ class VectorMaker:
         self.__dump_path = path.dirname(path.abspath(__file__)) + "/" + DUMP_PATH
         self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
         self.__tf_record_path = path.dirname(path.abspath(__file__)) + "/" + TF_RECORD_PATH + op.FILE_VECTOR + "/"
+
+        # initialize TfRecorder class
+        self.tf_recorder = TfRecorder(self.tf_record_path,
+                                      do_encode_image=DO_ENCODE_IMAGE,
+                                      is_cross_valid=IS_CROSS_VALID)
 
     @property
     def y_data(self):
@@ -161,28 +165,31 @@ class VectorMaker:
         x_test, y_test = self.__get_set(key="test")
         x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
 
-        # initialize TfRecorder class
-        tf_recorder = TfRecorder(self.tf_record_path, do_encode_image=DO_ENCODE_IMAGE, is_cross_valid=IS_CROSS_VALID)
-
         # shuffle data for avoiding over-fitting
         if IS_CROSS_VALID:
             print("This scope will be implemented")
             # TODO implement k-fold cross validation
             exit(-1)
             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                tf_recorder.to_tf_records(x_train, y_train, key="train")
-                tf_recorder.to_tf_records(x_test, y_test, key="test")
+                self.tf_recorder.to_tf_records(x_train, y_train, key="train")
+                self.tf_recorder.to_tf_records(x_test, y_test, key="test")
         else:
             i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
             x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
             y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
 
-            tf_recorder.to_tf_records(x_train, y_train, key="train")
-            tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
-            tf_recorder.to_tf_records(x_test, y_test, key="test")
+            self.tf_recorder.to_tf_records(x_train, y_train, key="train")
+            self.tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
+            self.tf_recorder.to_tf_records(x_test, y_test, key="test")
 
-        tf_recorder.save()
+        self.tf_recorder.save()
         print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
+
+    def __add_key_value_in_dict(self, key, value):
+        if KEY_TF_NAME not in self.vector_matrix:
+            self.vector_matrix[KEY_TF_NAME] = dict()
+
+        self.vector_matrix[KEY_TF_NAME][key] = value
 
     def __get_set(self, key):
         """
@@ -212,12 +219,16 @@ class VectorMaker:
 
             for vector, img_paths, y in zip(x_target, x_path_target, y_target):
                 for img_path in img_paths:
-                    _x_data.append([vector, img_path])
                     _y_data.append(y)
+                    _x_data.append([vector, img_path])
+                    tf_name = self.tf_recorder.get_record_name_from_img_path(key)
+                    self.__add_key_value_in_dict(tf_name, [vector, y])
         else:
             for vector, y in zip(x_target, y_target):
-                _x_data.append([vector])
                 _y_data.append(y)
+                tf_name = key + '_' + str(len(_y_data))
+                _x_data.append([vector, tf_name])
+                self.__add_key_value_in_dict(tf_name, [vector, y])
 
         return _x_data, _y_data
 
