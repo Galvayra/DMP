@@ -103,6 +103,7 @@ class SlimLearner(TensorModel):
             # If the model is fine-tuning, parameter will be trained during training
             else:
                 is_training = True
+            # logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1, is_training=is_training)
             logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
 
             return logits, end_points
@@ -155,16 +156,17 @@ class SlimLearner(TensorModel):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def __fine_tuning(self):
-        _, end_points = self.__init_pre_trained_model()
+        logits, end_points = self.__init_pre_trained_model()
         fc_7 = end_points['vgg_16/fc7']
 
-        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02),
-                        name=NAME_FC_W + '_' + str(self.num_of_fold))
-        b = tf.Variable(tf.random_normal([1], mean=0.0),
-                        name=NAME_FC_B + '_' + str(self.num_of_fold))
+        str_n_fold = '_' + str(self.num_of_fold)
+        self.fc_7 = end_points['vgg_16/fc7']
+        self.fc_8 = end_points['vgg_16/fc8']
 
-        fc = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]],
-                        name=NAME_FC + '_' + str(self.num_of_fold))
+        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name=NAME_FC_W + str_n_fold)
+        b = tf.Variable(tf.random_normal([1], mean=0.0), name=NAME_FC_B + str_n_fold)
+
+        fc = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]], name=NAME_FC + str_n_fold)
         logitx = tf.nn.bias_add(tf.matmul(fc, W), b)
 
         with tf.name_scope(NAME_SCOPE_COST):
@@ -173,7 +175,7 @@ class SlimLearner(TensorModel):
             cost_summary = tf.summary.scalar("cost", cost)
 
         with tf.name_scope(NAME_SCOPE_PREDICT):
-            predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
+            predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + str_n_fold)
             acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
             accuracy_summary = tf.summary.scalar("accuracy", acc)
 
@@ -184,6 +186,70 @@ class SlimLearner(TensorModel):
 
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
+
+    # def __fine_tuning(self):
+    #     logits, end_points = self.__init_pre_trained_model()
+    #     exclude = ['vgg_16/fc8']
+    #     variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
+    #     init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, variables_to_restore)
+    #
+    #     hypothesis = tf.nn.sigmoid(logits, name=NAME_HYPO + '_' + str(self.num_of_fold))
+    #     cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=self.tf_y))
+    #     predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
+    #     acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+    #     train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+    #
+    #     self.fc_7 = end_points['vgg_16/fc7']
+    #     self.fc_8 = end_points['vgg_16/fc8']
+    #
+    #     tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
+    #     iterator_test = tf_test_record.make_initializable_iterator()
+    #     with tf.Session() as sess:
+    #         init_op = tf.global_variables_initializer()
+    #         sess.run(init_op)
+    #         init_fn(sess)
+    #         sess.run(iterator_test.initializer)
+    #         next_element = iterator_test.get_next()
+    #
+    #         try:
+    #             while True:
+    #                 x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
+    #
+    #                 if self.shape:
+    #                     target = x_img
+    #                 else:
+    #                     target = x_batch
+    #
+    #                 fc7, fc8 = sess.run([self.fc_7, self.fc_8], feed_dict={self.tf_x: target, self.tf_y: y_batch})
+    #
+    #                 for f7, f8, tf_name in zip(fc7, fc8, tensor_name):
+    #                     print(tf_name)
+    #                     print(f7, f8)
+    #
+    #                 _, tra_loss, tra_acc = sess.run(
+    #                     [train_step, cost, acc],
+    #                     feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+    #                 )
+    #                 print('\n\n\n')
+    #
+    #                 fc7, fc8 = sess.run([self.fc_7, self.fc_8], feed_dict={self.tf_x: target, self.tf_y: y_batch})
+    #
+    #                 for f7, f8, tf_name in zip(fc7, fc8, tensor_name):
+    #                     print(tf_name)
+    #                     print(f7, f8)
+    #
+    #                 exit(-1)
+    #         except tf.errors.OutOfRangeError:
+    #             pass
+
+    @staticmethod
+    def __show_params(sess):
+        variables_names = [v.name for v in tf.trainable_variables()]
+        values = sess.run(variables_names)
+        for k, v in zip(variables_names, values):
+            print("Variable: ", k)
+            print("Shape: ", v.shape)
+            print()
 
     def __training(self):
         hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
@@ -267,12 +333,27 @@ class SlimLearner(TensorModel):
                             #
                             # target = np.array(x_array)
 
+                        # fc7 = sess.run(self.fc_7, feed_dict={self.tf_x: target, self.tf_y: y_batch})
+                        #
+                        # for fc, tf_name in zip(fc7, x_name):
+                        #     print(tf_name)
+                        #     print(fc)
+                        #     print()
+
                         train_summary, _, tra_loss, tra_acc = sess.run(
                             [merged_summary, train_step, cost, acc],
                             feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
                         )
-
                         train_writer.add_summary(train_summary, global_step=n_iter)
+
+                        # fc7 = sess.run(self.fc_7, feed_dict={self.tf_x: target, self.tf_y: y_batch})
+                        #
+                        # for fc, tf_name in zip(fc7, x_name):
+                        #     print(tf_name)
+                        #     print(fc)
+                        #     print()
+                        #
+                        # exit(-1)
 
                         self.loss_dict["train"].append(tra_loss)
                         self.acc_dict["train"].append(tra_acc)
@@ -446,7 +527,6 @@ class SlimLearner(TensorModel):
         init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
 
         with tf.Session() as sess:
-
             init_fn(sess)
             sess.run(iterator_test.initializer)
             next_element = iterator_test.get_next()
