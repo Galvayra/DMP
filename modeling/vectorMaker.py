@@ -221,7 +221,7 @@ class VectorMaker:
                 for img_path in img_paths:
                     _y_data.append(y)
                     _x_data.append([vector, img_path])
-                    tf_name = self.tf_recorder.get_record_name_from_img_path(key)
+                    tf_name = self.tf_recorder.get_record_name_from_img_path(img_path)
                     self.__add_key_value_in_dict(tf_name, [vector, y])
         else:
             for vector, y in zip(x_target, y_target):
