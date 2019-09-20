@@ -46,6 +46,22 @@ class SlimLearner(TensorModel):
             "valid": list()
         }
 
+        if self.is_cross_valid:
+            print('5-fold cross validation')
+        else:
+            print('hyper-parameter optimization')
+            if USE_EARLY_STOPPING:
+                print("Use early stopping")
+            else:
+                print("Do not use early stopping")
+
+        if self.model == "tuning" or self.model == "full":
+            print('Load  Vgg16  Model -', self.model, '\nis_training option - True\n\n\n')
+        elif self.model == "transfer":
+            print('Load  Vgg16  Model -', self.model, '\nis_training option - False\n\n\n')
+        else:
+            print("Feed Forward Neural Net\n\n\n")
+
     def __init_var_result(self):
         self.h = list()
         self.p = list()
@@ -81,13 +97,13 @@ class SlimLearner(TensorModel):
     def __init_pre_trained_model(self):
         vgg = tf.contrib.slim.nets.vgg
         with slim.arg_scope(vgg.vgg_arg_scope()):
-            if self.model == "tuning" or self.model == "transfer":
-                is_training = True
-            else:
+            # If the model is transfer learning, parameter will be not trained during training
+            if self.model == "transfer":
                 is_training = False
+            # If the model is fine-tuning, parameter will be trained during training
+            else:
+                is_training = True
             logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
-            print('Load  Vgg16  Model -', self.model)
-            print('is_training option -', is_training, '\n\n\n')
 
             return logits, end_points
 
@@ -139,14 +155,17 @@ class SlimLearner(TensorModel):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def __fine_tuning(self):
-        logtis, end_points = self.__init_pre_trained_model()
+        _, end_points = self.__init_pre_trained_model()
         fc_7 = end_points['vgg_16/fc7']
 
-        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name=NAME_FC_W)
-        b = tf.Variable(tf.random_normal([1], mean=0.0), name=NAME_FC_B)
+        W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02),
+                        name=NAME_FC_W + '_' + str(self.num_of_fold))
+        b = tf.Variable(tf.random_normal([1], mean=0.0),
+                        name=NAME_FC_B + '_' + str(self.num_of_fold))
 
-        fc_7 = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]], name=NAME_FC)
-        logitx = tf.nn.bias_add(tf.matmul(fc_7, W), b)
+        fc = tf.reshape(fc_7, [-1, W.get_shape().as_list()[0]],
+                        name=NAME_FC + '_' + str(self.num_of_fold))
+        logitx = tf.nn.bias_add(tf.matmul(fc, W), b)
 
         with tf.name_scope(NAME_SCOPE_COST):
             hypothesis = tf.nn.sigmoid(logitx, name=NAME_HYPO + '_' + str(self.num_of_fold))
@@ -234,7 +253,7 @@ class SlimLearner(TensorModel):
                 while not coord.should_stop():
                     n_iter += 1
                     x_batch, y_batch, x_img, x_name = sess.run(next_train_element)
-                    x_array = list()
+                    # x_array = list()
 
                     # early stop for avoid over-fitting
                     if not self.early_stopping.is_stop:
@@ -310,7 +329,6 @@ class SlimLearner(TensorModel):
                     self.acc_dict["valid"].append(val_acc)
             except tf.errors.OutOfRangeError:
                 pass
-                # print(len(self.loss_dict["train"]), len(self.loss_dict["valid"]))
 
     def __set_average_values(self, step):
         tra_loss = float(np.mean(np.array(self.loss_dict["train"])))
@@ -330,7 +348,7 @@ class SlimLearner(TensorModel):
             self.acc_dict["valid"].clear()
             print("             valid loss = %.5f,  accuracy = %.2f" % (val_loss, val_acc * 100))
 
-            if self.early_stopping.validate(val_loss):
+            if USE_EARLY_STOPPING and self.early_stopping.validate(val_loss):
                 return True
 
         return False
@@ -338,7 +356,6 @@ class SlimLearner(TensorModel):
     def __set_test_prob(self, sess, iterator, hypothesis):
         h_list = list()
         y_test = list()
-        c = int()
 
         # Test scope
         sess.run(iterator.initializer)
@@ -353,12 +370,6 @@ class SlimLearner(TensorModel):
                     target = x_batch
 
                 h_batch = sess.run(hypothesis, feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: 1})
-
-                # for b in bottleneck:
-                #     c += 1
-                #     print(c, b[-1])
-                #     print()
-                # print()
 
                 for h, y in zip(h_batch, y_batch):
                     h_list.append(h)
@@ -398,6 +409,7 @@ class SlimLearner(TensorModel):
             saver = tf.train.import_meta_graph(target_path + '.meta')
             saver.restore(sess, target_path)
 
+            exit(-1)
             print("\n\n\ncheckpoint -", target_path, "\nBest Epoch -", self.best_epoch, "\n")
 
             # load tensor
@@ -407,12 +419,18 @@ class SlimLearner(TensorModel):
             self.tf_x = graph.get_tensor_by_name(NAME_X + "_" + str_n_fold + ":0")
             self.tf_y = graph.get_tensor_by_name(NAME_Y + "_" + str_n_fold + ":0")
             self.keep_prob = graph.get_tensor_by_name(NAME_PROB + "_" + str_n_fold + ":0")
-            hypothesis = graph.get_tensor_by_name(NAME_SCOPE_COST + "/" + NAME_HYPO + "_" + str_n_fold + ":0")
-            predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
+
+            # get num_of_hidden, learning_rate
             num_of_hidden = graph.get_tensor_by_name(NAME_HIDDEN + "_" + str_n_fold + ":0")
             learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
-
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
+
+            #     W = graph.get_tensor_by_name(NAME_FC_W + '_' + str(self.num_of_fold) + ":0")
+            #     b = graph.get_tensor_by_name(NAME_FC_B + '_' + str(self.num_of_fold) +  ":0")
+
+            hypothesis = graph.get_tensor_by_name(NAME_SCOPE_COST + "/" + NAME_HYPO + "_" + str_n_fold + ":0")
+            # predict = graph.get_tensor_by_name(NAME_SCOPE_PREDICT + "/" + NAME_PREDICT + "_" + str_n_fold + ":0")
+
             self.__set_test_prob(sess, iterator_test, hypothesis)
 
         tf.reset_default_graph()
@@ -421,6 +439,36 @@ class SlimLearner(TensorModel):
         self.compute_score(self.y_test, self.p, self.h)
         self.set_score(target=KEY_TEST)
         self.show_score(target=KEY_TEST)
+
+    def __mini_test(self, test_tensor):
+        tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
+        iterator_test = tf_test_record.make_initializable_iterator()
+        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
+
+        with tf.Session() as sess:
+
+            init_fn(sess)
+            sess.run(iterator_test.initializer)
+            next_element = iterator_test.get_next()
+            try:
+                while True:
+                    x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
+
+                    if self.shape:
+                        target = x_img
+                    else:
+                        target = x_batch
+
+                    bottleneck = sess.run(test_tensor, feed_dict={self.tf_x: target,
+                                                                  self.tf_y: y_batch,
+                                                                  self.keep_prob: 1})
+
+                    for vector, tf_name in zip(bottleneck, tensor_name):
+                        print(tf_name, vector)
+
+                    exit(-1)
+            except tf.errors.OutOfRangeError:
+                pass
 
     def clear_tensor(self):
         super().clear_tensor()

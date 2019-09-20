@@ -8,9 +8,13 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\nUseAge : python predict_tfRecord.py -vector 'vector_file_name'\n\n")
-    parser.add_argument("-model", "--model", help="set a model type of neural net (default is tuning)"
+    parser.add_argument("-model", "--model", help="set a model type of neural net (default is transfer)"
+                                                  "\nYou can use 'transfer', 'tuning', 'ffnn'"
+                                                  "\ntransfer - transfer learning (update only last FC)"
+                                                  "\ntuning   - fine tuning   (update all of parameters)"
+                                                  "\nffnn     - feed forward neural net (do not use image)"
                                                   "\nUseAge : python predict_tfRecord.py -model (tuning|ffnn)\n\n",
-                        default='tuning', type=str)
+                        default='transfer', type=str)
     parser.add_argument("-tensor_dir", "--tensor_dir", help="set directory name for log and tensor (default is Null)"
                                                             "\nUseAge : python predict_tfRecord.py -tensor_dir 'dir_name'\n\n")
     parser.add_argument("-save", "--save", help="save a score to csv file (default is '{vector}')"
@@ -59,12 +63,10 @@ EPOCH = int()
 NUM_HIDDEN_LAYER = int()
 LEARNING_RATE = float()
 
-
-if args.model:
-    TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
-        print("\nInput Error model option! (You must input (tuning|ffnn))\n")
-        exit(-1)
+TYPE_OF_MODEL = args.model
+if TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
+    print("\nInput Error model option! (You must input (transfer|tuning|ffnn))\n")
+    exit(-1)
 
 if args.show:
     try:

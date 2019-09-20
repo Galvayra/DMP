@@ -50,7 +50,10 @@ class TensorModel(MyScore):
         if current_script == "training.py" or current_script == "fine_tuning.py":
             if DO_SHOW:
                 print("\n=============== hyper-parameters ===============")
-                print("Epoch -", self.best_epoch)
+                if self.is_cross_valid:
+                    print("Epoch -", self.best_epoch)
+                else:
+                    print("Epoch - unlimited")
                 print("Learning Rate -", self.learning_rate)
                 print("Mini-batch Size -", BATCH_SIZE, '\n\n')
 
@@ -102,7 +105,10 @@ class TensorModel(MyScore):
         if is_test:
             tf_recode = tf_recode.repeat(1)
         else:
-            tf_recode = tf_recode.repeat(EPOCH)
+            if self.is_cross_valid:
+                tf_recode = tf_recode.repeat(EPOCH)
+            else:
+                tf_recode = tf_recode.repeat()
 
         tf_recode = tf_recode.batch(BATCH_SIZE)
 
