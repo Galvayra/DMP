@@ -364,13 +364,16 @@ class SlimLearner(TensorModel):
                             self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
                             if self.__set_average_values(step):
                                 self.early_stopping.is_stop = True
-
+                    else:
+                        coord.request_stop()
             except tf.errors.OutOfRangeError:
-                # last epoch
-                if len(self.loss_dict["train"]) > 0:
-                    step += 1
-                    self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
-                    self.__set_average_values(step)
+                pass
+            finally:
+                # # last epoch
+                # if len(self.loss_dict["train"]) > 0:
+                #     step += 1
+                #     self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
+                #     self.__set_average_values(step)
 
                 self.save_loss_plot(log_path=self.name_of_log, step_list=[step for step in range(1, step + 1)])
 
@@ -379,7 +382,7 @@ class SlimLearner(TensorModel):
 
                 # set self.h, self.p, self.y_test
                 self.__set_test_prob(sess, iterator_test, hypothesis)
-            finally:
+
                 coord.request_stop()
                 coord.join(threads)
 
