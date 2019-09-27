@@ -170,19 +170,35 @@ class TensorModel(MyScore):
 
 
 class EarlyStopping:
-    def __init__(self, patience=0, verbose=0):
+    def __init__(self, patience=0, verbose=0, minimum_epoch=50, increase=0.1):
+        self._total_step = 0
         self._step = 0
         self._loss = float('inf')
+        self._acc_list = list()
+        self._increase= increase
+        self._minimum_epoch = minimum_epoch
         self.patience = patience
         self.verbose = verbose
         self.is_stop = False
 
-    def validate(self, loss):
+    def validate(self, loss, val_acc):
         if self._loss < loss:
+            self._total_step += 1
             self._step += 1
+
+            # The value is different from the current validation Acc and reduce mean of validation Acc
+            if self._total_step >= self._minimum_epoch:
+                mean_acc = np.mean(self._acc_list[int(round(len(self._acc_list) / 2)):])
+                if val_acc - mean_acc <= self._increase:
+                    if self.verbose:
+                        print("Training process is stopped early....")
+                        print("Because validation acc will be not increased")
+                    return True
+
             if self._step > self.patience:
                 if self.verbose:
-                    print(f'Training process is stopped early....')
+                    print("Training process is stopped early....")
+                    print("Because validation cost will be not decreased")
                 return True
         else:
             self._step = 0

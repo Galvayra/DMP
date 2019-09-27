@@ -36,7 +36,7 @@ class SlimLearner(TensorModel):
             shape.insert(0, None)
             self.shape = shape
 
-        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
+        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1, minimum_epoch=30)
         self.loss_dict = {
             "train": list(),
             "valid": list()
@@ -433,7 +433,7 @@ class SlimLearner(TensorModel):
             self.acc_dict["valid"].clear()
             print("             valid loss = %.5f,  accuracy = %.2f" % (val_loss, val_acc * 100))
 
-            if USE_EARLY_STOPPING and self.early_stopping.validate(val_loss):
+            if USE_EARLY_STOPPING and self.early_stopping.validate(val_loss, val_acc):
                 return True
 
         return False
