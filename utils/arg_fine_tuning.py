@@ -34,10 +34,13 @@ def get_arguments():
                                                     "\nIf you already have dir for saving, delete it and then save"
                                                     "\nIf you set False, It will be stopped before training"
                                                     "\nUseAge : python fine_tuning.py -delete 1 (True)\n\n",
-                        default=True, type=bool)
+                        default=1, type=int)
     parser.add_argument("-show", "--show", help="show score of mortality and immortality (default is 0)"
                                                 "\nUseAge : python fine_tuning.py -show 1 (True)\n\n",
-                        default=False, type=bool)
+                        default=0, type=int)
+    parser.add_argument("-plot", "--plot", help="whether making a plot for loss value and accuracy (default is 1)"
+                                                "\nUseAge : python fine_tuning.py -plot 1 (True)\n\n",
+                        default=1, type=int)
     parser.add_argument("-ver", "--version", help="set a version for training (Default is 1)"
                                                   "\n1 - training ct images respectively"
                                                   "\n2 - training ct images recursively"
@@ -83,6 +86,12 @@ DO_SHOW = args.show
 
 if DO_SHOW != 1 and DO_SHOW != 0:
     print("\nInput Error show option!\n")
+    exit(-1)
+
+DO_SHOW_PLOT = args.plot
+
+if DO_SHOW_PLOT != 1 and DO_SHOW_PLOT != 0:
+    print("\nInput Error plot option!\n")
     exit(-1)
 
 # SAVE options #

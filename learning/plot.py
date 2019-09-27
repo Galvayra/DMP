@@ -9,6 +9,8 @@ elif current_script == "predict.py" or current_script == "show_multi_plot.py":
     from DMP.utils.arg_predict import TYPE_OF_MODEL, DO_SHOW_PLOT
 elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import TYPE_OF_MODEL, DO_SHOW_PLOT
+elif current_script == "fine_tuning.py":
+    from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, DO_SHOW_PLOT
 
 TOP_N = 10
 
@@ -47,22 +49,23 @@ class MyPlot:
                 self.my_plot.set_title("Convolution Neural Network")
 
     def save_loss_plot(self, log_path, step_list):
-        plt.plot(step_list, self.tra_loss_list, '-b', label='train loss')
-        plt.plot(step_list, self.val_loss_list, '-r', label='valid loss')
-        plt.xlabel("epoch")
-        plt.legend(loc='upper left')
-        plt.title("loss graph")
-        plt.savefig(log_path + "loss_graph.png")
-        plt.clf()
+        if DO_SHOW_PLOT:
+            plt.plot(step_list, self.tra_loss_list, '-b', label='train loss')
+            plt.plot(step_list, self.val_loss_list, '-r', label='valid loss')
+            plt.xlabel("epoch")
+            plt.legend(loc='upper left')
+            plt.title("loss graph")
+            plt.savefig(log_path + "loss_graph.png")
+            plt.clf()
 
-        plt.plot(step_list, self.tra_acc_list, '-b', label='train acc')
-        plt.plot(step_list, self.val_acc_list, '-r', label='valid acc')
-        plt.xlabel("epoch")
-        plt.legend(loc='upper left')
-        plt.title("accuracy graph")
-        plt.savefig(log_path + "accuracy_graph.png")
+            plt.plot(step_list, self.tra_acc_list, '-b', label='train acc')
+            plt.plot(step_list, self.val_acc_list, '-r', label='valid acc')
+            plt.xlabel("epoch")
+            plt.legend(loc='upper left')
+            plt.title("accuracy graph")
+            plt.savefig(log_path + "accuracy_graph.png")
 
-        print("\nSuccess to save graphs in the ", log_path)
+            print("\nSuccess to save graphs in the ", log_path)
 
     def set_plot(self, k=None, fpr=None, tpr=None, title=None):
         if DO_SHOW_PLOT:

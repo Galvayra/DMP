@@ -150,15 +150,15 @@ class TensorModel(MyScore):
             print("Shape          -", self.tf_recorder.log[KEY_OF_SHAPE])
 
         print("# of dimension - %4d" % (self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]))
-        print("Training   Set - %4d (%4d/%4d)" % (self.tf_recorder.log[KEY_OF_TRAIN],
-                                                  self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_ALIVE],
-                                                  self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DEATH]))
-        print("Validation Set - %4d (%4d/%4d)" % (self.tf_recorder.log[KEY_OF_VALID],
-                                                  self.tf_recorder.log[KEY_OF_VALID + KEY_OF_ALIVE],
-                                                  self.tf_recorder.log[KEY_OF_VALID + KEY_OF_DEATH]))
-        print("Test       Set - %4d (%4d/%4d)\n\n" % (self.tf_recorder.log[KEY_OF_TEST],
-                                                      self.tf_recorder.log[KEY_OF_TEST + KEY_OF_ALIVE],
-                                                      self.tf_recorder.log[KEY_OF_TEST + KEY_OF_DEATH]))
+        print("Training   Set - %4d (%4d /%4d)" % (self.tf_recorder.log[KEY_OF_TRAIN],
+                                                   self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_ALIVE],
+                                                   self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DEATH]))
+        print("Validation Set - %4d (%4d /%4d)" % (self.tf_recorder.log[KEY_OF_VALID],
+                                                   self.tf_recorder.log[KEY_OF_VALID + KEY_OF_ALIVE],
+                                                   self.tf_recorder.log[KEY_OF_VALID + KEY_OF_DEATH]))
+        print("Test       Set - %4d (%4d /%4d)\n\n" % (self.tf_recorder.log[KEY_OF_TEST],
+                                                       self.tf_recorder.log[KEY_OF_TEST + KEY_OF_ALIVE],
+                                                       self.tf_recorder.log[KEY_OF_TEST + KEY_OF_DEATH]))
 
     def save_process_time(self):
         with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:
