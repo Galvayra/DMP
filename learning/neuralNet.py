@@ -6,7 +6,7 @@ import shutil
 import sys
 import json
 from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
-from DMP.modeling.tfRecorder import TfRecorder, EXTENSION_OF_TF_RECORD
+from DMP.modeling.tfRecorder import *
 import tensorflow as tf
 import numpy as np
 
@@ -17,7 +17,7 @@ if current_script == "training.py":
 elif current_script == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, LEARNING_RATE, \
         READ_VECTOR
-elif current_script == "fine_tuning.py":
+elif current_script == "fine_tuning.py" or current_script == "show_tfRecord.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
         READ_VECTOR
 elif current_script == "predict_tfRecord.py":
@@ -56,6 +56,9 @@ class TensorModel(MyScore):
                     print("Epoch - unlimited")
                 print("Learning Rate -", self.learning_rate)
                 print("Mini-batch Size -", BATCH_SIZE, '\n\n')
+
+                if current_script == "fine_tuning.py":
+                    self.show_tf_record_info()
 
     def init_log_and_tensor(self):
         self.name_of_log = PATH_LOGS + TENSOR_DIR_NAME
@@ -139,6 +142,23 @@ class TensorModel(MyScore):
                 y_data = np.array(y_data)
 
         return x_data, y_data
+
+    def show_tf_record_info(self):
+        print("tfRecord Path  -", self.tf_record_path)
+
+        if self.tf_recorder.do_encode_image:
+            print("Shape          -", self.tf_recorder.log[KEY_OF_SHAPE])
+
+        print("# of dimension - %4d" % (self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]))
+        print("Training   Set - %4d (%4d/%4d)" % (self.tf_recorder.log[KEY_OF_TRAIN],
+                                                  self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_ALIVE],
+                                                  self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DEATH]))
+        print("Validation Set - %4d (%4d/%4d)" % (self.tf_recorder.log[KEY_OF_VALID],
+                                                  self.tf_recorder.log[KEY_OF_VALID + KEY_OF_ALIVE],
+                                                  self.tf_recorder.log[KEY_OF_VALID + KEY_OF_DEATH]))
+        print("Test       Set - %4d (%4d/%4d)\n\n" % (self.tf_recorder.log[KEY_OF_TEST],
+                                                      self.tf_recorder.log[KEY_OF_TEST + KEY_OF_ALIVE],
+                                                      self.tf_recorder.log[KEY_OF_TEST + KEY_OF_DEATH]))
 
     def save_process_time(self):
         with open(self.name_of_log + FILE_OF_TRAINING_TIME, 'w') as outfile:

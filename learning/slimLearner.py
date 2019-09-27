@@ -1,5 +1,5 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tfRecorder import TfRecorder, KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_VALID, KEY_OF_SHAPE, KEY_OF_DIM
+from DMP.modeling.tfRecorder import KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_VALID, KEY_OF_SHAPE, KEY_OF_DIM
 from .variables import *
 import numpy as np
 import tensorflow.contrib.slim as slim
@@ -18,9 +18,9 @@ NUM_OF_EARLY_STOPPING = 5
 
 
 class SlimLearner(TensorModel):
-    def __init__(self, model, tf_name_vector):
+    def __init__(self, model=None, tf_name_vector=None):
         super().__init__(is_cross_valid=False)
-        self.tf_recorder = TfRecorder(self.tf_record_path)
+        # self.tf_recorder = TfRecorder(self.tf_record_path)
         self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
         self.num_of_output_nodes = 1
         self.tf_name = None

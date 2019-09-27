@@ -7,13 +7,15 @@ import copy
 import sys
 import time
 
-if sys.argv[0].split('/')[-1] == "training.py":
+current_script = sys.argv[0].split('/')[-1]
+
+if current_script == "training.py":
     from DMP.utils.arg_training import DO_SHOW
-elif sys.argv[0].split('/')[-1] == "predict.py":
+elif current_script == "predict.py":
     from DMP.utils.arg_predict import DO_SHOW, SAVE_DIR_NAME
-elif sys.argv[0].split('/')[-1] == "fine_tuning.py":
+elif current_script == "fine_tuning.py" or current_script == "show_tfRecord.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW
-elif sys.argv[0].split('/')[-1] == "predict_tfRecord.py":
+elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import DO_SHOW
 
 NUM_OF_BLANK = 2
