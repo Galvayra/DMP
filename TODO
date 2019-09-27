@@ -1,25 +1,5 @@
-vgg_16 option 중 is_training
-
-False를 주면 VGG 초기 weight 값들이 확실하게 고정되고
-True를 주면 확실하게 변화됨....
-
-False를 주었을 때 테스트 할 때마다 bottleneck의 값이 유지되는것을 확인
-True는 매번 테스트 할 때마다 바뀜
-
-
-둘의 차이를 정확하게 모르겠으나 아래로 추측됨
-
-is_training 옵션은 VGG16 망의 weight값들을 학습에 사용할 것인지 아닌지를 설정하는 옵션
-(여기서도 추가로 optimization과정에서 minimize할 때 var_list를 모두 사용한다면 weight가 업데이트 되는 것을 확인)
-(따라서 fine tuning은 minimize를 default // transfer learning은 minimize를 최종 FC의 weight, bias로 주어야함)
-
+vgg_16 option 중 is_training 옵션은 VGG16 망의 weight값들을 학습에 사용할 것인지 아닌지를 설정하는 옵션
 False = weight 값 학습 중 업데이트에 사용하지 않음
 True  = weight 값 학습 중 업데이트에 사용
-
-(나중에 학습 완료 후, 최종 신경망을 restore할 때, 처음 VGG모델이 False여야만 가중치가 변하지 않음)
-(이것도 소수점 다섯, 여섯째자리 정도에서 미세한 변화가 있지만 크게 결과에 지장이 없어 결과는 변화가 없음)
-
-
-
 
 

@@ -7,7 +7,6 @@ import tensorflow as tf
 import tensorflow.contrib.slim.nets
 import sys
 from os import path, getcwd
-from sklearn.metrics import confusion_matrix
 from .neuralNet import EarlyStopping
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
@@ -23,7 +22,6 @@ class SlimLearner(TensorModel):
         # self.tf_recorder = TfRecorder(self.tf_record_path)
         self.num_of_input_nodes = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
         self.num_of_output_nodes = 1
-        self.tf_name = None
         self.tf_name_vector = tf_name_vector
         self.is_cross_valid = self.tf_recorder.is_cross_valid
         self.model = model
@@ -37,6 +35,7 @@ class SlimLearner(TensorModel):
             self.shape = shape
 
         self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1, minimum_epoch=30)
+
         self.loss_dict = {
             "train": list(),
             "valid": list()
@@ -104,8 +103,8 @@ class SlimLearner(TensorModel):
             # If the model is fine-tuning, parameter will be trained during training
             else:
                 is_training = True
-            # logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1, is_training=is_training)
-            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1, is_training=is_training)
+            # logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
 
             return logits, end_points
 
@@ -158,11 +157,11 @@ class SlimLearner(TensorModel):
 
     def __fine_tuning(self):
         logits, end_points = self.__init_pre_trained_model()
+        exclude = ['vgg_16/fc8']
+        variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
         fc_7 = end_points['vgg_16/fc7']
 
         str_n_fold = '_' + str(self.num_of_fold)
-        self.fc_7 = end_points['vgg_16/fc7']
-        self.fc_8 = end_points['vgg_16/fc8']
 
         W = tf.Variable(tf.random_normal([4096, 1], mean=0.0, stddev=0.02), name=NAME_FC_W + str_n_fold)
         b = tf.Variable(tf.random_normal([1], mean=0.0), name=NAME_FC_B + str_n_fold)
@@ -185,7 +184,7 @@ class SlimLearner(TensorModel):
         else:
             train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
 
-        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
+        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, variables_to_restore)
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
     # def __fine_tuning(self):
@@ -194,54 +193,22 @@ class SlimLearner(TensorModel):
     #     variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
     #     init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, variables_to_restore)
     #
-    #     hypothesis = tf.nn.sigmoid(logits, name=NAME_HYPO + '_' + str(self.num_of_fold))
-    #     cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=self.tf_y))
-    #     predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
-    #     acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
-    #     train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+    #     with tf.name_scope(NAME_SCOPE_COST):
+    #         hypothesis = tf.nn.sigmoid(logits, name=NAME_HYPO + '_' + str(self.num_of_fold))
+    #         cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=self.tf_y))
+    #         cost_summary = tf.summary.scalar("cost", cost)
     #
-    #     self.fc_7 = end_points['vgg_16/fc7']
-    #     self.fc_8 = end_points['vgg_16/fc8']
+    #     with tf.name_scope(NAME_SCOPE_PREDICT):
+    #         predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + '_' + str(self.num_of_fold))
+    #         acc = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+    #         accuracy_summary = tf.summary.scalar("accuracy", acc)
     #
-    #     tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
-    #     iterator_test = tf_test_record.make_initializable_iterator()
-    #     with tf.Session() as sess:
-    #         init_op = tf.global_variables_initializer()
-    #         sess.run(init_op)
-    #         init_fn(sess)
-    #         sess.run(iterator_test.initializer)
-    #         next_element = iterator_test.get_next()
+    #     if self.model == "transfer":
+    #         train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
+    #     else:
+    #         train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
     #
-    #         try:
-    #             while True:
-    #                 x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
-    #
-    #                 if self.shape:
-    #                     target = x_img
-    #                 else:
-    #                     target = x_batch
-    #
-    #                 fc7, fc8 = sess.run([self.fc_7, self.fc_8], feed_dict={self.tf_x: target, self.tf_y: y_batch})
-    #
-    #                 for f7, f8, tf_name in zip(fc7, fc8, tensor_name):
-    #                     print(tf_name)
-    #                     print(f7, f8)
-    #
-    #                 _, tra_loss, tra_acc = sess.run(
-    #                     [train_step, cost, acc],
-    #                     feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-    #                 )
-    #                 print('\n\n\n')
-    #
-    #                 fc7, fc8 = sess.run([self.fc_7, self.fc_8], feed_dict={self.tf_x: target, self.tf_y: y_batch})
-    #
-    #                 for f7, f8, tf_name in zip(fc7, fc8, tensor_name):
-    #                     print(tf_name)
-    #                     print(f7, f8)
-    #
-    #                 exit(-1)
-    #         except tf.errors.OutOfRangeError:
-    #             pass
+    #     self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
     @staticmethod
     def __show_params(sess):
@@ -250,6 +217,7 @@ class SlimLearner(TensorModel):
         for k, v in zip(variables_names, values):
             print("Variable: ", k)
             print("Shape: ", v.shape)
+            # print(v)
             print()
 
     def __training(self):
@@ -301,6 +269,7 @@ class SlimLearner(TensorModel):
             sess.run(init_op)
             sess.run(iterator_train.initializer)
 
+            # saver = tf.train.Saver(max_to_keep=(NUM_OF_EARLY_STOPPING + 1))
             merged_summary = tf.summary.merge_all()
             train_writer = tf.summary.FileWriter(self.name_of_log + "train", sess.graph)
             valid_writer = tf.summary.FileWriter(self.name_of_log + "valid", sess.graph)
@@ -323,61 +292,38 @@ class SlimLearner(TensorModel):
                     # x_array = list()
 
                     # early stop for avoid over-fitting
-                    if not self.early_stopping.is_stop:
-                        if self.shape:
-                            target = x_img
-                        else:
-                            target = x_batch
-
-                            # for name, x in zip(x_name, x_batch):
-                            #     x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
-                            #
-                            # target = np.array(x_array)
-
-                        # fc7 = sess.run(self.fc_7, feed_dict={self.tf_x: target, self.tf_y: y_batch})
-                        #
-                        # for fc, tf_name in zip(fc7, x_name):
-                        #     print(tf_name)
-                        #     print(fc)
-                        #     print()
-
-                        train_summary, _, tra_loss, tra_acc = sess.run(
-                            [merged_summary, train_step, cost, acc],
-                            feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
-                        )
-                        train_writer.add_summary(train_summary, global_step=n_iter)
-
-                        # fc7 = sess.run(self.fc_7, feed_dict={self.tf_x: target, self.tf_y: y_batch})
-                        #
-                        # for fc, tf_name in zip(fc7, x_name):
-                        #     print(tf_name)
-                        #     print(fc)
-                        #     print()
-                        #
-                        # exit(-1)
-
-                        self.loss_dict["train"].append(tra_loss)
-                        self.acc_dict["train"].append(tra_acc)
-
-                        # epoch
-                        if n_iter % batch_iter == 0:
-                            step += 1
-                            self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
-                            if self.__set_average_values(step):
-                                self.early_stopping.is_stop = True
+                    # if not self.early_stopping.is_stop:
+                    if self.shape:
+                        target = x_img
                     else:
-                        coord.request_stop()
+                        target = x_batch
+
+                        # for name, x in zip(x_name, x_batch):
+                        #     x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
+                        #
+                        # target = np.array(x_array)
+
+                    train_summary, _, tra_loss, tra_acc = sess.run(
+                        [merged_summary, train_step, cost, acc],
+                        feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
+                    )
+                    train_writer.add_summary(train_summary, global_step=n_iter)
+
+                    self.loss_dict["train"].append(tra_loss)
+                    self.acc_dict["train"].append(tra_acc)
+
+                    # epoch
+                    if n_iter % batch_iter == 0:
+                        step += 1
+                        self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
+                        # saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+                        if self.__set_average_values(step):
+                            coord.request_stop()
             except tf.errors.OutOfRangeError:
-                pass
+                print("tfErrors]OutOfRangeError\n\n")
+                exit(-1)
             finally:
-                # # last epoch
-                # if len(self.loss_dict["train"]) > 0:
-                #     step += 1
-                #     self.__set_valid_loss(sess, n_iter, iterator_valid, merged_summary, cost, acc, valid_writer)
-                #     self.__set_average_values(step)
-
                 self.save_loss_plot(log_path=self.name_of_log, step_list=[step for step in range(1, step + 1)])
-
                 saver = tf.train.Saver()
                 saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
 
@@ -463,25 +409,13 @@ class SlimLearner(TensorModel):
             self.h = np.array(h_list)
             self.p = (self.h > 0.5)
             self.y_test = np.array(y_test)
-            self.__show_data_proposition(self.y_test, self.p)
-
-    @staticmethod
-    def __show_data_proposition(y_true, y_predict):
-        death_count = int()
-
-        for data in y_true:
-            if data == [1]:
-                death_count += 1
-
-        print("\n\nTotal = %d (%d / %d)" % (len(y_true), len(y_true) - death_count, death_count), '\n\n')
-        print("Confusion Matrix")
-        print(confusion_matrix(y_true, y_predict))
 
     def load_nn(self):
         self.num_of_fold += 1
         checkpoint = tf.train.get_checkpoint_state(self.get_name_of_tensor())
         paths = checkpoint.all_model_checkpoint_paths
         target_path = paths[-1]
+        # target_path = paths[len(paths) - (NUM_OF_EARLY_STOPPING + 1)]
 
         self.best_epoch = int(target_path.split("/")[-1].split("model-")[-1])
         self.num_of_dimension = self.tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DIM]
@@ -509,7 +443,7 @@ class SlimLearner(TensorModel):
             learning_rate = graph.get_tensor_by_name(NAME_LEARNING_RATE + "_" + str_n_fold + ":0")
             self.num_of_hidden, self.learning_rate = sess.run([num_of_hidden, learning_rate])
 
-            #     W = graph.get_tensor_by_name(NAME_FC_W + '_' + str(self.num_of_fold) + ":0")
+            # self.w = graph.get_tensor_by_name(NAME_FC_W + '_' + str(self.num_of_fold) + ":0")
             #     b = graph.get_tensor_by_name(NAME_FC_B + '_' + str(self.num_of_fold) +  ":0")
 
             hypothesis = graph.get_tensor_by_name(NAME_SCOPE_COST + "/" + NAME_HYPO + "_" + str_n_fold + ":0")
@@ -547,36 +481,3 @@ class SlimLearner(TensorModel):
                         best_epoch=self.best_epoch,
                         num_of_dimension=self.num_of_dimension,
                         learning_rate=self.learning_rate)
-
-    def __mini_test(self, test_tensor):
-        tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
-        iterator_test = tf_test_record.make_initializable_iterator()
-        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, slim.get_model_variables('vgg_16'))
-
-        with tf.Session() as sess:
-            init_fn(sess)
-            sess.run(iterator_test.initializer)
-            next_element = iterator_test.get_next()
-            try:
-                while True:
-                    x_batch, y_batch, x_img, tensor_name = sess.run(next_element)
-
-                    if self.shape:
-                        target = x_img
-                    else:
-                        target = x_batch
-
-                    bottleneck = sess.run(test_tensor, feed_dict={self.tf_x: target,
-                                                                  self.tf_y: y_batch,
-                                                                  self.keep_prob: 1})
-
-                    for vector, tf_name in zip(bottleneck, tensor_name):
-                        print(tf_name, vector)
-
-                    exit(-1)
-            except tf.errors.OutOfRangeError:
-                pass
-
-    def clear_tensor(self):
-        super().clear_tensor()
-        self.tf_name = None

@@ -168,32 +168,61 @@ class TensorModel(MyScore):
         self.tf_x = None
         self.tf_y = None
 
+    def count_number_trainable_params(self):
+        """
+        Counts the number of trainable variables.
+        """
+        tot_nb_params = 0
+        for trainable_variable in tf.trainable_variables():
+            print(trainable_variable)
+            shape = trainable_variable.get_shape()  # e.g [D,F] or [W,H,C]
+            current_nb_params = self.get_nb_params_shape(shape)
+            tot_nb_params = tot_nb_params + current_nb_params
+        return tot_nb_params
+
+    @staticmethod
+    def get_nb_params_shape(shape):
+        """
+        Computes the total number of params for a given shap.
+        Works for any number of shapes etc [D,F] or [W,H,C] computes D*F and W*H*C.
+        """
+        nb_params = 1
+        for dim in shape:
+            nb_params = nb_params*int(dim)
+        return nb_params
+
 
 class EarlyStopping:
-    def __init__(self, patience=0, verbose=0, minimum_epoch=50, increase=0.1):
+    def __init__(self, patience=0, verbose=0, minimum_epoch=50, increase=0.01):
         self._total_step = 0
         self._step = 0
         self._loss = float('inf')
         self._acc_list = list()
-        self._increase= increase
+        self._increase = increase
         self._minimum_epoch = minimum_epoch
         self.patience = patience
         self.verbose = verbose
         self.is_stop = False
 
     def validate(self, loss, val_acc):
-        if self._loss < loss:
-            self._total_step += 1
-            self._step += 1
+        self._total_step += 1
+        mean_acc = np.mean(self._acc_list[int(round(len(self._acc_list) / 2)):])
+        self._acc_list.append(val_acc)
 
-            # The value is different from the current validation Acc and reduce mean of validation Acc
-            if self._total_step >= self._minimum_epoch:
-                mean_acc = np.mean(self._acc_list[int(round(len(self._acc_list) / 2)):])
-                if val_acc - mean_acc <= self._increase:
-                    if self.verbose:
-                        print("Training process is stopped early....")
-                        print("Because validation acc will be not increased")
-                    return True
+        # The value is different from the current validation Acc and reduce mean of validation Acc
+        if self._total_step >= self._minimum_epoch:
+            if val_acc - mean_acc <= self._increase:
+                if self.verbose:
+                    print("Training process is stopped early....")
+                    print("Because validation acc will be not increased")
+
+                # print("total step -", self._total_step, '\tstep -', self._step)
+                # print("val acc -", val_acc, "mean acc -", mean_acc, "difference -", val_acc - mean_acc)
+                # print("acc_list -", self._acc_list, '\n')
+                return True
+
+        if self._loss < loss:
+            self._step += 1
 
             if self._step > self.patience:
                 if self.verbose:
@@ -204,4 +233,7 @@ class EarlyStopping:
             self._step = 0
             self._loss = loss
 
+        # print("total step -", self._total_step, '\tstep -', self._step)
+        # print("val acc -", val_acc, "mean acc -", mean_acc, "difference -", val_acc - mean_acc)
+        # print("acc_list -", self._acc_list, '\n')
         return False
