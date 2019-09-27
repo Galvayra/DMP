@@ -268,7 +268,7 @@ class DataClassifier:
                 for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                     h, y_predict = ocf.load_svm(x_train, y_train, x_test)
                     ocf.set_training_count(y_train, y_test)
-                    ocf.predict(h, y_predict, y_test)
+                    ocf.predict(h, y_predict, y_test, is_cross_valid=True)
 
                 ocf.save()
                 ocf.show_process_time()
@@ -280,20 +280,20 @@ class DataClassifier:
                     for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                         h, y_predict = nn.load_nn(x_test, y_test)
                         nn.set_training_count(y_train, y_test)
-                        nn.predict(h, y_predict, y_test)
+                        nn.predict(h, y_predict, y_test, is_cross_valid=True)
                 elif TYPE_OF_MODEL == "cnn":
                     if IMAGE_PATH:
                         for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data, do_get_index=True):
                             self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
                             h, y_predict = nn.load_nn(x_test, y_test)
                             nn.set_training_count(y_train, y_test)
-                            nn.predict(h, y_predict, y_test)
+                            nn.predict(h, y_predict, y_test, is_cross_valid=True)
                     else:
                         for _, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
                             self.dataHandler.expand4square_matrix(x_test)
                             h, y_predict = nn.load_nn(x_test, y_test)
                             nn.set_training_count(y_train, y_test)
-                            nn.predict(h, y_predict, y_test)
+                            nn.predict(h, y_predict, y_test, is_cross_valid=True)
 
                 nn.save()
                 nn.show_process_time()
@@ -309,7 +309,7 @@ class DataClassifier:
 
                 # initialize support vector machine
                 h, y_predict = ocf.load_svm(x_train, y_train, x_test)
-                ocf.predict(h, y_predict, y_test)
+                ocf.predict(h, y_predict, y_test, is_cross_valid=False)
                 ocf.save(self.dataHandler)
                 ocf.show_process_time()
                 ocf.show_plot()
@@ -324,7 +324,7 @@ class DataClassifier:
                 nn = NeuralNet(is_cross_valid=False)
                 nn.init_plot()
                 h, y_predict = nn.load_nn(x_test, y_test)
-                nn.predict(h, y_predict, y_test)
+                nn.predict(h, y_predict, y_test, is_cross_valid=False)
                 nn.save(self.dataHandler)
                 nn.show_process_time()
                 nn.show_plot()
@@ -334,6 +334,7 @@ class DataClassifier:
 
         if not nn.is_cross_valid:
             nn.load_nn()
+            nn.save()
 
     # @staticmethod
     # def show_multi_plot():
@@ -362,40 +363,6 @@ class OlderClassifier(MyScore):
         test_probas_ = svc.predict_proba(x_test)
 
         return test_probas_[:, 1], y_predict
-
-    def predict(self, h, y_predict, y_test):
-        def __get_reverse(_y_labels, is_hypothesis=False):
-            _y_labels_reverse = list()
-
-            if is_hypothesis:
-                for _y in _y_labels:
-                    _y_labels_reverse.append([1 - _y])
-            else:
-                for _y in _y_labels:
-                    if _y == [0]:
-                        _y_labels_reverse.append([1])
-                    else:
-                        _y_labels_reverse.append([0])
-
-            return _y_labels_reverse
-
-        # set score of immortality
-        self.compute_score(__get_reverse(self.get_y_set(y_test)),
-                           __get_reverse(y_predict),
-                           __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY)
-
-        # set score of mortality
-        self.compute_score(self.get_y_set(y_test), y_predict,  h)
-        self.set_score(target=KEY_MORTALITY)
-
-        # set total score of immortality and mortality
-        self.set_2_class_score()
-
-        if self.is_cross_valid:
-            self.show_performance()
-
-        self.set_plot(self.num_of_fold)
 
     def save(self, data_handler=False):
         self.set_performance()

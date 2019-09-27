@@ -16,7 +16,7 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py" or current_script == "show_tfRecord.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW
 elif current_script == "predict_tfRecord.py":
-    from DMP.utils.arg_predict_tfRecord import DO_SHOW
+    from DMP.utils.arg_predict_tfRecord import DO_SHOW, SAVE_DIR_NAME
 
 NUM_OF_BLANK = 2
 INDEX_OF_PERFORMANCE = 0
@@ -134,6 +134,48 @@ class MyScore(MyPlot):
 
         self.score_dict[self.num_of_fold][target] = copy.deepcopy(self.score)
         self.__score = self.__init_score()
+
+    def predict(self, h, y_predict, y_test, is_cross_valid=False):
+        # set score of immortality
+        self.compute_score(self.get_reverse_labels(self.get_y_set(y_test)),
+                           self.get_reverse_labels(y_predict),
+                           self.get_reverse_labels(h, is_hypothesis=True))
+        self.set_score(target=KEY_IMMORTALITY)
+
+        # set score of mortality
+        self.compute_score(self.get_y_set(y_test), y_predict, h)
+        self.set_score(target=KEY_MORTALITY)
+
+        # set 2 class score
+        self.set_2_class_score()
+
+        if is_cross_valid:
+            self.show_performance()
+
+        self.set_plot(self.num_of_fold)
+
+    @staticmethod
+    def get_reverse_labels(_y_labels, is_hypothesis=False):
+        _y_labels_reverse = list()
+
+        if is_hypothesis:
+            for _y in _y_labels:
+                _y_labels_reverse.append([1 - _y[0]])
+        else:
+            if len(_y_labels[0]) > 1:
+                for _y in _y_labels:
+                    if _y == [0, 1]:
+                        _y_labels_reverse.append([1, 0])
+                    else:
+                        _y_labels_reverse.append([0, 1])
+            else:
+                for _y in _y_labels:
+                    if _y == [0]:
+                        _y_labels_reverse.append([1])
+                    else:
+                        _y_labels_reverse.append([0])
+
+        return _y_labels_reverse
 
     def compute_score(self, y, y_predict, hypothesis, accuracy=False):
         try:
@@ -269,8 +311,8 @@ class MyScore(MyPlot):
         data_frame = {
             "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],
             "# of total": ["" for _ in range(loop_cnt)],
-            "# of death": ["" for _ in range(loop_cnt)],
             "# of survive": ["" for _ in range(loop_cnt)],
+            "# of death": ["" for _ in range(loop_cnt)],
             "": ["" for _ in range(loop_cnt * num_of_total_fold)],
             "K fold": ["Average"] + ["" for _ in range(1, loop_cnt)],
             " ": ["" for _ in range(loop_cnt * num_of_total_fold)],
@@ -319,8 +361,8 @@ class MyScore(MyPlot):
         data_frame = {
             "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],
             "# of total": data_handler.count_all + ["" for _ in range(3, loop_cnt)],
-            "# of death": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
             "# of survive": data_handler.count_alive + ["" for _ in range(3, loop_cnt)],
+            "# of death": data_handler.count_mortality + ["" for _ in range(3, loop_cnt)],
             "": ["" for _ in range(loop_cnt)],
             SAVE_DIR_NAME: [key for key in self.score],
             KEY_IMMORTALITY: ["%0.2f" % s for s in self.score_dict[INDEX_OF_PERFORMANCE][KEY_IMMORTALITY].values()],

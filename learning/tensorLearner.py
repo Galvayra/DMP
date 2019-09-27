@@ -264,47 +264,6 @@ class NeuralNet(TensorModel):
 
         return h, y_predict
 
-    def predict(self, h, y_predict, y_test):
-        def __get_reverse(_y_labels, is_hypothesis=False):
-            _y_labels_reverse = list()
-
-            if is_hypothesis:
-                for _y in _y_labels:
-                    _y_labels_reverse.append([1 - _y[0]])
-            else:
-                if len(_y_labels[0]) > 1:
-                    for _y in _y_labels:
-                        if _y == [0, 1]:
-                            _y_labels_reverse.append([1, 0])
-                        else:
-                            _y_labels_reverse.append([0, 1])
-                else:
-                    for _y in _y_labels:
-                        if _y == [0]:
-                            _y_labels_reverse.append([1])
-                        else:
-                            _y_labels_reverse.append([0])
-
-            return _y_labels_reverse
-
-        # set score of immortality
-        self.compute_score(__get_reverse(self.get_y_set(y_test)),
-                           __get_reverse(y_predict),
-                           __get_reverse(h, is_hypothesis=True))
-        self.set_score(target=KEY_IMMORTALITY)
-
-        # set score of mortality
-        self.compute_score(self.get_y_set(y_test), y_predict, h)
-        self.set_score(target=KEY_MORTALITY)
-
-        # set 2 class score
-        self.set_2_class_score()
-
-        if self.is_cross_valid:
-            self.show_performance()
-
-        self.set_plot(self.num_of_fold)
-
     # def set_multi_plot(self):
     #
     #     title = "FFNN_baseline"

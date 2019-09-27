@@ -83,7 +83,7 @@ class DataHandler:
             #         self.img_test = vector_list[KEY_IMG_TEST]
 
             # count list
-            # index == 0, all // index == 1, mortality // index == 2, alive
+            # index == 0, training // index == 1, valid // index == 2, test
             self.count_all = list()
             self.count_mortality = list()
             self.count_alive = list()

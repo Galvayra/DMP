@@ -1,5 +1,5 @@
 from DMP.learning.neuralNet import TensorModel
-from DMP.modeling.tfRecorder import KEY_OF_TRAIN, KEY_OF_TEST, KEY_OF_VALID, KEY_OF_SHAPE, KEY_OF_DIM
+from DMP.modeling.tfRecorder import *
 from .variables import *
 import numpy as np
 import tensorflow.contrib.slim as slim
@@ -46,21 +46,22 @@ class SlimLearner(TensorModel):
             "valid": list()
         }
 
-        if self.is_cross_valid:
-            print('5-fold cross validation')
-        else:
-            print('hyper-parameter optimization')
-            if USE_EARLY_STOPPING:
-                print("Use early stopping")
+        if self.do_show:
+            if self.is_cross_valid:
+                print('5-fold cross validation')
             else:
-                print("Do not use early stopping")
+                print('hyper-parameter optimization')
+                if USE_EARLY_STOPPING:
+                    print("Use early stopping")
+                else:
+                    print("Do not use early stopping")
 
-        if self.model == "tuning" or self.model == "full":
-            print('Load  Vgg16  Model -', self.model, '\nis_training option - True\n\n\n')
-        elif self.model == "transfer":
-            print('Load  Vgg16  Model -', self.model, '\nis_training option - False\n\n\n')
-        else:
-            print("Feed Forward Neural Net\n\n\n")
+            if self.model == "tuning" or self.model == "full":
+                print('Load  Vgg16  Model -', self.model, '\nis_training option - True\n\n\n')
+            elif self.model == "transfer":
+                print('Load  Vgg16  Model -', self.model, '\nis_training option - False\n\n\n')
+            else:
+                print("Feed Forward Neural Net\n\n\n")
 
     def __init_var_result(self):
         self.h = list()
@@ -493,7 +494,6 @@ class SlimLearner(TensorModel):
             saver = tf.train.import_meta_graph(target_path + '.meta')
             saver.restore(sess, target_path)
 
-            exit(-1)
             print("\n\n\ncheckpoint -", target_path, "\nBest Epoch -", self.best_epoch, "\n")
 
             # load tensor
@@ -520,9 +520,33 @@ class SlimLearner(TensorModel):
         tf.reset_default_graph()
         self.clear_tensor()
 
-        self.compute_score(self.y_test, self.p, self.h)
-        self.set_score(target=KEY_TEST)
-        self.show_score(target=KEY_TEST)
+    def save(self):
+        class Handler:
+            def __init__(self, tf_recorder):
+                self.count_all = [
+                    tf_recorder.log[KEY_OF_TRAIN],
+                    tf_recorder.log[KEY_OF_VALID],
+                    tf_recorder.log[KEY_OF_TEST]
+                ]
+                self.count_mortality = [
+                    tf_recorder.log[KEY_OF_TRAIN + KEY_OF_DEATH],
+                    tf_recorder.log[KEY_OF_VALID + KEY_OF_DEATH],
+                    tf_recorder.log[KEY_OF_TEST + KEY_OF_DEATH]
+                ]
+                self.count_alive = [
+                    tf_recorder.log[KEY_OF_TRAIN + KEY_OF_ALIVE],
+                    tf_recorder.log[KEY_OF_VALID + KEY_OF_ALIVE],
+                    tf_recorder.log[KEY_OF_TEST + KEY_OF_ALIVE]
+                ]
+
+        data_handler = Handler(self.tf_recorder)
+        self.predict(self.h, self.p, self.y_test, is_cross_valid=False)
+        self.set_performance()
+        self.show_performance()
+        self.save_score(data_handler=data_handler,
+                        best_epoch=self.best_epoch,
+                        num_of_dimension=self.num_of_dimension,
+                        learning_rate=self.learning_rate)
 
     def __mini_test(self, test_tensor):
         tf_test_record = self.init_tf_record_tensor(key=KEY_OF_TEST, is_test=True)
