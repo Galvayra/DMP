@@ -1,5 +1,4 @@
-vgg_16 option 중 is_training 옵션은 VGG16 망의 weight값들을 학습에 사용할 것인지 아닌지를 설정하는 옵션
-False = weight 값 학습 중 업데이트에 사용하지 않음
-True  = weight 값 학습 중 업데이트에 사용
+vgg_16 option 중 is_training 옵션은 무조건 False로 두어야 test시 weight가 변하지 않음
 
+minimize할 때 fc8만 학습하거나 전체 weight를 학습하는 것으로 나뉨
 
