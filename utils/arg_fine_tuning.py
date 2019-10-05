@@ -20,6 +20,9 @@ def get_arguments():
                                                   "\nyou have to use this option more than 100"
                                                   "\nUseAge : python fine_tuning.py -epoch 2000\n\n",
                         default=2000, type=int)
+    parser.add_argument("-mini_epoch", "--mini_epoch", help="set a minimum of epoch for early stopping (default is 50)"
+                                                            "\nUseAge : python fine_tuning.py -mini_epoch 50\n\n",
+                        default=50, type=int)
     parser.add_argument("-hidden", "--hidden", help="set a number of hidden layer (default is 0)"
                                                     "\ndefault is not using hidden layer for linear model"
                                                     "\nUseAge : python fine_tuning.py -hidden 2 (non-linear)\n\n",
@@ -75,6 +78,7 @@ COLUMN_TARGET_NAME = str()
 
 # Parameter options #
 EPOCH = args.epoch
+MINI_EPOCH = args.mini_epoch
 NUM_HIDDEN_LAYER = args.hidden
 NUM_HIDDEN_DIMENSION = 0
 LEARNING_RATE = args.learn

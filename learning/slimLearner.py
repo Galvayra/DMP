@@ -34,7 +34,7 @@ class SlimLearner(TensorModel):
             shape.insert(0, None)
             self.shape = shape
 
-        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1, minimum_epoch=2)
+        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
 
         self.loss_dict = {
             "train": list(),

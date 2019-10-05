@@ -4,12 +4,12 @@ from os import path
 import os
 import shutil
 import sys
-import json
 from DMP.modeling.variables import MODELING_PATH, TF_RECORD_PATH
 from DMP.modeling.tfRecorder import *
 import tensorflow as tf
 import numpy as np
 
+MINI_EPOCH = 50
 current_script = sys.argv[0].split('/')[-1]
 if current_script == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
@@ -19,7 +19,7 @@ elif current_script == "predict.py":
         READ_VECTOR
 elif current_script == "fine_tuning.py" or current_script == "show_tfRecord.py":
     from DMP.utils.arg_fine_tuning import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
-        READ_VECTOR
+        READ_VECTOR, MINI_EPOCH
 elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, \
         LEARNING_RATE, READ_VECTOR
@@ -193,7 +193,7 @@ class TensorModel(MyScore):
 
 
 class EarlyStopping:
-    def __init__(self, patience=0, verbose=0, minimum_epoch=50, increase=0.01):
+    def __init__(self, patience=0, verbose=0, minimum_epoch=MINI_EPOCH, increase=0.01):
         self._total_step = 0
         self._step = 0
         self._loss = float('inf')
@@ -203,10 +203,13 @@ class EarlyStopping:
         self.patience = patience
         self.verbose = verbose
         self.is_stop = False
+        print("Minimum epoch -", minimum_epoch, "\n\n")
 
     def validate(self, loss, val_acc):
         self._total_step += 1
-        mean_acc = np.mean(self._acc_list[int(round(len(self._acc_list) / 2)):])
+        index = int(round(len(self._acc_list) / 2))
+        index = int((index / 2) * 1.5)
+        mean_acc = np.mean(self._acc_list[index:])
         self._acc_list.append(val_acc)
 
         # The value is different from the current validation Acc and reduce mean of validation Acc
