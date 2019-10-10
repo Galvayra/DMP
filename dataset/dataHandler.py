@@ -10,7 +10,7 @@ from DMP.dataset.images.variables import *
 
 if sys.argv[0].split('/')[-1] == "parsing.py":
     from DMP.utils.arg_parsing import SAVE_FILE_TOTAL, SAVE_FILE_TEST, SAVE_FILE_TRAIN, SAVE_FILE_VALID, RATIO, \
-        EXTENSION_FILE, LOG_NAME
+        EXTENSION_FILE, LOG_NAME, TEST_CSV_TARGET
 
 
 HAVE_SYMPTOM = 1
@@ -43,7 +43,7 @@ class DataHandler:
         # read csv file
         try:
             self.__raw_data = pd.read_csv(data_path + read_csv)
-            print("Read csv file -", data_path + read_csv)
+            print("Read csv file -", data_path + read_csv, "\n")
         except FileNotFoundError:
             print("FileNotFoundError]", data_path + read_csv, "\n")
             exit(-1)
@@ -80,32 +80,31 @@ class DataHandler:
         self.y_column = Y_COLUMN
         self.y_data = self.__set_labels()
         self.__do_sampling = do_sampling
-                
+
         if self.do_parsing:
-            # except for data which is not necessary
-            # [ position 1, ... position n ]
+            self.__log_path = self.data_path + PARSING_PATH + SAVE_FILE_TOTAL.split(EXTENSION_FILE)[0]
 
             if LOG_NAME:
-                self.__log_path = self.data_path + PARSING_PATH + LOG_NAME
+                log_path = self.data_path + PARSING_PATH + LOG_NAME
 
                 try:
-                    with open(self.log_path, 'r') as infile:
+                    with open(log_path, 'r') as infile:
                         self.__log_dict = json.load(infile)
                 except FileNotFoundError:
-                    print("\nPlease make sure a path of log name -", self.log_path)
+                    print("\nPlease make sure a path of log name -", log_path)
                     exit(-1)
-                print("Read log file -", self.log_path, "\n")
+                print("Read log file -", log_path, "\n")
 
                 self.__erase_index_list = self.__get_items_in_log_dict(target_key=KEY_ERASE_INDEX)
             else:
-                self.__log_path = self.data_path + PARSING_PATH + SAVE_FILE_TOTAL.split(EXTENSION_FILE)[0]
                 self.__log_dict = dict()
 
                 if ct_image_path:
                     self.__ct_image_path = self.data_path + IMAGE_PATH + ct_image_path
                     self.__erase_index_list = self.__init_erase_index_list_for_ct_image()
                 else:
-                    self.__erase_index_list = self.__init_erase_index_list()
+                    self.__erase_index_list = self.__init_erase_index_list(data_path)
+                    self.__set_erase_index_list()
 
             if self.column_target:
                 self.__append_target_in_erase_index_list()
@@ -122,8 +121,16 @@ class DataHandler:
         return self.__columns_dict
 
     @property
+    def raw_test_data(self):
+        return self.__raw_test_data
+
+    @property
     def raw_data(self):
         return self.__raw_data
+
+    @raw_data.setter
+    def raw_data(self, raw_data):
+        self.__raw_data = raw_data
 
     @property
     def erase_index_list(self):
@@ -212,6 +219,37 @@ class DataHandler:
     def __get_raw_data(self, header):
         return self.raw_data[self.raw_header_dict[header]]
 
+    # if TEST_CSV_TARGET is inputted, find a duplicated rows with a origin csv file and a target csv file
+    def __init_erase_index_list(self, data_path):
+        if TEST_CSV_TARGET:
+            try:
+                self.__raw_test_data = pd.read_csv(data_path + TEST_CSV_TARGET)
+                print("Read csv file -", data_path + TEST_CSV_TARGET, "\n")
+            except FileNotFoundError:
+                print("FileNotFoundError]", data_path + TEST_CSV_TARGET, "\n")
+                exit(-1)
+
+            index_list = list()
+
+            for n_hospital_target, n_id_target, n_time_target in self.__generator_of_identity(self.raw_test_data):
+                raw_index = POSITION_OF_ROW
+                for n_hospital, n_id, n_time in self.__generator_of_identity(self.raw_data):
+                    if n_hospital == n_hospital_target and n_id == n_id_target and n_time == n_time_target:
+                        index_list.append(raw_index)
+                    raw_index += 1
+
+            return list(set(index_list))
+        else:
+            return list()
+
+    def __generator_of_identity(self, target_df):
+        hospital_data = list(target_df[self.raw_header_dict[COLUMN_HOSPITAL]])
+        id_data = list(target_df[self.raw_header_dict[ID_COLUMN]])
+        time_data = list(target_df[self.raw_header_dict[COLUMN_TIME]])
+
+        for n_hospital, n_id, n_time in zip(hospital_data, id_data, time_data):
+            yield n_hospital, n_id, n_time
+
     def __set_data_dict(self):
 
         # {
@@ -291,7 +329,7 @@ class DataHandler:
         for index in sorted(self.erase_index_list, reverse=True):
             del self.y_data[index - POSITION_OF_ROW]
 
-    def __init_erase_index_list(self):
+    def __set_erase_index_list(self):
         # header keys 조건이 모두 만족 할 때
         def __condition(header_key, condition):
             _erase_index_dict = {i + POSITION_OF_ROW: 0 for i in range(self.x_data_count)}
@@ -345,11 +383,9 @@ class DataHandler:
         # 주증상 데이터에 한글이 있는 경우의 예외처리
         __case_of_exception_in_symptom()
 
-        erase_index_list = sorted(list(set(erase_index_list)), reverse=False)
-        self.__add_to_log_dict(target=erase_index_list, target_key=KEY_ERASE_INDEX)
-
-        # return list()
-        return erase_index_list
+        self.erase_index_list += erase_index_list
+        self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
+        self.__add_to_log_dict(target=self.erase_index_list, target_key=KEY_ERASE_INDEX)
 
     def __init_erase_index_list_for_ct_image(self):
         erase_index_list = list()
@@ -440,10 +476,9 @@ class DataHandler:
                   "\n# of     alive -", str(cnt_total - cnt_mortality).rjust(4),
                   "\n# of mortality -", str(cnt_mortality).rjust(4), "\n\n")
 
-        if not LOG_NAME:
-            with open(self.log_path, 'w') as outfile:
-                json.dump(self.log_dict, outfile, indent=4)
-                print("Write log file -", self.log_path, "\n\n")
+        with open(self.log_path, 'w') as outfile:
+            json.dump(self.log_dict, outfile, indent=4)
+            print("Write log file -", self.log_path, "\n\n")
 
     def save_log(self):
         """

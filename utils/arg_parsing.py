@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 def get_arguments():
     parser.add_argument("-base", "--base",
                         help="set a path of log file name for restore(default is None)"
-                             "\nUseAge : python encoding.py -base 'B'\n\n",
+                             "\nUseAge : python parsing.py -base 'B'\n\n",
                         default="", type=str)
     parser.add_argument("-input", "--input", help="set a name of input csv file"
                                                   "\ndefault is 'dataset'.csv"
@@ -16,11 +16,16 @@ def get_arguments():
                                                     "\ndefault is 'parsing'.csv "
                                                     "\nthe File will be saved in dataset/parsing"
                                                     "\nUseAge : python parsing.py -output 'Name'\n\n")
+    parser.add_argument("-test_target", "--test_target",
+                        help="set a target of test set for erasing overlapped patients(default is None)"
+                             "\nUseAge : python parsing.py -target_test 'Name of test csv'\n\n",
+                        default="", type=str)
+    parser.add_argument("-symptom_target", "--symptom_target",
+                        help="set a target of specific symptom"
+                             "\nUseAge : python parsing.py -target 'symptom'\n\n")
     parser.add_argument("-ratio", "--ratio", help="set a ratio of training set in data set(default is 0.8)"
                                                   "\ntrain:test:validate = N:(10-N)/2:(10-N)/2"
-                                                  "\nUseAge : python encoding.py -ratio 0.5 (2:1:1)\n\n")
-    parser.add_argument("-target", "--target", help="set a target of specific symptom "
-                                                    "\nUseAge : python parsing.py -target 'symptom'\n\n")
+                                                  "\nUseAge : python parsing.py -ratio 0.5 (2:1:1)\n\n")
     parser.add_argument("-sampling", "--sampling", help="set whether sampling or not (default is 1)"
                                                         "\nUseAge : python parsing.py -sampling 1\n\n")
     parser.add_argument("-parsing_image", "--parsing_image",
@@ -52,6 +57,15 @@ if DO_PARSING_IMAGE != 1 and DO_PARSING_IMAGE != 0:
     exit(-1)
 
 LOG_NAME = args.base
+TEST_CSV_TARGET = args.test_target
+
+if LOG_NAME and TEST_CSV_TARGET:
+    print("\nPlease do not use both of options(base and test_target)!\n")
+    exit(-1)
+
+if TEST_CSV_TARGET:
+    TEST_CSV_TARGET += EXTENSION_FILE
+
 RATIO = 0.8
 
 if args.input:
@@ -63,8 +77,8 @@ if args.output:
     SAVE_FILE_VALID = args.output + "_valid"
     SAVE_FILE_TEST = args.output + "_test"
 
-if args.target:
-    COLUMN_TARGET = args.target
+if args.symptom_target:
+    COLUMN_TARGET = args.symptom_target
     COLUMN_TARGET_NAME = str()
 
     if COLUMN_TARGET == "b":
