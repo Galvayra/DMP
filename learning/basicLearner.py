@@ -1,7 +1,7 @@
 import tensorflow as tf
 import math
 import json
-from .neuralNet import TensorModel
+from .neuralNetModel import TensorModel
 from .variables import *
 
 

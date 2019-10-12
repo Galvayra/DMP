@@ -10,10 +10,11 @@ def get_arguments():
                                                     "\nUseAge : python fine_tuning.py -vector 'vector_file_name'\n\n",
                         default="modeling/vectors/image_vector", type=str)
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is transfer)"
-                                                  "\nYou can use 'transfer', 'tuning', 'ffnn'"
+                                                  "\nYou can use 'transfer', 'tuning', 'ffnn', 'cnn'"
                                                   "\ntransfer - transfer learning (update only last FC)"
                                                   "\ntuning   - fine tuning   (update all of parameters)"
                                                   "\nffnn     - feed forward neural net (do not use image)"
+                                                  "\ncnn      - convolution  neural net (do not use image)"
                                                   "\nUseAge : python fine_tuning.py -model M\n\n",
                         default="transfer", type=str)
     parser.add_argument("-epoch", "--epoch", help="set epoch for neural network (default is 2000)"
@@ -68,8 +69,8 @@ READ_VECTOR = args.vector
 # Model option #
 TYPE_OF_MODEL = args.model
 
-if TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
-    print("\nInput Error model option! (You must input - ['transfer', 'tuning', 'ffnn'])\n")
+if TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn":
+    print("\nInput Error model option! (You must input - ['transfer', 'tuning', 'ffnn', 'cnn'])\n")
     exit(-1)
 
 # Target options #

@@ -1,5 +1,5 @@
 from DMP.utils.arg_fine_tuning import *
-from DMP.learning.neuralNet import TensorModel
+from DMP.learning.neuralNetModel import TensorModel
 from keras.applications import VGG19, VGG16, ResNet50
 from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D

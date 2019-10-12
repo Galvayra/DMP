@@ -9,10 +9,11 @@ def get_arguments():
     parser.add_argument("-vector", "--vector", help="set vector file name to train or predict"
                                                     "\nUseAge : python predict_tfRecord.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is transfer)"
-                                                  "\nYou can use 'transfer', 'tuning', 'ffnn'"
+                                                  "\nYou can use 'transfer', 'tuning', 'ffnn', 'cnn'"
                                                   "\ntransfer - transfer learning (update only last FC)"
                                                   "\ntuning   - fine tuning   (update all of parameters)"
                                                   "\nffnn     - feed forward neural net (do not use image)"
+                                                  "\ncnn      - convolution  neural net (do not use image)"
                                                   "\nUseAge : python predict_tfRecord.py -model (tuning|ffnn)\n\n",
                         default='transfer', type=str)
     parser.add_argument("-tensor_dir", "--tensor_dir", help="set directory name for log and tensor (default is Null)"
@@ -64,8 +65,8 @@ NUM_HIDDEN_LAYER = int()
 LEARNING_RATE = float()
 
 TYPE_OF_MODEL = args.model
-if TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn":
-    print("\nInput Error model option! (You must input (transfer|tuning|ffnn))\n")
+if TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning" and TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn":
+    print("\nInput Error model option! (You must input - ['transfer', 'tuning', 'ffnn', 'cnn'])\n")
     exit(-1)
 
 if args.show:

@@ -1,13 +1,15 @@
-from DMP.learning.neuralNet import TensorModel
+from DMP.learning.neuralNetModel import TensorModel
 from DMP.modeling.tfRecorder import *
 from .variables import *
+from PIL import Image
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
 import tensorflow.contrib.slim.nets
 import sys
+import math
 from os import path, getcwd
-from .neuralNet import EarlyStopping
+from .neuralNetModel import EarlyStopping
 
 SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
 sys.path.append(SLIM_PATH)
@@ -25,8 +27,9 @@ class SlimLearner(TensorModel):
         self.tf_name_vector = tf_name_vector
         self.is_cross_valid = self.tf_recorder.is_cross_valid
         self.model = model
+        self.image_converter = ImageConverter()
 
-        if self.model == "ffnn" or self.model is None:
+        if self.model == "ffnn" or self.model == "cnn" or self.model is None:
             self.shape = None
         else:
             # self.shape = (None, Width, Height, channels)
@@ -75,8 +78,12 @@ class SlimLearner(TensorModel):
             self.tf_x = tf.placeholder(dtype=tf.float32, shape=self.shape,
                                        name=NAME_X + '_' + str(self.num_of_fold))
         else:
-            self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_input_nodes],
-                                       name=NAME_X + '_' + str(self.num_of_fold))
+            if self.model == 'cnn':
+                self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, INITIAL_IMAGE_SIZE ** 2],
+                                           name=NAME_X + '_' + str(self.num_of_fold))
+            else:
+                self.tf_x = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_input_nodes],
+                                           name=NAME_X + '_' + str(self.num_of_fold))
 
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
@@ -155,6 +162,65 @@ class SlimLearner(TensorModel):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
+    def __init_convolution_layer(self):
+        num_of_filter = [20, 50, 200]
+        size_of_filter = 5
+
+        tf_x_img = tf.reshape(self.tf_x, [-1, INITIAL_IMAGE_SIZE, INITIAL_IMAGE_SIZE, 1])
+
+        # 5 x 5 x 1 x 20
+        filter_1 = tf.Variable(
+            tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
+            name="cnn_filter_1")
+        conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_1_" + str(self.num_of_fold))
+        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_1_" + str(self.num_of_fold))
+        pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob,
+                               name="dropout_1_" + str(self.num_of_fold))
+
+        # 5 x 5 x 20 x 50
+        filter_2 = tf.Variable(
+            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
+            name="cnn_filter_2")
+        conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_2_" + str(self.num_of_fold))
+        pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_2_" + str(self.num_of_fold))
+        pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob,
+                               name="dropout_2_" + str(self.num_of_fold))
+
+        # 5 x 5 x 50 x 200
+        filter_3 = tf.Variable(
+            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
+            name="cnn_filter_3")
+        conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
+                              name="conv_3_" + str(self.num_of_fold))
+        pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+                                name="pool_3_" + str(self.num_of_fold))
+        pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob,
+                               name="dropout_3_" + str(self.num_of_fold))
+
+        relu_layer = tf.nn.relu(pool_3)
+
+        convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]],
+                                       name="cnn_span_layer_" + str(self.num_of_fold))
+
+        if self.do_show:
+            print("\n\n======== Convolution Layer ========")
+            print("tf_x     -", self.tf_x.shape)
+            print("tf_x_img -", tf_x_img.shape)
+
+            print("\n\nconv_1 -", conv_1.shape)
+            print("pool_1 -", pool_1.shape)
+            print("\n\nconv_2 -", conv_2.shape)
+            print("pool_2 -", pool_2.shape)
+            print("\n\nconv_3 -", conv_3.shape)
+            print("pool_3 -", pool_3.shape)
+            print("\n\ncnn_span_layer -", convolution_layer.shape)
+
+        return convolution_layer, num_of_filter[-1]
+
     # def __fine_tuning(self):
     #     logits, end_points = self.__init_pre_trained_model()
     #     str_n_fold = '_' + str(self.num_of_fold)
@@ -187,6 +253,17 @@ class SlimLearner(TensorModel):
     #     init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, variables_to_restore)
     #     self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
+    @staticmethod
+    def __show_params(sess, show_values=False):
+        variables_names = [v.name for v in tf.trainable_variables()]
+        values = sess.run(variables_names)
+        for k, v in zip(variables_names, values):
+            print("Variable: ", k)
+            print("Shape: ", v.shape)
+            if show_values:
+                print(v)
+            print()
+
     def __fine_tuning(self):
         logits, end_points = self.__init_pre_trained_model()
         exclude = ['vgg_16/fc8']
@@ -213,20 +290,16 @@ class SlimLearner(TensorModel):
 
         self.__sess_run(hypothesis, train_step, cost, acc, init_fn)
 
-    @staticmethod
-    def __show_params(sess):
-        variables_names = [v.name for v in tf.trainable_variables()]
-        values = sess.run(variables_names)
-        for k, v in zip(variables_names, values):
-            print("Variable: ", k)
-            print("Shape: ", v.shape)
-            print(v)
-            print()
-
     def __training(self):
+        if self.model == "cnn":
+            input_layer, num_of_dimension = self.__init_convolution_layer()
+            self.num_of_input_nodes = num_of_dimension
+        else:
+            input_layer = self.tf_x
+
         hypothesis = self.__init_feed_forward_layer(num_of_input_nodes=self.num_of_input_nodes,
                                                     num_of_output_nodes=self.num_of_output_nodes,
-                                                    input_layer=self.tf_x)
+                                                    input_layer=input_layer)
 
         if self.do_show:
             print("Layer O -", hypothesis.shape, "\n\n\n")
@@ -306,6 +379,9 @@ class SlimLearner(TensorModel):
                         #
                         # target = np.array(x_array)
 
+                    if self.model == 'cnn':
+                        target = self.image_converter.get_array_from_img(target)
+
                     train_summary, _, tra_loss, tra_acc = sess.run(
                         [merged_summary, train_step, cost, acc],
                         feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: KEEP_PROB}
@@ -325,7 +401,7 @@ class SlimLearner(TensorModel):
             except tf.errors.OutOfRangeError:
                 print("tfErrors]OutOfRangeError\n\n")
                 exit(-1)
-            finally:
+            else:
                 self.save_loss_plot(log_path=self.name_of_log, step_list=[step for step in range(1, step + 1)])
                 saver = tf.train.Saver()
                 saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
@@ -352,6 +428,9 @@ class SlimLearner(TensorModel):
                         target = x_valid_img
                     else:
                         target = x_valid_batch
+
+                    if self.model == 'cnn':
+                        target = self.image_converter.get_array_from_img(target)
 
                     valid_summary, val_loss, val_acc = sess.run(
                         [merged_summary, cost, accuracy],
@@ -402,6 +481,9 @@ class SlimLearner(TensorModel):
                     target = x_img
                 else:
                     target = x_batch
+
+                if self.model == 'cnn':
+                    target = self.image_converter.get_array_from_img(target)
 
                 # fc, h_batch = sess.run([self.fc, hypothesis],
                 #                        feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: 1})
@@ -488,3 +570,46 @@ class SlimLearner(TensorModel):
                         best_epoch=self.best_epoch,
                         num_of_dimension=self.num_of_dimension,
                         learning_rate=self.learning_rate)
+
+
+class ImageConverter:
+    def __init__(self, use_pil_image=True):
+        self.use_pil_image = use_pil_image
+
+    def get_array_from_img(self, vector_set):
+        img_array = np.array
+        vector_set = vector_set.tolist()
+        size_of_1d = len(vector_set[0])
+
+        if INITIAL_IMAGE_SIZE and not self.use_pil_image:
+            size_of_2d = INITIAL_IMAGE_SIZE ** 2
+        else:
+            size_of_2d = pow(math.ceil(math.sqrt(size_of_1d)), 2)
+
+        # expand data for 2d matrix
+        for i, vector in enumerate(vector_set):
+            for _ in range(size_of_1d, size_of_2d):
+                vector.append(0.0)
+
+            if i == 0:
+                img_array = self.__get_array_from_img(vector)
+            else:
+                img_array = np.concatenate((img_array, self.__get_array_from_img(vector)))
+
+        return img_array
+
+    def __get_array_from_img(self, x):
+        if self.use_pil_image:
+            x = np.array(x) * GRAY_SCALE
+            x = np.reshape(x, (-1, int(math.sqrt(len(x)))))
+            img = Image.fromarray(x)
+
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+
+            img = img.resize((INITIAL_IMAGE_SIZE, INITIAL_IMAGE_SIZE), resample=Image.BILINEAR)
+            img = img.convert('L')
+        else:
+            img = x
+
+        return np.reshape(np.array(img), (-1, INITIAL_IMAGE_SIZE * INITIAL_IMAGE_SIZE))
