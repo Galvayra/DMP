@@ -213,16 +213,17 @@ class EarlyStopping:
         self._acc_list.append(val_acc)
 
         # The value is different from the current validation Acc and reduce mean of validation Acc
-        if self._total_step >= self._minimum_epoch:
-            if val_acc - mean_acc <= self._increase:
-                if self.verbose:
-                    print("Training process is stopped early....")
-                    print("Because validation acc will be not increased")
+        if USE_EARLY_STOPPING_WITH_VAL_ACC:
+            if self._total_step >= self._minimum_epoch:
+                if val_acc - mean_acc <= self._increase:
+                    if self.verbose:
+                        print("Training process is stopped early....")
+                        print("Because validation acc will be not increased")
 
-                # print("total step -", self._total_step, '\tstep -', self._step)
-                # print("val acc -", val_acc, "mean acc -", mean_acc, "difference -", val_acc - mean_acc)
-                # print("acc_list -", self._acc_list, '\n')
-                return True
+                    # print("total step -", self._total_step, '\tstep -', self._step)
+                    # print("val acc -", val_acc, "mean acc -", mean_acc, "difference -", val_acc - mean_acc)
+                    # print("acc_list -", self._acc_list, '\n')
+                    return True
 
         if self._loss < loss:
             self._step += 1

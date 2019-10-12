@@ -59,10 +59,11 @@ NUM_OF_LOSS_OVER_FIT = 3
 NUM_OF_SAVE_EPOCH = 20
 
 # mini-batch size
-BATCH_SIZE = 4
+BATCH_SIZE = 32
 
 # Image options #
 # set CT image size
 IMAGE_RESIZE = 224
 DO_NORMALIZE = False
 USE_EARLY_STOPPING = True
+USE_EARLY_STOPPING_WITH_VAL_ACC = True

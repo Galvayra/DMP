@@ -26,7 +26,7 @@ class SlimLearner(TensorModel):
         self.is_cross_valid = self.tf_recorder.is_cross_valid
         self.model = model
 
-        if self.model == "ffnn":
+        if self.model == "ffnn" or self.model is None:
             self.shape = None
         else:
             # self.shape = (None, Width, Height, channels)

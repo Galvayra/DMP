@@ -17,7 +17,7 @@ TEMP_COLUMN = "L"
 Y_COLUMN = "DA"
 
 USE_FINAL_DIAGNOSIS = False
-USE_WORD_FEATURES = False
+USE_WORD_FEATURES = True
 
 # All of features
 default_info_columns = {
