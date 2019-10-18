@@ -139,7 +139,7 @@ class TfRecorder:
         print("Training   Count -", str(self.log[KEY_OF_TRAIN]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
               "\t Death Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH]).rjust(3))
-        if self.is_cross_valid:
+        if not self.is_cross_valid:
             print("Validation Count -", str(self.log[KEY_OF_VALID]).rjust(4),
                   "\t Alive Count -", str(self.log[KEY_OF_VALID + KEY_OF_ALIVE]).rjust(4),
                   "\t Death Count -", str(self.log[KEY_OF_VALID + KEY_OF_DEATH]).rjust(3))

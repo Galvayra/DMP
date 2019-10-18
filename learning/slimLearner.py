@@ -494,9 +494,11 @@ class SlimLearner(TensorModel):
 
                 h_batch = sess.run(hypothesis, feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: 1})
 
-                for h, y in zip(h_batch, y_batch):
+                for h, y, name in zip(h_batch, y_batch, tensor_name):
+                    print(name, h, y)
                     h_list.append(h)
                     y_test.append(y)
+                print("\n\n==========")
         except tf.errors.OutOfRangeError:
             self.h = np.array(h_list)
             self.p = (self.h > 0.5)

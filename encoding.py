@@ -33,5 +33,6 @@ if __name__ == '__main__':
     vectorMaker = VectorMaker(dataHandler_dict)
 
     vectorMaker.encoding()
+    vectorMaker.show_vector_info()
     vectorMaker.build_tf_records()
     vectorMaker.dump()

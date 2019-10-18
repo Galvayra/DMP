@@ -164,6 +164,8 @@ class VectorMaker:
             x_train, y_train = self.__get_set(key="train")
             x_valid, y_valid = self.__get_set(key="valid")
             x_test, y_test = self.__get_set(key="test")
+
+            # erase shuffle set
             x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
 
             # shuffle data for avoiding over-fitting
@@ -175,17 +177,17 @@ class VectorMaker:
                     self.tf_recorder.to_tf_records(x_train, y_train, key="train")
                     self.tf_recorder.to_tf_records(x_test, y_test, key="test")
             else:
-                if DO_ENCODE_IMAGE:
-                    i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
-                    x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
-                    y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
+                # if DO_ENCODE_IMAGE:
+                #     i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
+                #     x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
+                #     y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
 
                 self.tf_recorder.to_tf_records(x_train, y_train, key="train")
                 self.tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
                 self.tf_recorder.to_tf_records(x_test, y_test, key="test")
 
             self.tf_recorder.save()
-            print("success build tf records! (in the -", self.tf_record_path + ")\n\n\n")
+            print("success build tf records! (in the -", self.tf_record_path + ")\n\n")
 
     def __add_key_value_in_dict(self, key, value):
         if KEY_TF_NAME not in self.vector_matrix:
@@ -260,7 +262,18 @@ class VectorMaker:
 
             yield x_train, y_train, x_test, y_test
 
-    def dump(self, do_show=True):
+    def dump(self):
+        if op.FILE_VECTOR:
+            file_name = self.dump_path + op.FILE_VECTOR
+        else:
+            file_name = self.dump_path + DUMP_FILE
+
+        with open(file_name, 'w') as outfile:
+            json.dump(self.vector_matrix, outfile, indent=4)
+            print("\n=========================================================\n")
+            print("success make dump file! - file name is", file_name, "\n\n\n")
+
+    def show_vector_info(self):
         def __counting_mortality(_data):
             count = 0
 
@@ -275,17 +288,7 @@ class VectorMaker:
 
             return count
 
-        if op.FILE_VECTOR:
-            file_name = self.dump_path + op.FILE_VECTOR
-        else:
-            file_name = self.dump_path + DUMP_FILE
-
-        with open(file_name, 'w') as outfile:
-            json.dump(self.vector_matrix, outfile, indent=4)
-            print("\n=========================================================\n")
-            print("success make dump file! - file name is", file_name)
-
-        if do_show:
+        if DO_SHOW_VECTOR_INFO:
             len_x_train = len(self.vector_matrix["x_train"]["merge"])
             len_x_valid = len(self.vector_matrix["x_valid"]["merge"])
             len_x_test = len(self.vector_matrix["x_test"]["merge"])

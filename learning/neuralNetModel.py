@@ -113,9 +113,14 @@ class TensorModel(MyScore):
             else:
                 tf_recode = tf_recode.repeat()
 
+            tf_recode = tf_recode.shuffle(buffer_size=self.__get_shuffle_buffer_size(key))
+
         tf_recode = tf_recode.batch(BATCH_SIZE)
 
         return tf_recode
+
+    def __get_shuffle_buffer_size(self, key):
+        return self.tf_recorder.log[key]
 
     def get_total_batch(self, key, is_get_image=False):
         x_data, y_data = list(), list()
