@@ -15,7 +15,7 @@ from DMP.dataset.images.variables import *
 
 if __name__ == '__main__':
     if DO_PARSING_IMAGE:
-        dataParser = DataParser(IMAGE_CSV, ct_image_path=CT_IMAGE_PATH)
+        dataParser = DataParser(READ_FILE, ct_image_path=CT_IMAGE_PATH)
     else:
         dataParser = DataParser(READ_FILE)
 

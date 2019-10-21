@@ -36,7 +36,6 @@ class W2vReader:
                 exit(-1)
             else:
                 print("Complete Loading!!\n\n")
-            exit(-1)
 
     def has_key_in_w2v_dict(self, key):
         if key + self.pos_tag in self.w2v_dict:
