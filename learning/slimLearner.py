@@ -163,8 +163,10 @@ class SlimLearner(TensorModel):
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
     def __init_convolution_layer(self):
-        num_of_filter = [20, 50, 200]
-        size_of_filter = 5
+        num_of_filter = [20, 50, 500]
+        size_of_filter = 7
+        # num_of_filter = [20, 50, 200]
+        # size_of_filter = 5
 
         tf_x_img = tf.reshape(self.tf_x, [-1, INITIAL_IMAGE_SIZE, INITIAL_IMAGE_SIZE, 1])
 
@@ -495,10 +497,10 @@ class SlimLearner(TensorModel):
                 h_batch = sess.run(hypothesis, feed_dict={self.tf_x: target, self.tf_y: y_batch, self.keep_prob: 1})
 
                 for h, y, name in zip(h_batch, y_batch, tensor_name):
-                    print(name, h, y)
+                    # print(name, h, y)
                     h_list.append(h)
                     y_test.append(y)
-                print("\n\n==========")
+                # print("\n\n==========")
         except tf.errors.OutOfRangeError:
             self.h = np.array(h_list)
             self.p = (self.h > 0.5)

@@ -47,19 +47,20 @@ NUM_OF_K_FOLD = 5
 GRAY_SCALE = 255
 
 # initialize a image size for convolution neural networks
-INITIAL_IMAGE_SIZE = 36
+# INITIAL_IMAGE_SIZE = 36
+INITIAL_IMAGE_SIZE = 50
 
 # drop out ratio
 KEEP_PROB = 0.7
 
 # if valid loss increase X in a row
-NUM_OF_LOSS_OVER_FIT = 3
+NUM_OF_LOSS_OVER_FIT = 5
 
 # save every X epoch
 NUM_OF_SAVE_EPOCH = 20
 
 # mini-batch size
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 
 # Image options #
 # set CT image size
