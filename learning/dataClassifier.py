@@ -138,7 +138,7 @@ class DataClassifier:
 
     def __data_generator(self, x_data, y_data, cast_numpy=False, do_get_index=False):
 
-        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=1, shuffle=True)
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=SEED, shuffle=True)
 
         if do_get_index:
             for train_index_list, test_index_list in cv.split(x_data, y_data):
@@ -357,7 +357,7 @@ class OlderClassifier(MyScore):
 
     def load_svm(self, x_train, y_train, x_test):
         self.num_of_fold += 1
-        svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=None, probability=True)
+        svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=SEED, probability=True)
         svc.fit(x_train, self.get_y_set(y_train))
 
         y_predict = svc.predict(x_test)
