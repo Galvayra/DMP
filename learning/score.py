@@ -136,7 +136,9 @@ class MyScore(MyPlot):
         self.__score = self.__init_score()
 
     def predict(self, h, y_predict, y_test, is_cross_valid=False):
-        # set score of immortality
+        if not len(h.shape) == 2:
+            h = np.reshape(h, (-1, 1))
+
         self.compute_score(self.get_reverse_labels(self.get_y_set(y_test)),
                            self.get_reverse_labels(y_predict),
                            self.get_reverse_labels(h, is_hypothesis=True))
@@ -162,18 +164,18 @@ class MyScore(MyPlot):
             for _y in _y_labels:
                 _y_labels_reverse.append([1 - _y[0]])
         else:
-            if len(_y_labels[0]) > 1:
-                for _y in _y_labels:
-                    if _y == [0, 1]:
-                        _y_labels_reverse.append([1, 0])
-                    else:
-                        _y_labels_reverse.append([0, 1])
-            else:
-                for _y in _y_labels:
-                    if _y == [0]:
-                        _y_labels_reverse.append([1])
-                    else:
-                        _y_labels_reverse.append([0])
+            # if len(_y_labels[0]) > 1:
+            #     for _y in _y_labels:
+            #         if _y == [0, 1]:
+            #             _y_labels_reverse.append([1, 0])
+            #         else:
+            #             _y_labels_reverse.append([0, 1])
+            # else:
+            for _y in _y_labels:
+                if _y == [0]:
+                    _y_labels_reverse.append([1])
+                else:
+                    _y_labels_reverse.append([0])
 
         return _y_labels_reverse
 

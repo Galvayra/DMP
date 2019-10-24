@@ -391,8 +391,10 @@ class ConvolutionNet(NeuralNet):
     # The model of our Paper
     def __init_convolution_layer_model_2(self, num_of_input_nodes):
         num_of_image = int(math.sqrt(num_of_input_nodes))
-        num_of_filter = [20, 50, 200]
-        size_of_filter = 5
+        num_of_filter = [50, 50, 200]
+        size_of_filter = 7
+        # num_of_filter = [20, 50, 200]
+        # size_of_filter = 5
 
         tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
 

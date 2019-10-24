@@ -13,7 +13,7 @@ def get_arguments():
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is ffnn)"
                                                   "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
     parser.add_argument("-image_dir", "--image_dir", help="set a path of image directory (default is None)"
-                                                          "It is only apply to use cnn model"
+                                                          "\nIt is only apply to use cnn model"
                                                           "\nUseAge : python training.py -image_dir 'path'\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to train (default is merge(all))"
                                                       "\nUseAge : python training.py -feature 'TYPE_OF_FEATURE'\n\n")

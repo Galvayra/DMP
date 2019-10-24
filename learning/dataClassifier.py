@@ -16,14 +16,14 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.slimLearner import SlimLearner
-    from sklearn.preprocessing import StandardScaler
+    # from sklearn.preprocessing import StandardScaler
     from DMP.learning.variables import NUM_OF_K_FOLD
 elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import TYPE_OF_MODEL, DO_SHOW, VERSION
     from DMP.learning.slimLearner import SlimLearner
 
 SEED = 1
-DO_SHUFFLE = True
+DO_SHUFFLE = False
 DO_IMG_SCALING = True
 DO_SAMPLING = False
 SAMPLE_RATIO = 5
@@ -99,26 +99,6 @@ class DataClassifier:
 
         nn.save_process_time()
 
-    @staticmethod
-    def __img_scaling(x_train, x_test):
-        if DO_IMG_SCALING:
-            scaling = StandardScaler()
-
-            n, w, h, k = x_train.shape
-            x_list = list(x_train.reshape([n, -1]))
-
-            scaling.fit(x_list)
-            x_transformed = scaling.transform(x_list)
-            x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-            n, w, h, k = x_test.shape
-            x_list = list(x_test.reshape([n, -1]))
-
-            x_transformed = scaling.transform(x_list)
-            x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
-
-            return x_train, x_test
-
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
             return [[vector] + [path] for vector, path in zip(vector_list, path_list)]
@@ -141,56 +121,6 @@ class DataClassifier:
 
         return self.__get_set(x_data, y_data)
 
-    def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
-        x_img_data = list()
-        y_img_data = list()
-
-        if has_img_paths:
-            if VERSION == 1:
-                for images, y_value in zip(x_data[:n], y_data[:n]):
-                    for img_path in images[1]:
-                        x_img_data.append(img_path)
-                        y_img_data.append(y_value)
-            else:
-                for images, y_value in zip(x_data[:n], y_data[:n]):
-                    x_img_data.append(images[1])
-                    y_img_data.append(y_value)
-        else:
-            if VERSION == 1:
-                for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
-                    for image in images:
-                        x_img_data.append(image)
-                        y_img_data.append(y_value)
-            else:
-                for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
-                    x_img_data.append(images)
-                    y_img_data.append(y_value)
-
-        self.__sampling(x_img_data, y_img_data)
-        self.__show_info(y_img_data)
-
-        return self.__get_set(x_img_data, y_img_data)
-
-    @staticmethod
-    def __sampling(x_img_data, y_img_data):
-        if DO_SAMPLING:
-            erase_index_list = list()
-            cnt_of_death = int()
-
-            for i in range(len(y_img_data)):
-                if y_img_data[i] == [0]:
-                    erase_index_list.append(i)
-                else:
-                    cnt_of_death += 1
-
-            random.seed(5)
-            random.shuffle(erase_index_list)
-            random.seed(9)
-            erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * SAMPLE_RATIO))
-
-            for i in sorted(erase_index_list, reverse=True):
-                del x_img_data[i], y_img_data[i]
-
     @staticmethod
     def __get_set(x_data, y_data):
         if DO_SHUFFLE:
@@ -202,35 +132,13 @@ class DataClassifier:
 
         return x_data, y_data
 
-    def __show_info_during_training(self, k_fold, y_train, y_test):
-        print("\n\n============================", k_fold + 1, "- fold training ============================")
-        self.__show_info(y_train, keyword="Training")
-        self.__show_info(y_test, keyword="Test    ")
-        print("\n\n\n\n")
-
-    @staticmethod
-    def __show_info(y_img_data, keyword="Total Training"):
-        if DO_SHOW:
-            cnt = 0
-
-            if len(y_img_data[0]) > 1:
-                for y in y_img_data:
-                    if y == [0, 1]:
-                        cnt += 1
-            else:
-                for y in y_img_data:
-                    if y == [0]:
-                        cnt += 1
-
-            print("\n" + keyword + " Count (alive/death) -", str(len(y_img_data)),
-                  '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')')
-
     @staticmethod
     def __get_data_matrix(_data, _index_list):
         return [_data[i] for i in _index_list]
 
     def __data_generator(self, x_data, y_data, cast_numpy=False, do_get_index=False):
-        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
+
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=1, shuffle=True)
 
         if do_get_index:
             for train_index_list, test_index_list in cv.split(x_data, y_data):
@@ -343,6 +251,99 @@ class DataClassifier:
     #     nn.init_plot()
     #     nn.set_multi_plot()
     #     nn.show_plot()
+    #
+    # @staticmethod
+    # def __img_scaling(x_train, x_test):
+    #     if DO_IMG_SCALING:
+    #         scaling = StandardScaler()
+    #
+    #         n, w, h, k = x_train.shape
+    #         x_list = list(x_train.reshape([n, -1]))
+    #
+    #         scaling.fit(x_list)
+    #         x_transformed = scaling.transform(x_list)
+    #         x_train = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+    #
+    #         n, w, h, k = x_test.shape
+    #         x_list = list(x_test.reshape([n, -1]))
+    #
+    #         x_transformed = scaling.transform(x_list)
+    #         x_test = np.array(x_transformed, dtype=IMG_D_TYPE).reshape([n, w, h, k])
+    #
+    #         return x_train, x_test
+    #
+    # def __get_total_image_set(self, x_data, y_data, has_img_paths=False):
+    #     x_img_data = list()
+    #     y_img_data = list()
+    #
+    #     if has_img_paths:
+    #         if VERSION == 1:
+    #             for images, y_value in zip(x_data[:n], y_data[:n]):
+    #                 for img_path in images[1]:
+    #                     x_img_data.append(img_path)
+    #                     y_img_data.append(y_value)
+    #         else:
+    #             for images, y_value in zip(x_data[:n], y_data[:n]):
+    #                 x_img_data.append(images[1])
+    #                 y_img_data.append(y_value)
+    #     else:
+    #         if VERSION == 1:
+    #             for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+    #                 for image in images:
+    #                     x_img_data.append(image)
+    #                     y_img_data.append(y_value)
+    #         else:
+    #             for images, y_value in zip(self.dataHandler.get_image_vector(x_data[:n]), y_data[:n]):
+    #                 x_img_data.append(images)
+    #                 y_img_data.append(y_value)
+    #
+    #     self.__sampling(x_img_data, y_img_data)
+    #     self.__show_info(y_img_data)
+    #
+    #     return self.__get_set(x_img_data, y_img_data)
+    #
+    # @staticmethod
+    # def __sampling(x_img_data, y_img_data):
+    #     if DO_SAMPLING:
+    #         erase_index_list = list()
+    #         cnt_of_death = int()
+    #
+    #         for i in range(len(y_img_data)):
+    #             if y_img_data[i] == [0]:
+    #                 erase_index_list.append(i)
+    #             else:
+    #                 cnt_of_death += 1
+    #
+    #         random.seed(5)
+    #         random.shuffle(erase_index_list)
+    #         random.seed(9)
+    #         erase_index_list = random.sample(erase_index_list, len(erase_index_list) - (cnt_of_death * SAMPLE_RATIO))
+    #
+    #         for i in sorted(erase_index_list, reverse=True):
+    #             del x_img_data[i], y_img_data[i]
+    #
+    # def __show_info_during_training(self, k_fold, y_train, y_test):
+    #     print("\n\n============================", k_fold + 1, "- fold training ============================")
+    #     self.__show_info(y_train, keyword="Training")
+    #     self.__show_info(y_test, keyword="Test    ")
+    #     print("\n\n\n\n")
+    #
+    # @staticmethod
+    # def __show_info(y_img_data, keyword="Total Training"):
+    #     if DO_SHOW:
+    #         cnt = 0
+    #
+    #         if len(y_img_data[0]) > 1:
+    #             for y in y_img_data:
+    #                 if y == [0, 1]:
+    #                     cnt += 1
+    #         else:
+    #             for y in y_img_data:
+    #                 if y == [0]:
+    #                     cnt += 1
+    #
+    #         print("\n" + keyword + " Count (alive/death) -", str(len(y_img_data)),
+    #               '(' + str(cnt) + '/' + str(len(y_img_data) - cnt) + ')')
 
 
 class OlderClassifier(MyScore):
