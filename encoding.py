@@ -35,4 +35,5 @@ if __name__ == '__main__':
     vectorMaker.encoding()
     vectorMaker.show_vector_info()
     # vectorMaker.build_tf_records()
+    vectorMaker.build_pillow_img()
     vectorMaker.dump()

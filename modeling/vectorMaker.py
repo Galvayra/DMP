@@ -8,8 +8,10 @@ from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
 from DMP.dataset.variables import DATA_PATH
 from DMP.modeling.tfRecorder import TfRecorder
+from DMP.modeling.imageMaker import ImageMaker
 from sklearn.model_selection import KFold
 from DMP.learning.variables import NUM_OF_K_FOLD
+from DMP.utils.progress_bar import show_progress_bar
 import json
 import os
 import shutil
@@ -106,6 +108,7 @@ class VectorMaker:
         self.__set_vector_matrix(matrix_dict)
 
         if DO_ENCODE_IMAGE:
+            encoder.set_tf_record_path(self.tf_record_path)
             image_matrix_dict = {
                 KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
                 KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
@@ -148,19 +151,24 @@ class VectorMaker:
         for key, matrix in matrix_dict.items():
             self.vector_matrix[key] = matrix
 
+    @staticmethod
+    def __mkdir_records(_path):
+        if os.path.isdir(_path):
+            print("\nThe directory for record is already existed -", _path, "\n")
+            while True:
+                do_continue = input("Do you want to re-encoding? (y/n) - ").lower()
+                if do_continue == 'n':
+                    return
+                elif do_continue == 'y':
+                    shutil.rmtree(_path)
+                    break
+
+        os.mkdir(_path)
+
     def build_tf_records(self):
         if VERSION == 1:
-            if os.path.isdir(self.tf_record_path):
-                print("\nThe directory for tfrecord is already existed -", self.tf_record_path, "\n")
-                while True:
-                    do_continue = input("Do you want to re-encoding? (y/n) - ").lower()
-                    if do_continue == 'n':
-                        return
-                    elif do_continue == 'y':
-                        shutil.rmtree(self.tf_record_path)
-                        break
+            self.__mkdir_records(self.tf_record_path)
 
-            os.mkdir(self.tf_record_path)
             x_train, y_train = self.__get_set(key="train")
             x_valid, y_valid = self.__get_set(key="valid")
             x_test, y_test = self.__get_set(key="test")
@@ -252,7 +260,7 @@ class VectorMaker:
         return [_data[i] for i in _index_list]
 
     def __data_generator(self, x_data, y_data):
-        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=0, shuffle=False)
+        cv = KFold(n_splits=NUM_OF_K_FOLD, random_state=1, shuffle=True)
 
         for train_index_list, test_index_list in cv.split(x_data, y_data):
             x_train = self.__get_data_matrix(x_data, train_index_list)
@@ -261,6 +269,24 @@ class VectorMaker:
             y_test = self.__get_data_matrix(y_data, test_index_list)
 
             yield x_train, y_train, x_test, y_test
+
+    def build_pillow_img(self):
+        if VERSION == 1 and DO_ENCODE_IMAGE == 1:
+            self.__mkdir_records(self.tf_record_path)
+
+            x_train, y_train = self.__get_set(key="train")
+            x_valid, y_valid = self.__get_set(key="valid")
+            x_test, y_test = self.__get_set(key="test")
+
+            x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
+
+            image_maker = ImageMaker(self.tf_record_path)
+            total_len = len(x_data)
+
+            for i, x in enumerate(x_data):
+                img_path = x[1]
+                image_maker.image2vector(img_path)
+                show_progress_bar(i + 1, total_len, prefix="Save pickles of image")
 
     def dump(self):
         if op.FILE_VECTOR:

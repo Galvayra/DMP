@@ -19,6 +19,7 @@ W2V_FILE = "model.txt"
 MODELING_PATH = "modeling/"
 TF_RECORD_PATH = "tf_records/"
 EXTENSION_OF_IMAGE = '.jpg'
+EXTENSION_OF_PICKLE = ".pickle"
 # NAME_OF_TF_RECORD = "images"
 
 KEY_NAME_OF_MERGE_VECTOR = "merge"

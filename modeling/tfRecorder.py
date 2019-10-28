@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import json
 from os import path
-from .variables import EXTENSION_OF_IMAGE
+from .variables import EXTENSION_OF_IMAGE, EXTENSION_OF_PICKLE
 from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 from DMP.utils.progress_bar import show_progress_bar
 
@@ -166,11 +166,12 @@ class TfRecorder:
 
     @staticmethod
     def get_record_name_from_img_path(img_path):
-        img_path = img_path.split('/')
-        num_of_patient = img_path[-2]
-        num_of_image = img_path[-1].split(EXTENSION_OF_IMAGE)[0]
-
-        return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
+        return img_path.split('/')[-1]
+        # img_path = img_path.split('/')
+        # num_of_patient = img_path[-2]
+        # num_of_image = img_path[-1].split(EXTENSION_OF_PICKLE)[0]
+        #
+        # return num_of_patient + "_" + num_of_image + EXTENSION_OF_PICKLE
 
     def _parse_func(self, serialized_example):
         feature = {
