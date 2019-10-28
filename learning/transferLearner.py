@@ -1,172 +1,164 @@
-from DMP.utils.arg_fine_tuning import *
-from DMP.learning.neuralNetModel import TensorModel
-from keras.applications import VGG19, VGG16, ResNet50
-from keras.models import Sequential, Model, Input
-from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
-from keras.optimizers import Adam
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
-from DMP.learning.variables import KEY_TEST
-import numpy as np
-from DMP.modeling.tf_recoder import get_img_from_tf_records, EXTENSION_OF_TF_RECORD
+import tensorflow.contrib.slim as slim
+import tensorflow.contrib.slim.nets
+import sys
+import math
+from DMP.learning.basicLearner import NeuralNet
+from os import path, getcwd
+from .variables import *
 
-ALIVE_DIR = 'alive'
-DEATH_DIR = 'death'
-BATCH_SIZE = 32
-DO_FINE_TUNING = True
+SLIM_PATH = path.dirname(path.abspath(getcwd())) + '/models/research/slim'
+sys.path.append(SLIM_PATH)
+
+VGG_PATH = 'dataset/images/ckpt/vgg_16.ckpt'
 
 
-class TransferLearner(TensorModel):
-    def __init__(self):
-        super().__init__(is_cross_valid=True)
-        self.num_of_input_nodes = int()
-        self.num_of_output_nodes = int()
-        self.trained_model = None
-        self.custom_model = None
+class TransferLearner(NeuralNet):
+    def __init__(self, is_cross_valid=True):
+        super().__init__(is_cross_valid=is_cross_valid)
 
-    def load_pre_trained_model(self, input_tensor):
-        w_size, h_size, n_channel = input_tensor.shape
-        input_tensor = Input(shape=(w_size, h_size, n_channel))
-        self.trained_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_tensor)
+    def __init_var_result(self):
+        self.h = list()
+        self.p = list()
+        self.y_test = list()
+
+    def __init_place_holder(self, x_train, y_train):
+        self.num_of_fold += 1
+        self.num_of_input_nodes = len(x_train[0])
+        self.num_of_output_nodes = len(y_train[0])
+        
+        shape = [None] + [dim for dim in x_train[0].shape]
+        self.tf_x = tf.placeholder(dtype=tf.float32, shape=shape,
+                                   name=NAME_X + '_' + str(self.num_of_fold))
+        self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
+                                   name=NAME_Y + '_' + str(self.num_of_fold))
+        self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
     def transfer_learning(self, x_train, y_train, x_test, y_test):
-        self.__init_custom_model()
-        self.__training(x_train, y_train)
-        self.__predict_model(x_test, y_test)
+        self.__init_place_holder(x_train, y_train)
 
-    def training_end_to_end(self, tf_record_path):
-        self.num_of_fold += 1
-        train_tf_record_path = tf_record_path + "train_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
-        test_tf_record_path = tf_record_path + "test_" + str(self.num_of_fold) + EXTENSION_OF_TF_RECORD
+        h, y_predict, accuracy = self.__sess_run_for_transfer(x_train, y_train, x_test, y_test)
+        self.compute_score(x_test, y_predict, h, accuracy)
 
-        x_train_tensor, y_train_tensor = get_img_from_tf_records(train_tf_record_path)
-        x_test_tensor, y_test_tensor = get_img_from_tf_records(test_tf_record_path)
+        if self.is_cross_valid:
+            key = KEY_TEST
+        else:
+            key = KEY_VALID
 
-        x_train, y_train = tf.train.shuffle_batch([x_train_tensor, y_train_tensor], batch_size=16,
-                                                  capacity=30, num_threads=2, min_after_dequeue=10)
-        x_test, y_test = tf.train.shuffle_batch([x_test_tensor, y_test_tensor], batch_size=16,
-                                                capacity=30, num_threads=2, min_after_dequeue=10)
+        self.set_score(target=key)
+        self.show_score(target=key)
 
-        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    def __init_pre_trained_model(self):
+        vgg = tf.contrib.slim.nets.vgg
+        with slim.arg_scope(vgg.vgg_arg_scope()):
+            logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1, is_training=False)
+            # logits, end_points = vgg.vgg_16(inputs=self.tf_x, num_classes=1000, is_training=is_training)
 
-        with tf.Session() as sess:
-            sess.run(init_op)
+            return logits, end_points
 
-            coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(coord=coord)
-            n_iter = int()
-            try:
-                while not coord.should_stop():
-                    n_iter += 1
-                    x_batch, y_batch = sess.run([x_train, y_train])
-                    print(n_iter, type(x_batch), x_batch.shape, len(y_batch), y_batch.shape)
-            except tf.errors.OutOfRangeError:
-                pass
-            finally:
-                coord.request_stop()
-                coord.join(threads)
+    def __sess_run_for_transfer(self, x_train, y_train, x_test, y_test):
+        logits, end_points = self.__init_pre_trained_model()
+        exclude = ['vgg_16/fc8']
+        variables_to_restore = slim.get_variables_to_restore(exclude=exclude)
+        init_fn = slim.assign_from_checkpoint_fn(VGG_PATH, variables_to_restore)
 
-        tf.reset_default_graph()
+        str_n_fold = '_' + str(self.num_of_fold)
+        fc = tf.contrib.framework.get_variables('vgg_16/fc8')
 
-        # print(images.shape, labels.shape)
-        #
-        # self.transfer_learning(images, labels, list(), list())
+        with tf.name_scope(NAME_SCOPE_COST):
+            hypothesis = tf.nn.sigmoid(logits, name=NAME_HYPO + str_n_fold)
+            cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=self.tf_y))
+            cost_summary = tf.summary.scalar("cost", cost)
 
-    @staticmethod
-    def __get_y_predict(history):
-        y_predict = list()
+        with tf.name_scope(NAME_SCOPE_PREDICT):
+            predict = tf.cast(hypothesis > 0.5, dtype=tf.float32, name=NAME_PREDICT + str_n_fold)
+            _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+            accuracy_summary = tf.summary.scalar("accuracy", _accuracy)
 
-        for regress in history:
-            if regress > 0.5:
-                y_predict.append(1.0)
-            else:
-                y_predict.append(0.0)
+        # if self.model == "transfer":
+        #     train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[fc])
+        # else:
+        #     train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
 
-        return np.array(y_predict)
+        train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(cost, var_list=[fc])
 
-    def __init_custom_model(self):
-        self.num_of_fold += 1
-
-        # Creating dictionary that maps layer names to the layers
-        layer_dict = dict([(layer.name, layer) for layer in self.trained_model.layers])
-
-        # Getting output tensor of the last VGG layer that we want to include
-        x = layer_dict['block2_pool'].output
-
-        # Stacking a new simple convolutional network on top of it
-        x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same')(x)
-        x = MaxPooling2D(pool_size=(2, 2))(x)
-        x = Flatten()(x)
-        x = Dense(256, activation='relu')(x)
-        x = Dropout(0.7)(x)
-        x = Dense(1, activation='sigmoid')(x)
-
-        # Creating new model. Please note that this is NOT a Sequential() model.
-        self.custom_model = Model(input=self.trained_model.input, output=x)
-
-        # Make sure that the pre-trained bottom layers are not trainable
-        for layer in self.custom_model.layers[:7]:
-            layer.trainable = DO_FINE_TUNING
-
-        # if DO_SHOW:
-        #     print(self.custom_model.summary())
-
-    def __training(self, x_train, y_train):
         # set file names for saving
         self.set_name_of_log()
         self.set_name_of_tensor()
+        tf.Variable(self.learning_rate, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
+        tf.Variable(self.num_of_hidden, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
 
-        board = TensorBoard(log_dir=self.name_of_log + "/fold_" + str(self.num_of_fold),
-                            histogram_freq=0, write_graph=True, write_images=True)
-        ckpt = ModelCheckpoint(filepath=self.get_name_of_tensor() + '/model')
-        self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
-        self.custom_model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCH, callbacks=[board])
-        # self.custom_model.save_weights(self.get_name_of_tensor() + '/dl_model.h5')
+        with tf.Session() as sess:
+            merged_summary = tf.summary.merge_all()
+            print("\n\n\n")
 
-    def __predict_model(self, x_test, y_test):
-        h = self.custom_model.predict(x_test, batch_size=BATCH_SIZE)
-        y_predict = self.__get_y_predict(h)
-
-        self.compute_score(y_test, y_predict, h)
-        self.set_score(target=KEY_TEST)
-        self.show_score(target=KEY_TEST)
-
-    def __init_cnn_model(self, img_shape, num_cnn_layers):
-        self.num_of_fold += 1
-        NUM_FILTERS = 32
-        KERNEL = (3, 3)
-
-        self.custom_model = Sequential()
-
-        # feature map 1
-        for i in range(1, num_cnn_layers + 1):
-            if i == 1:
-                self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, input_shape=img_shape, activation='relu',
-                                             padding='same'))
+            if not self.is_cross_valid:
+                train_writer = tf.summary.FileWriter(self.name_of_log + "/train",
+                                                     sess.graph)
+                val_writer = tf.summary.FileWriter(self.name_of_log + "/val",
+                                                   sess.graph)
+                saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
             else:
-                self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
-        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
+                train_writer = tf.summary.FileWriter(self.name_of_log + "/fold_" + str(self.num_of_fold) + "/train",
+                                                     sess.graph)
+                val_writer = None
+                saver = tf.train.Saver()
 
-        # feature map 2
-        for i in range(1, num_cnn_layers + 1):
-            self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
-        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
+            sess.run(tf.global_variables_initializer())
+            sess.run(tf.local_variables_initializer())
 
-        # feature map 3
-        for i in range(1, num_cnn_layers + 1):
-            self.custom_model.add(Conv2D(NUM_FILTERS * i, KERNEL, activation='relu', padding='same'))
-        self.custom_model.add(MaxPooling2D(pool_size=(2, 2)))
+            batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
 
-        # FC
-        self.custom_model.add(Flatten())
-        self.custom_model.add(Dense(2048, activation='relu'))
-        self.custom_model.add(Dropout(0.25))
-        self.custom_model.add(Dense(1024, activation='relu'))
-        self.custom_model.add(Dropout(0.25))
-        self.custom_model.add(Dense(256, activation='relu'))
-        self.custom_model.add(Dropout(0.25))
-        self.custom_model.add(Dense(1, activation='sigmoid'))
-        self.custom_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
+            for step in range(1, self.best_epoch + 1):
+                # mini-batch
+                for i in range(batch_iter):
+                    batch_x = x_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+                    batch_y = y_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
 
-        if DO_SHOW:
-            self.custom_model.summary()
+                    _, tra_loss = sess.run(
+                        [train_step, cost],
+                        feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
+                    )
+
+                # training
+                if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+                    if self.is_cross_valid:
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                        )
+
+                        train_writer.add_summary(train_summary, global_step=step)
+                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+
+                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+                    else:
+                        train_summary, tra_loss, tra_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                        )
+
+                        train_writer.add_summary(train_summary, global_step=step)
+                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+
+                        val_summary, val_loss, val_acc = sess.run(
+                            [merged_summary, cost, _accuracy],
+                            feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: KEEP_PROB}
+                        )
+
+                        # write validation curve on tensor board
+                        val_writer.add_summary(val_summary, global_step=step)
+                        print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc * 100.0))
+
+                        # save tensor every NUM_OF_SAVE_EPOCH
+                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+
+                        if self.__is_stopped_training(val_loss):
+                            break
+
+            h, p, acc = sess.run([hypothesis, predict, _accuracy],
+                                 feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1.0})
+
+        tf.reset_default_graph()
+
+        return h, p, acc

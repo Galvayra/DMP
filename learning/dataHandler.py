@@ -4,7 +4,9 @@ import numpy as np
 import json
 import math
 import sys
-from DMP.modeling.variables import EXTENSION_OF_IMAGE, KEY_TF_NAME
+from os import path
+from DMP.modeling.variables import EXTENSION_OF_IMAGE, KEY_TF_NAME, KEY_IMG_TRAIN, KEY_IMG_VALID, KEY_IMG_TEST, \
+    TF_RECORD_PATH
 
 current_script = sys.argv[0].split('/')[-1]
 
@@ -69,6 +71,11 @@ class DataHandler:
             self.y_valid = vector_list["y_valid"]
             self.x_test = vector_list["x_test"][TYPE_OF_FEATURE]
             self.y_test = vector_list["y_test"]
+            self.img_train = vector_list[KEY_IMG_TRAIN]
+            self.img_valid = vector_list[KEY_IMG_VALID]
+            self.img_test = vector_list[KEY_IMG_TEST]
+            self.tf_record_path = path.dirname(path.dirname(path.abspath(__file__))) + "/"
+            self.tf_record_path += "modeling/" + TF_RECORD_PATH + READ_VECTOR.split('/')[-1] + "/"
 
             # TODO: erase if
             if KEY_TF_NAME in vector_list:

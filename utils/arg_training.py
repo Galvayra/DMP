@@ -84,8 +84,8 @@ DO_DELETE = True
 
 if args.model:
     TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn":
-        print("\nInput Error model option! (You must input - ['ffnn', 'cnn'])\n")
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn"  and TYPE_OF_MODEL != "transfer":
+        print("\nInput Error model option! (You must input - ['ffnn', 'cnn', 'transfer])\n")
         exit(-1)
 
 if args.image_dir:

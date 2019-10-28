@@ -5,7 +5,9 @@ from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 from .variables import *
 from .basicLearner import NeuralNet, ConvolutionNet
+from .transferLearner import TransferLearner
 from .score import MyScore
+from DMP.modeling.imageMaker import ImageMaker
 
 current_script = sys.argv[0].split('/')[-1]
 
@@ -66,6 +68,24 @@ class DataClassifier:
                         self.dataHandler.expand4square_matrix(x_train, x_test)
                         nn.training(x_train, y_train, x_test, y_test)
 
+            elif TYPE_OF_MODEL == "transfer":
+                nn = TransferLearner()
+
+                image_maker = ImageMaker(self.dataHandler.tf_record_path)
+                img_train = self.dataHandler.img_train
+                img_valid = self.dataHandler.img_valid
+                img_test = self.dataHandler.img_test
+                img_data = img_train + img_valid + img_test
+
+                for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
+                    x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
+                    x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path)
+                    x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path)
+                    x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path)
+
+                    nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
+                    exit(-1)
+
         elif VERSION == 2:
             x_train = self.dataHandler.x_train
             y_train = self.dataHandler.y_train
@@ -98,6 +118,18 @@ class DataClassifier:
             #     nn.run_fine_tuning()
 
         nn.save_process_time()
+
+    def __get_matrix_from_img_path(self, x_img_path):
+        x_data = list()
+        y_data = list()
+
+        for img_path_list in x_img_path:
+            for img_path in img_path_list:
+                key = img_path.split("/")[-1]
+                x_data.append(self.dataHandler.tf_name_vector[key][0])
+                y_data.append(self.dataHandler.tf_name_vector[key][1])
+
+        return np.array(x_data), np.array(y_data)
 
     def __get_total_set(self, has_img_paths=False):
         def __get_expended_x_data(vector_list, path_list):
