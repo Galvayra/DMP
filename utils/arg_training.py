@@ -11,7 +11,12 @@ def get_arguments():
                                                     "\n(default is 'model')"
                                                     "\nUseAge : python training.py -vector 'vector_file_name'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is ffnn)"
-                                                  "\nUseAge : python training.py -model (ffnn|cnn)\n\n")
+                                                  "\nYou can use 'transfer', 'tuning', 'ffnn', 'cnn'"
+                                                  "\ntransfer - transfer learning (update only last FC)"
+                                                  "\ntuning   - fine tuning   (update all of parameters)"
+                                                  "\nffnn     - feed forward neural net (do not use image)"
+                                                  "\ncnn      - convolution  neural net (do not use image)"
+                                                  "\nUseAge : python training.py -model M\n\n")
     parser.add_argument("-image_dir", "--image_dir", help="set a path of image directory (default is None)"
                                                           "\nIt is only apply to use cnn model"
                                                           "\nUseAge : python training.py -image_dir 'path'\n\n")
@@ -84,8 +89,8 @@ DO_DELETE = True
 
 if args.model:
     TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn"  and TYPE_OF_MODEL != "transfer":
-        print("\nInput Error model option! (You must input - ['ffnn', 'cnn', 'transfer])\n")
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn" and TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning":
+        print("\nInput Error model option! (You must input - ['ffnn', 'cnn', 'transfer', 'tuning'])\n")
         exit(-1)
 
 if args.image_dir:

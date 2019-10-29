@@ -71,18 +71,23 @@ class DataClassifier:
             elif TYPE_OF_MODEL == "transfer":
                 nn = TransferLearner()
 
-                image_maker = ImageMaker(self.dataHandler.tf_record_path)
+                image_maker = ImageMaker(self.dataHandler.img_pickles_path)
                 img_train = self.dataHandler.img_train
                 img_valid = self.dataHandler.img_valid
                 img_test = self.dataHandler.img_test
+
                 img_data = img_train + img_valid + img_test
 
                 for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
                     x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
-                    x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path)
-                    x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path)
-                    x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path)
+                    x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path, key="test")
+                    x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path, image_maker)
+                    x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path, image_maker)
 
+                    # print(x_img_train.shape, x_train.shape, y_train.shape)
+                    # print(x_img_test.shape, x_test.shape, y_test.shape)
+
+                    # print(x_img_train.shape, x_img_train.dtype)
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
                     exit(-1)
 
@@ -105,6 +110,20 @@ class DataClassifier:
                 nn = ConvolutionNet(is_cross_valid=False)
                 nn.training(x_train, y_train, x_valid, y_valid)
 
+            elif TYPE_OF_MODEL == "transfer":
+                nn = TransferLearner(is_cross_valid=False)
+
+                image_maker = ImageMaker(self.dataHandler.img_pickles_path)
+                img_train = self.dataHandler.img_train
+                img_valid = self.dataHandler.img_valid
+
+                x_img_train = image_maker.get_matrix_from_pickle(img_train)
+                x_img_test = image_maker.get_matrix_from_pickle(img_valid, key="test")
+                x_train, y_train = self.__get_matrix_from_img_path(img_train, image_maker)
+                x_test, y_test = self.__get_matrix_from_img_path(img_valid, image_maker)
+
+                nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
+
         nn.save_process_time()
 
     def transfer_learning(self):
@@ -119,13 +138,13 @@ class DataClassifier:
 
         nn.save_process_time()
 
-    def __get_matrix_from_img_path(self, x_img_path):
+    def __get_matrix_from_img_path(self, x_img_path, image_maker):
         x_data = list()
         y_data = list()
 
         for img_path_list in x_img_path:
             for img_path in img_path_list:
-                key = img_path.split("/")[-1]
+                key = image_maker.get_img_name_from_path(img_path)
                 x_data.append(self.dataHandler.tf_name_vector[key][0])
                 y_data.append(self.dataHandler.tf_name_vector[key][1])
 

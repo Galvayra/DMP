@@ -14,7 +14,12 @@ def get_arguments():
                                                           "It is only apply to use cnn model"
                                                           "\nUseAge : python predict.py -image_dir 'path'\n\n")
     parser.add_argument("-model", "--model", help="set a model type of neural net (default is svm)"
-                                                  "\nUseAge : python predict.py -model (svm|ffnn|cnn)\n\n")
+                                                  "\nsvm      - support vector machine"
+                                                  "\ntransfer - transfer learning (update only last FC)"
+                                                  "\ntuning   - fine tuning   (update all of parameters)"
+                                                  "\nffnn     - feed forward neural net (do not use image)"
+                                                  "\ncnn      - convolution  neural net (do not use image)"
+                                                  "\nUseAge : python predict.py -model M\n\n")
     parser.add_argument("-feature", "--feature", help="set a feature to predict (default is merge(all))"
                                                       "\nUseAge : python predict.py -feature 'TYPE_OF_FEATURE'\n\n")
     parser.add_argument("-target", "--target", help="set a target of specific symptom"
@@ -86,8 +91,9 @@ if args.image_dir:
 
 if args.model:
     TYPE_OF_MODEL = args.model
-    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn" and TYPE_OF_MODEL != "svm":
-        print("\nInput Error model option! (You must input (svm|ffnn|cnn))\n")
+    if TYPE_OF_MODEL != "ffnn" and TYPE_OF_MODEL != "cnn" and TYPE_OF_MODEL != "transfer" and TYPE_OF_MODEL != "tuning"\
+            and TYPE_OF_MODEL != "svm":
+        print("\nInput Error model option! (You must input - ['svm', 'ffnn', 'cnn', 'transfer', 'tuning'])\n")
         exit(-1)
 
 if args.target:
