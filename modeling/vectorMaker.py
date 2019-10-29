@@ -166,17 +166,16 @@ class VectorMaker:
             while True:
                 do_continue = input("Do you want to re-encoding? (y/n) - ").lower()
                 if do_continue == 'n':
-                    return
+                    return False
                 elif do_continue == 'y':
                     shutil.rmtree(_path)
+                    os.mkdir(_path)
                     break
-
-        os.mkdir(_path)
+        
+        return True
 
     def build_tf_records(self):
-        if VERSION == 1:
-            self.__mkdir_records(self.tf_record_path)
-
+        if VERSION == 1 and self.__mkdir_records(self.tf_record_path):
             x_train, y_train = self.__get_set(key="train")
             x_valid, y_valid = self.__get_set(key="valid")
             x_test, y_test = self.__get_set(key="test")
@@ -284,9 +283,7 @@ class VectorMaker:
             yield x_train, y_train, x_test, y_test
 
     def build_pillow_img(self):
-        if VERSION == 1 and DO_ENCODE_IMAGE == 1:
-            self.__mkdir_records(self.pickles_path)
-
+        if VERSION == 1 and DO_ENCODE_IMAGE == 1 and self.__mkdir_records(self.pickles_path):
             x_train, y_train = self.__get_set(key="train")
             x_valid, y_valid = self.__get_set(key="valid")
             x_test, y_test = self.__get_set(key="test")
