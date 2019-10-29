@@ -86,10 +86,8 @@ class DataClassifier:
 
                     # print(x_img_train.shape, x_train.shape, y_train.shape)
                     # print(x_img_test.shape, x_test.shape, y_test.shape)
-
                     # print(x_img_train.shape, x_img_train.dtype)
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
-                    exit(-1)
 
         elif VERSION == 2:
             x_train = self.dataHandler.x_train
