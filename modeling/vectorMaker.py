@@ -60,10 +60,15 @@ class VectorMaker:
         self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
         self.__tf_record_path = path.dirname(path.abspath(__file__)) + "/" + TF_RECORD_PATH + op.FILE_VECTOR + "/"
 
+        self.__pickles_path = path.dirname(path.abspath(__file__)) + "/" + IMAGE_PICKLES_PATH + op.FILE_VECTOR + "/"
+
         # initialize TfRecorder class
         self.tf_recorder = TfRecorder(self.tf_record_path,
                                       do_encode_image=DO_ENCODE_IMAGE,
                                       is_cross_valid=IS_CROSS_VALID)
+
+        # initialize ImageMaker class
+        self.image_maker = ImageMaker(self.pickles_path)
 
     @property
     def y_data(self):
@@ -89,6 +94,10 @@ class VectorMaker:
     def tf_record_path(self):
         return self.__tf_record_path
 
+    @property
+    def pickles_path(self):
+        return self.__pickles_path
+
     def encoding(self):
         ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
 
@@ -108,7 +117,6 @@ class VectorMaker:
         self.__set_vector_matrix(matrix_dict)
 
         if DO_ENCODE_IMAGE:
-            encoder.set_tf_record_path(self.tf_record_path)
             image_matrix_dict = {
                 KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
                 KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
@@ -165,37 +173,37 @@ class VectorMaker:
 
         os.mkdir(_path)
 
-    def build_tf_records(self):
-        if VERSION == 1:
-            self.__mkdir_records(self.tf_record_path)
-
-            x_train, y_train = self.__get_set(key="train")
-            x_valid, y_valid = self.__get_set(key="valid")
-            x_test, y_test = self.__get_set(key="test")
-
-            # erase shuffle set
-            x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
-
-            # shuffle data for avoiding over-fitting
-            if IS_CROSS_VALID:
-                print("This scope will be implemented")
-                # TODO implement k-fold cross validation
-                exit(-1)
-                for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
-                    self.tf_recorder.to_tf_records(x_train, y_train, key="train")
-                    self.tf_recorder.to_tf_records(x_test, y_test, key="test")
-            else:
-                # if DO_ENCODE_IMAGE:
-                #     i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
-                #     x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
-                #     y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
-
-                self.tf_recorder.to_tf_records(x_train, y_train, key="train")
-                self.tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
-                self.tf_recorder.to_tf_records(x_test, y_test, key="test")
-
-            self.tf_recorder.save()
-            print("success build tf records! (in the -", self.tf_record_path + ")\n\n")
+    # def build_tf_records(self):
+    #     if VERSION == 1:
+    #         self.__mkdir_records(self.tf_record_path)
+    #
+    #         x_train, y_train = self.__get_set(key="train")
+    #         x_valid, y_valid = self.__get_set(key="valid")
+    #         x_test, y_test = self.__get_set(key="test")
+    #
+    #         # erase shuffle set
+    #         x_data, y_data = self.__get_shuffle_set(x_train + x_valid + x_test, y_train + y_valid + y_test)
+    #
+    #         # shuffle data for avoiding over-fitting
+    #         if IS_CROSS_VALID:
+    #             print("This scope will be implemented")
+    #             # TODO implement k-fold cross validation
+    #             exit(-1)
+    #             for x_train, y_train, x_test, y_test in self.__data_generator(x_data, y_data):
+    #                 self.tf_recorder.to_tf_records(x_train, y_train, key="train")
+    #                 self.tf_recorder.to_tf_records(x_test, y_test, key="test")
+    #         else:
+    #             # if DO_ENCODE_IMAGE:
+    #             #     i_train, i_valid = int(len(y_data) * TRAIN_RATIO), int(len(y_data) * VALID_RATIO)
+    #             #     x_train, x_valid, x_test = x_data[:i_train], x_data[i_train:i_valid], x_data[i_valid:]
+    #             #     y_train, y_valid, y_test = y_data[:i_train], y_data[i_train:i_valid], y_data[i_valid:]
+    #
+    #             self.tf_recorder.to_tf_records(x_train, y_train, key="train")
+    #             self.tf_recorder.to_tf_records(x_valid, y_valid, key="valid")
+    #             self.tf_recorder.to_tf_records(x_test, y_test, key="test")
+    #
+    #         self.tf_recorder.save()
+    #         print("success build tf records! (in the -", self.tf_record_path + ")\n\n")
 
     def __add_key_value_in_dict(self, key, value):
         if KEY_TF_NAME not in self.vector_matrix:
@@ -203,7 +211,7 @@ class VectorMaker:
 
         self.vector_matrix[KEY_TF_NAME][key] = value
 
-    def __get_set(self, key):
+    def __get_set(self, key, converter="image_maker"):
         """
 
         :param key:
@@ -226,6 +234,11 @@ class VectorMaker:
         else:
             img_key = KEY_IMG_TEST
 
+        if converter == "image_maker":
+            converter = self.image_maker
+        else:
+            converter = self.tf_recorder
+
         if img_key in self.vector_matrix:
             x_path_target = self.vector_matrix[img_key]
 
@@ -233,7 +246,7 @@ class VectorMaker:
                 for img_path in img_paths:
                     _y_data.append(y)
                     _x_data.append([vector, img_path])
-                    tf_name = self.tf_recorder.get_record_name_from_img_path(img_path)
+                    tf_name = converter.get_img_name_from_path(img_path)
                     self.__add_key_value_in_dict(tf_name, [vector, y])
         else:
             for vector, y in zip(x_target, y_target):
@@ -272,7 +285,7 @@ class VectorMaker:
 
     def build_pillow_img(self):
         if VERSION == 1 and DO_ENCODE_IMAGE == 1:
-            self.__mkdir_records(self.tf_record_path)
+            self.__mkdir_records(self.pickles_path)
 
             x_train, y_train = self.__get_set(key="train")
             x_valid, y_valid = self.__get_set(key="valid")
@@ -280,12 +293,11 @@ class VectorMaker:
 
             x_data, y_data = x_train + x_valid + x_test, y_train + y_valid + y_test
 
-            image_maker = ImageMaker(self.tf_record_path)
             total_len = len(x_data)
 
             for i, x in enumerate(x_data):
                 img_path = x[1]
-                image_maker.image2vector(img_path)
+                self.image_maker.image2vector(img_path)
                 show_progress_bar(i + 1, total_len, prefix="Save pickles of image")
 
     def dump(self):

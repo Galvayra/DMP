@@ -13,6 +13,7 @@ modeling/save/
 modeling/embedding/
 modeling/parsing_result/
 modeling/fsResult/
+modeling/image_pickles/
 modeling/tf_records/
 reference/
 result/

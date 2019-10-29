@@ -18,6 +18,7 @@ W2V_FILE = "model.txt"
 
 MODELING_PATH = "modeling/"
 TF_RECORD_PATH = "tf_records/"
+IMAGE_PICKLES_PATH = "image_pickles/"
 EXTENSION_OF_IMAGE = '.jpg'
 EXTENSION_OF_PICKLE = ".pickle"
 # NAME_OF_TF_RECORD = "images"

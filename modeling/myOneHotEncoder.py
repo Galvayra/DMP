@@ -541,9 +541,6 @@ class MyOneHotEncoder(W2vReader):
 
                 self.__set_vector(class_of_column, generator)
 
-    def set_tf_record_path(self, tf_record_path):
-        self.tf_record_path = tf_record_path
-
     def transform2image_matrix(self, data_handler):
         image_matrix = list()
         target_data_dict = data_handler.x_data_dict
@@ -554,8 +551,9 @@ class MyOneHotEncoder(W2vReader):
             patient_image_matrix = list()
 
             for image_name in sorted(listdir(target_path)):
-                image_name = image_name.split(EXTENSION_OF_IMAGE)[0]
-                target_image_path = self.tf_record_path + p_number + "_" + image_name + EXTENSION_OF_PICKLE
+                target_image_path = target_path + image_name
+                # image_name = image_name.split(EXTENSION_OF_IMAGE)[0]
+                # target_image_path = self.tf_record_path + p_number + "_" + image_name + EXTENSION_OF_PICKLE
                 patient_image_matrix.append(target_image_path)
 
             image_matrix.append(patient_image_matrix)

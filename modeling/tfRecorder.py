@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import json
 from os import path
-from .variables import EXTENSION_OF_IMAGE, EXTENSION_OF_PICKLE
+from .variables import EXTENSION_OF_IMAGE
 from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
 from DMP.utils.progress_bar import show_progress_bar
 
@@ -109,7 +109,7 @@ class TfRecorder:
 
                 if self.do_encode_image:
                     img_path = target_image_list[i][1]
-                    record_name = self.get_record_name_from_img_path(img_path)
+                    record_name = self.get_img_name_from_path(img_path)
                     img = self.__load_image(img_path)
                     feature = {
                         'vector': self._float_feature(vector),
@@ -165,13 +165,12 @@ class TfRecorder:
                 self.is_cross_valid = self.log[KEY_OF_IS_CROSS_VALID]
 
     @staticmethod
-    def get_record_name_from_img_path(img_path):
-        return img_path.split('/')[-1]
-        # img_path = img_path.split('/')
-        # num_of_patient = img_path[-2]
-        # num_of_image = img_path[-1].split(EXTENSION_OF_PICKLE)[0]
-        #
-        # return num_of_patient + "_" + num_of_image + EXTENSION_OF_PICKLE
+    def get_img_name_from_path(img_path):
+        img_path = img_path.split('/')
+        num_of_patient = img_path[-2]
+        num_of_image = img_path[-1].split(EXTENSION_OF_IMAGE)[0]
+
+        return num_of_patient + "_" + num_of_image + EXTENSION_OF_TF_RECORD
 
     def _parse_func(self, serialized_example):
         feature = {
