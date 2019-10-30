@@ -122,8 +122,14 @@ class VectorMaker:
                 KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
                 KEY_IMG_TEST: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST])
             }
+        else:
+            image_matrix_dict = {
+                KEY_IMG_TRAIN: None,
+                KEY_IMG_VALID: None,
+                KEY_IMG_TEST: None
+            }
 
-            self.__set_vector_matrix4image(image_matrix_dict)
+        self.__set_vector_matrix4image(image_matrix_dict)
 
         del self.dataHandler_dict
 
