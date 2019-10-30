@@ -38,7 +38,7 @@ class ImageMaker:
                 img_pickle_path = self.__get_pickle_path_from_path(img_path)
                 img_vector = self.__get_vector_from_pickle(img_pickle_path)
                 img_matrix.append(img_vector)
-                show_progress_bar(i + 1, total=total_len, prefix="Load " + key + " Pickles")
+                show_progress_bar(i + 1, total=total_len, prefix="Load " + key.rjust(6) + " Pickles")
                 i += 1
 
         if DO_NORMALIZE:

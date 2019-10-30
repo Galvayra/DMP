@@ -169,9 +169,9 @@ class VectorMaker:
                     return False
                 elif do_continue == 'y':
                     shutil.rmtree(_path)
-                    os.mkdir(_path)
-                    break
-        
+
+        os.mkdir(_path)
+
         return True
 
     def build_tf_records(self):

@@ -65,6 +65,6 @@ BATCH_SIZE = 16
 # Image options #
 # set CT image size
 IMAGE_RESIZE = 224
-DO_NORMALIZE = False
+DO_NORMALIZE = True
 USE_EARLY_STOPPING = True
 USE_EARLY_STOPPING_WITH_VAL_ACC = True

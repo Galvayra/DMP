@@ -4,7 +4,7 @@ import numpy as np
 import json
 from os import path
 from .variables import EXTENSION_OF_IMAGE
-from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE
+from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE, GRAY_SCALE
 from DMP.utils.progress_bar import show_progress_bar
 
 EXTENSION_OF_TF_RECORD = ".tfrecords"
@@ -197,7 +197,7 @@ class TfRecorder:
             image = tf.reshape(image, self.log[KEY_OF_SHAPE])
 
             if DO_NORMALIZE:
-                image /= image
+                image /= GRAY_SCALE
             else:
                 image = tf.cast(image, tf.uint8)
         else:

@@ -18,7 +18,6 @@ elif current_script == "predict.py":
 elif current_script == "fine_tuning.py":
     from DMP.utils.arg_fine_tuning import TYPE_OF_MODEL, VERSION, DO_SHOW
     from DMP.learning.slimLearner import SlimLearner
-    # from sklearn.preprocessing import StandardScaler
     from DMP.learning.variables import NUM_OF_K_FOLD
 elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import TYPE_OF_MODEL, DO_SHOW, VERSION
@@ -88,6 +87,7 @@ class DataClassifier:
                     # print(x_img_test.shape, x_test.shape, y_test.shape)
                     # print(x_img_train.shape, x_img_train.dtype)
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
+                    exit(-1)
 
         elif VERSION == 2:
             x_train = self.dataHandler.x_train
