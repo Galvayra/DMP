@@ -175,6 +175,7 @@ class VectorMaker:
                     return False
                 elif do_continue == 'y':
                     shutil.rmtree(_path)
+                    break
 
         os.mkdir(_path)
 
@@ -244,9 +245,9 @@ class VectorMaker:
         else:
             converter = self.tf_recorder
 
-        if img_key in self.vector_matrix:
-            x_path_target = self.vector_matrix[img_key]
-
+        # if img_key in self.vector_matrix:
+        x_path_target = self.vector_matrix[img_key]
+        if x_path_target:
             for vector, img_paths, y in zip(x_target, x_path_target, y_target):
                 for img_path in img_paths:
                     _y_data.append(y)
