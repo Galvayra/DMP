@@ -101,10 +101,15 @@ if args.target:
         symptom = str()
 
     if symptom:
-        SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_" + symptom + "_train" + EXTENSION_FILE
-        SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_" + symptom + "_valid" + EXTENSION_FILE
-        SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_" + symptom + "_test" + EXTENSION_FILE
-        SAVE_FILE_TOTAL = SAVE_FILE_TOTAL + "_" + symptom + EXTENSION_FILE
+        # SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_" + symptom + "_train" + EXTENSION_FILE
+        # SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_" + symptom + "_valid" + EXTENSION_FILE
+        # SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_" + symptom + "_test" + EXTENSION_FILE
+        # SAVE_FILE_TOTAL = SAVE_FILE_TOTAL + "_" + symptom + EXTENSION_FILE
+
+        SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_train" + EXTENSION_FILE
+        SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_valid" + EXTENSION_FILE
+        SAVE_FILE_TEST = SAVE_FILE_TOTAL + "_test" + EXTENSION_FILE
+        SAVE_FILE_TOTAL += EXTENSION_FILE
 else:
     SAVE_FILE_TRAIN = SAVE_FILE_TOTAL + "_train" + EXTENSION_FILE
     SAVE_FILE_VALID = SAVE_FILE_TOTAL + "_valid" + EXTENSION_FILE

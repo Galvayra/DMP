@@ -51,12 +51,12 @@ class DataHandler:
         self.__column_target = column_target
         self.__columns_dict = columns_dict
 
-        # if use target option, eliminate target column in column dict because it is not necessary
-        if eliminate_target and column_target:
-            for class_of_column in list(self.columns_dict.keys()):
-                for type_of_column in list(self.columns_dict[class_of_column].keys()):
-                    if self.column_target in self.columns_dict[class_of_column][type_of_column]:
-                        self.columns_dict[class_of_column][type_of_column].remove(self.column_target)
+        # # if use target option, eliminate target column in column dict because it is not necessary
+        # if eliminate_target and column_target:
+        #     for class_of_column in list(self.columns_dict.keys()):
+        #         for type_of_column in list(self.columns_dict[class_of_column].keys()):
+        #             if self.column_target in self.columns_dict[class_of_column][type_of_column]:
+        #                 self.columns_dict[class_of_column][type_of_column].remove(self.column_target)
 
         # header of data using column_dict in variables.py
         # [ 'C', 'E', .... 'CZ' ]
@@ -111,6 +111,13 @@ class DataHandler:
 
             self.__apply_exception()
             self.__save_dict = OrderedDict()
+        else:
+            self.__erase_index_list = list()
+
+            if self.column_target:
+                self.__append_target_in_erase_index_list()
+
+            self.__apply_exception()
 
     @property
     def column_target(self):
