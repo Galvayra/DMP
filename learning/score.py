@@ -224,11 +224,11 @@ class MyScore(MyPlot):
             if target:
                 print('\n\n======== Target is', target, "========\n")
 
-            print('Precision : %.1f' % self.score_dict[self.num_of_fold][target][KEY_PRECISION])
-            print('Recall    : %.1f' % self.score_dict[self.num_of_fold][target][KEY_RECALL])
-            print('F1-Score  : %.1f' % self.score_dict[self.num_of_fold][target][KEY_F1])
-            print('Accuracy  : %.1f' % self.score_dict[self.num_of_fold][target][KEY_ACCURACY])
-            print('AUC       : %.1f' % self.score_dict[self.num_of_fold][target][KEY_AUC])
+            print('Precision : %.2f' % self.score_dict[self.num_of_fold][target][KEY_PRECISION])
+            print('Recall    : %.2f' % self.score_dict[self.num_of_fold][target][KEY_RECALL])
+            print('F1-Score  : %.2f' % self.score_dict[self.num_of_fold][target][KEY_F1])
+            print('Accuracy  : %.2f' % self.score_dict[self.num_of_fold][target][KEY_ACCURACY])
+            print('AUC       : %.2f' % self.score_dict[self.num_of_fold][target][KEY_AUC], "\n\n")
 
     def show_performance(self):
         if DO_SHOW:

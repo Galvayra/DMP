@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 DATA_PATH = "dataset/"
 ORIGIN_PATH = "origin/"
+CT_CSV_FILE = "dataset_images.csv"
 PARSING_PATH = "parsing/"
 DUMP_PATH = "vectors"
 

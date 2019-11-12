@@ -3,10 +3,11 @@ from .myOneHotEncoder import MyOneHotEncoder
 from collections import OrderedDict
 from .variables import *
 from DMP.utils.arg_encoding import VERSION, LOG_NAME, NUM_OF_IMPORTANT, DO_CROSS_ENTROPY, DO_ENCODE_IMAGE, \
-    IS_CROSS_VALID
+    IS_CROSS_VALID, SAVE_FILE_TRAIN, SAVE_FILE_VALID, SAVE_FILE_TEST
 from os import path
 from DMP.dataset.images.variables import CT_IMAGE_PATH, CT_IMAGE_ALL_PATH, IMAGE_PATH
-from DMP.dataset.variables import DATA_PATH
+from DMP.dataset.variables import DATA_PATH, ORIGIN_PATH, CT_CSV_FILE, COLUMN_HOSPITAL, ID_COLUMN, COLUMN_TIME, \
+    PARSING_PATH, POSITION_OF_ROW, COLUMN_NUMBER
 from DMP.modeling.tfRecorder import TfRecorder
 from DMP.modeling.imageMaker import ImageMaker
 from sklearn.model_selection import KFold
@@ -16,7 +17,10 @@ import json
 import os
 import shutil
 import random
+import pandas as pd
 
+PRJ_PATH = path.dirname(path.dirname(path.abspath(__file__))) + "/"
+CT_CSV_PATH = PRJ_PATH + DATA_PATH + ORIGIN_PATH + CT_CSV_FILE
 SEED = 1
 DO_SHUFFLE = True
 TRAIN_RATIO = 8
@@ -56,8 +60,9 @@ class VectorMaker:
             "y_test": list()
         }
 
+        self.__parsing_path = PRJ_PATH + DATA_PATH + PARSING_PATH
         self.__dump_path = path.dirname(path.abspath(__file__)) + "/" + DUMP_PATH
-        self.__image_path = path.dirname(path.dirname(path.abspath(__file__))) + "/" + DATA_PATH + IMAGE_PATH
+        self.__image_path = PRJ_PATH + DATA_PATH + IMAGE_PATH
         self.__tf_record_path = path.dirname(path.abspath(__file__)) + "/" + TF_RECORD_PATH + op.FILE_VECTOR + "/"
 
         self.__pickles_path = path.dirname(path.abspath(__file__)) + "/" + IMAGE_PICKLES_PATH + op.FILE_VECTOR + "/"
@@ -83,6 +88,10 @@ class VectorMaker:
         return self.__vector_matrix
 
     @property
+    def parsing_path(self):
+        return self.__parsing_path
+
+    @property
     def dump_path(self):
         return self.__dump_path
 
@@ -97,6 +106,73 @@ class VectorMaker:
     @property
     def pickles_path(self):
         return self.__pickles_path
+
+    def __get_raw_data(self, target):
+        if target == "train":
+            target_path = self.parsing_path + SAVE_FILE_TRAIN
+        elif target == "valid":
+            target_path = self.parsing_path + SAVE_FILE_VALID
+        else:
+            target_path = self.parsing_path + SAVE_FILE_TEST
+        try:
+            return pd.read_csv(target_path)
+        except FileNotFoundError:
+            print("FileNotFoundError]", target_path, "\n")
+            exit(-1)
+
+    @staticmethod
+    def __get_ct_raw_data():
+        try:
+            return pd.read_csv(CT_CSV_PATH)
+        except FileNotFoundError:
+            print("FileNotFoundError]", CT_CSV_PATH, "\n")
+            exit(-1)
+
+    def __get_head_dict_key(self, index):
+
+        alpha_dict = {
+            0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F", 6: "G", 7: "H", 8: "I", 9: "J",
+            10: "K", 11: "L", 12: "M", 13: "N", 14: "O", 15: "P", 16: "Q", 17: "R", 18: "S", 19: "T",
+            20: "U", 21: "V", 22: "W", 23: "X", 24: "Y", 25: "Z"
+        }
+        alpha_len = len(alpha_dict)
+        key = str()
+
+        if index < alpha_len:
+            return alpha_dict[index]
+
+        key_second = int(index / alpha_len) - 1
+        key_first = index % alpha_len
+
+        key += self.__get_head_dict_key(key_second)
+        key += alpha_dict[key_first]
+
+        return key
+
+    def __generator_of_identity(self, target_df):
+        raw_header_dict = {self.__get_head_dict_key(i): v for i, v in enumerate(target_df)}
+
+        number_data = list(target_df[raw_header_dict[COLUMN_NUMBER]])
+        hospital_data = list(target_df[raw_header_dict[COLUMN_HOSPITAL]])
+        id_data = list(target_df[raw_header_dict[ID_COLUMN]])
+        time_data = list(target_df[raw_header_dict[COLUMN_TIME]])
+
+        for n_patient, n_hospital, n_id, n_time in zip(number_data, hospital_data, id_data, time_data):
+            yield n_patient, n_hospital, n_id, n_time
+
+    def __get_ct_index_dict(self, target="train"):
+        raw_data = self.__get_raw_data(target=target)
+        ct_raw_data = self.__get_ct_raw_data()
+        ct_index_dict = {index + POSITION_OF_ROW: None for index in range(len(raw_data))}
+
+        for n_patient, n_hospital_target, n_id_target, n_time_target in self.__generator_of_identity(ct_raw_data):
+            index = POSITION_OF_ROW
+            for _, n_hospital, n_id, n_time in self.__generator_of_identity(raw_data):
+                if n_hospital == n_hospital_target and n_id == n_id_target and n_time == n_time_target:
+                    ct_index_dict[index] = str(n_patient)
+                index += 1
+
+        return ct_index_dict
 
     def encoding(self):
         ct_image_path = self.image_path + CT_IMAGE_PATH + CT_IMAGE_ALL_PATH
@@ -118,9 +194,9 @@ class VectorMaker:
 
         if DO_ENCODE_IMAGE:
             image_matrix_dict = {
-                KEY_IMG_TRAIN: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TRAIN]),
-                KEY_IMG_VALID: encoder.transform2image_matrix(self.dataHandler_dict[KEY_VALID]),
-                KEY_IMG_TEST: encoder.transform2image_matrix(self.dataHandler_dict[KEY_TEST])
+                KEY_IMG_TRAIN: encoder.transform2image_matrix(self.__get_ct_index_dict(target="train")),
+                KEY_IMG_VALID: encoder.transform2image_matrix(self.__get_ct_index_dict(target="valid")),
+                KEY_IMG_TEST: encoder.transform2image_matrix(self.__get_ct_index_dict(target="test"))
             }
         else:
             image_matrix_dict = {

@@ -54,6 +54,7 @@ class TransferLearner(NeuralNet):
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
 
     def transfer_learning(self, x_train, y_train, x_test, y_test):
+        self.show_sets(y_train, y_test)
         self.__init_place_holder(x_train, y_train)
 
         self.__sess_run_for_transfer(x_train, y_train, x_test, y_test)

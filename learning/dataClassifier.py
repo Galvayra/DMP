@@ -67,8 +67,12 @@ class DataClassifier:
                         self.dataHandler.expand4square_matrix(x_train, x_test)
                         nn.training(x_train, y_train, x_test, y_test)
 
-            elif TYPE_OF_MODEL == "transfer":
-                nn = TransferLearner()
+            else:
+                if TYPE_OF_MODEL == "transfer":
+                    nn = TransferLearner()
+                else:
+                    nn = TransferLearner(model="tuning")
+                # nn = NeuralNet()
 
                 image_maker = ImageMaker(self.dataHandler.img_pickles_path)
                 img_train = self.dataHandler.img_train
@@ -85,9 +89,10 @@ class DataClassifier:
 
                     # print(x_img_train.shape, x_train.shape, y_train.shape)
                     # print(x_img_test.shape, x_test.shape, y_test.shape)
-                    # print(x_img_train.shape, x_img_train.dtype)
+
+                    # nn.training(x_train, y_train, x_test, y_test)
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
-                    exit(-1)
+                    # exit(-1)
 
         elif VERSION == 2:
             x_train = self.dataHandler.x_train

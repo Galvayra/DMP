@@ -7,6 +7,10 @@ import gzip
 from DMP.utils.progress_bar import show_progress_bar
 
 DO_NORMALIZE = True
+DO_CROPPING = True
+IMG_SIZE = 512
+CROPPING_RATIO = 6
+START_POS = int(IMG_SIZE / CROPPING_RATIO)
 
 
 class ImageMaker:
@@ -61,6 +65,8 @@ class ImageMaker:
     @staticmethod
     def __load_image(img_path):
         img = cv2.imread(img_path)
+        if DO_CROPPING:
+            img = img[START_POS:IMG_SIZE - START_POS, START_POS:IMG_SIZE - START_POS]
         img = cv2.resize(img, (IMAGE_RESIZE, IMAGE_RESIZE), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.uint8)

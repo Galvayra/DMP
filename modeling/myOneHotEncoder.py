@@ -541,22 +541,40 @@ class MyOneHotEncoder(W2vReader):
 
                 self.__set_vector(class_of_column, generator)
 
-    def transform2image_matrix(self, data_handler):
+    def transform2image_matrix(self, ct_index_dict):
         image_matrix = list()
-        target_data_dict = data_handler.x_data_dict
 
-        for p_number in target_data_dict['A'].values():
-            target_path = self.ct_image_path + p_number + "/"
-
+        for index, p_number in ct_index_dict.items():
             patient_image_matrix = list()
 
-            for image_name in sorted(listdir(target_path)):
-                target_image_path = target_path + image_name
-                # image_name = image_name.split(EXTENSION_OF_IMAGE)[0]
-                # target_image_path = self.tf_record_path + p_number + "_" + image_name + EXTENSION_OF_PICKLE
-                patient_image_matrix.append(target_image_path)
+            if p_number:
+                target_path = self.ct_image_path + p_number + "/"
+
+                try:
+                    for image_name in sorted(listdir(target_path)):
+                        target_image_path = target_path + image_name
+                        # image_name = image_name.split(EXTENSION_OF_IMAGE)[0]
+                        # target_image_path = self.tf_record_path + p_number + "_" + image_name + EXTENSION_OF_PICKLE
+                        patient_image_matrix.append(target_image_path)
+                except FileNotFoundError:
+                    pass
 
             image_matrix.append(patient_image_matrix)
+
+        # target_data_dict = data_handler.x_data_dict
+
+        # for p_number in target_data_dict['A'].values():
+        #     target_path = self.ct_image_path + p_number + "/"
+        #
+        #     patient_image_matrix = list()
+        #
+        #     for image_name in sorted(listdir(target_path)):
+        #         target_image_path = target_path + image_name
+        #         # image_name = image_name.split(EXTENSION_OF_IMAGE)[0]
+        #         # target_image_path = self.tf_record_path + p_number + "_" + image_name + EXTENSION_OF_PICKLE
+        #         patient_image_matrix.append(target_image_path)
+        #
+        #     image_matrix.append(patient_image_matrix)
 
         return image_matrix
 

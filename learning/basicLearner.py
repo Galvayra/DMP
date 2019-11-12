@@ -57,7 +57,38 @@ class NeuralNet(TensorModel):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
+    def show_sets(self, y_train, y_test):
+
+        def __counting_mortality(_data):
+            count = 0
+
+            death_vector = [1]
+
+            for _d in _data:
+                if _d == death_vector:
+                    count += 1
+
+            return count
+
+        if self.do_show:
+            len_alive_train = len(y_train)
+            len_alive_test = len(y_test)
+
+            len_death_train = __counting_mortality(y_train)
+            len_death_test = __counting_mortality(y_test)
+
+            print("\nAll   total count -", str(len_alive_train + len_alive_test).rjust(4),
+                  "\tAlive count -", str(len_alive_train + len_alive_test - len_death_train - len_death_test).rjust(4),
+                  "\tDeath count -", str(len_death_train + len_death_test).rjust(4))
+            print("Train total count -", str(len_alive_train).rjust(4),
+                  "\tAlive count -", str(len_alive_train - len_death_train).rjust(4),
+                  "\tDeath count -", str(len_death_train).rjust(4))
+            print("Test  total count -", str(len_alive_test).rjust(4),
+                  "\tAlive count -", str(len_alive_test - len_death_test).rjust(4),
+                  "\tDeath count -", str(len_death_test).rjust(4), "\n\n")
+
     def training(self, x_train, y_train, x_valid, y_valid):
+        self.show_sets(y_train, y_valid)
         self.init_place_holder(x_train, y_train)
         self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=self.tf_x)
 
@@ -315,6 +346,7 @@ class ConvolutionNet(NeuralNet):
         super().__init__(is_cross_valid=is_cross_valid)
 
     def training(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
+        self.show_sets(y_train, y_valid)
         self.init_place_holder(x_train, y_train)
 
         # concat CNN to Feed Forward NN

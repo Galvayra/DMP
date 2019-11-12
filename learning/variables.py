@@ -57,10 +57,10 @@ KEEP_PROB = 0.7
 NUM_OF_LOSS_OVER_FIT = 5
 
 # save every X epoch
-NUM_OF_SAVE_EPOCH = 20
+NUM_OF_SAVE_EPOCH = 1
 
 # mini-batch size
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 
 # Image options #
 # set CT image size
