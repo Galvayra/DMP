@@ -81,18 +81,32 @@ class DataClassifier:
 
                 img_data = img_train + img_valid + img_test
 
-                for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
-                    x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
-                    x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path, key="test")
-                    x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path, image_maker)
-                    x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path, image_maker)
+                # use a image respectively
+                img_matrix = image_maker.get_matrix_from_pickle(img_data)
+                x_matrix, y_matrix = self.__get_matrix_from_img_path(img_data, image_maker)
 
-                    # print(x_img_train.shape, x_train.shape, y_train.shape)
-                    # print(x_img_test.shape, x_test.shape, y_test.shape)
+                random.seed(SEED)
+                c = list(zip(img_matrix, y_matrix))
+                random.shuffle(c)
+                img_matrix, y_matrix = zip(*c)
 
-                    # nn.training(x_train, y_train, x_test, y_test)
+                for x_img_train, y_train, x_img_test, y_test in self.__data_generator(img_matrix, y_matrix,
+                                                                                      cast_numpy=True):
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
-                    # exit(-1)
+
+                # # use a image by patient
+                # for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
+                #     x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
+                #     x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path, key="test")
+                #     x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path, image_maker)
+                #     x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path, image_maker)
+                #
+                #     # print(x_img_train.shape, x_train.shape, y_train.shape)
+                #     # print(x_img_test.shape, x_test.shape, y_test.shape)
+                #
+                #     # nn.training(x_train, y_train, x_test, y_test)
+                #     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
+                #     # exit(-1)
 
         elif VERSION == 2:
             x_train = self.dataHandler.x_train
@@ -178,7 +192,7 @@ class DataClassifier:
     @staticmethod
     def __get_set(x_data, y_data):
         if DO_SHUFFLE:
-            print("\n==== Apply shuffle to the dataset ====\n\n")
+            # print("\n==== Apply shuffle to the dataset ====\n\n")
             random.seed(SEED)
             c = list(zip(x_data, y_data))
             random.shuffle(c)
