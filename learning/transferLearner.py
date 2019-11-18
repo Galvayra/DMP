@@ -151,7 +151,7 @@ class TransferLearner(NeuralNet):
                 else:
                     early_stop = False
 
-                if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+                if self.do_show and step % NUM_OF_SHOW_EPOCH == 0:
                     saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
 
                 if early_stop:

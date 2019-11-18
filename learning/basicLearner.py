@@ -1,7 +1,10 @@
 import tensorflow as tf
 import math
-from .neuralNetModel import TensorModel
+from sklearn.model_selection import train_test_split
+from .neuralNetModel import TensorModel, EarlyStopping
 from .variables import *
+
+SEED = 7
 
 
 class NeuralNet(TensorModel):
@@ -9,6 +12,7 @@ class NeuralNet(TensorModel):
         super().__init__(is_cross_valid=is_cross_valid)
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = int()
+        self.early_stopping = EarlyStopping(patience=NUM_OF_LOSS_OVER_FIT, verbose=1)
 
     def __init_feed_forward_layer(self, num_of_input_nodes, num_of_output_nodes, input_layer):
         if NUM_HIDDEN_DIMENSION:
@@ -118,7 +122,7 @@ class NeuralNet(TensorModel):
         self.set_score(target=key)
         self.show_score(target=key)
 
-    def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    def __sess_run(self, hypothesis, x_data, y_data, x_test, y_test):
         if self.do_show:
             print("Layer O -", hypothesis.shape, "\n\n\n")
 
@@ -155,6 +159,12 @@ class NeuralNet(TensorModel):
 
             train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cost)
 
+        # split train, valid
+        x_train, x_valid, y_train, y_valid = train_test_split(x_data, y_data,
+                                                              test_size=0.2,
+                                                              random_state=SEED,
+                                                              shuffle=True)
+
         # set file names for saving
         self.set_name_of_log()
         self.set_name_of_tensor()
@@ -165,17 +175,9 @@ class NeuralNet(TensorModel):
             merged_summary = tf.summary.merge_all()
             print("\n\n\n")
 
-            if not self.is_cross_valid:
-                train_writer = tf.summary.FileWriter(self.name_of_log + "/train",
-                                                     sess.graph)
-                val_writer = tf.summary.FileWriter(self.name_of_log + "/val",
-                                                   sess.graph)
-                saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
-            else:
-                train_writer = tf.summary.FileWriter(self.name_of_log + "/fold_" + str(self.num_of_fold) + "/train",
-                                                     sess.graph)
-                val_writer = None
-                saver = tf.train.Saver()
+            train_writer = tf.summary.FileWriter(self.get_name_of_log() + "/train", sess.graph)
+            val_writer = tf.summary.FileWriter(self.get_name_of_log() + "/val", sess.graph)
+            saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
 
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -193,48 +195,159 @@ class NeuralNet(TensorModel):
                         feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
                     )
 
+                train_summary, tra_loss, tra_acc = sess.run(
+                    [merged_summary, cost, _accuracy],
+                    feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+                )
+
+                train_writer.add_summary(train_summary, global_step=step)
+
+                val_summary, val_loss, val_acc = sess.run(
+                    [merged_summary, cost, _accuracy],
+                    feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
+                )
+
+                # write validation curve on tensor board
+                val_writer.add_summary(val_summary, global_step=step)
+
+                saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+
                 # training
-                if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
-                    if self.is_cross_valid:
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                        )
+                if self.do_show and step % NUM_OF_SHOW_EPOCH == 0:
+                    print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+                    print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc * 100.0))
 
-                        train_writer.add_summary(train_summary, global_step=step)
-                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+                    if math.isnan(tra_loss) or math.isnan(val_loss):
+                        print("Vanishing weights!!\n\n")
+                        exit(-1)
 
-                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
-                    else:
-                        train_summary, tra_loss, tra_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
-                        )
-
-                        train_writer.add_summary(train_summary, global_step=step)
-                        print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
-
-                        val_summary, val_loss, val_acc = sess.run(
-                            [merged_summary, cost, _accuracy],
-                            feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
-                        )
-
-                        # write validation curve on tensor board
-                        val_writer.add_summary(val_summary, global_step=step)
-                        print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
-
-                        # save tensor every NUM_OF_SAVE_EPOCH
-                        saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
-
-                        if self.__is_stopped_training(val_loss):
-                            break
+                if self.early_stopping.validate(val_loss, val_acc):
+                    break
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
-                                 feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
+                                 feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1.0})
 
         tf.reset_default_graph()
 
         return h, p, acc
+
+    # def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
+    #     if self.do_show:
+    #         print("Layer O -", hypothesis.shape, "\n\n\n")
+    #
+    #     num_of_class = self.num_of_output_nodes
+    #
+    #     # Use softmax cross entropy
+    #     if num_of_class > 1:
+    #         with tf.name_scope(NAME_SCOPE_COST):
+    #             cost_i = tf.nn.softmax_cross_entropy_with_logits(logits=hypothesis, labels=self.tf_y)
+    #             cost = tf.reduce_mean(cost_i)
+    #             cost_summ = tf.summary.scalar("cost", cost)
+    #
+    #         with tf.name_scope(NAME_SCOPE_PREDICT):
+    #             hypothesis = tf.nn.softmax(hypothesis)
+    #             predict = tf.argmax(hypothesis, 1)
+    #             correct_prediction = tf.equal(predict, tf.argmax(self.tf_y, 1))
+    #             _accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
+    #             accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+    #
+    #         train_op = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(cost)
+    #
+    #     # Do not use softmax cross entropy
+    #     else:
+    #         with tf.name_scope("cost"):
+    #             hypothesis = tf.sigmoid(hypothesis, name=NAME_HYPO + '_' + str(self.num_of_fold))
+    #             cost = -tf.reduce_mean(self.tf_y * tf.log(hypothesis) + (1 - self.tf_y) * tf.log(1 - hypothesis))
+    #             cost_summ = tf.summary.scalar("cost", cost)
+    #
+    #         with tf.name_scope("prediction"):
+    #             predict = tf.cast(hypothesis > 0.5, dtype=tf.float32,
+    #                               name=NAME_PREDICT + '_' + str(self.num_of_fold))
+    #             _accuracy = tf.reduce_mean(tf.cast(tf.equal(predict, self.tf_y), dtype=tf.float32))
+    #             accuracy_summ = tf.summary.scalar("accuracy", _accuracy)
+    #
+    #         train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cost)
+    #
+    #     # set file names for saving
+    #     self.set_name_of_log()
+    #     self.set_name_of_tensor()
+    #     tf.Variable(self.learning_rate, name=NAME_LEARNING_RATE + '_' + str(self.num_of_fold))
+    #     tf.Variable(self.num_of_hidden, name=NAME_HIDDEN + '_' + str(self.num_of_fold))
+    #
+    #     with tf.Session() as sess:
+    #         merged_summary = tf.summary.merge_all()
+    #         print("\n\n\n")
+    #
+    #         if not self.is_cross_valid:
+    #             train_writer = tf.summary.FileWriter(self.name_of_log + "/train",
+    #                                                  sess.graph)
+    #             val_writer = tf.summary.FileWriter(self.name_of_log + "/val",
+    #                                                sess.graph)
+    #             saver = tf.train.Saver(max_to_keep=(NUM_OF_LOSS_OVER_FIT + 1))
+    #         else:
+    #             train_writer = tf.summary.FileWriter(self.name_of_log + "/fold_" + str(self.num_of_fold) + "/train",
+    #                                                  sess.graph)
+    #             val_writer = None
+    #             saver = tf.train.Saver()
+    #
+    #         sess.run(tf.global_variables_initializer())
+    #         sess.run(tf.local_variables_initializer())
+    #
+    #         batch_iter = int(math.ceil(len(x_train) / BATCH_SIZE))
+    #
+    #         for step in range(1, self.best_epoch + 1):
+    #             # mini-batch
+    #             for i in range(batch_iter):
+    #                 batch_x = x_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+    #                 batch_y = y_train[BATCH_SIZE * i: BATCH_SIZE * (i + 1)]
+    #
+    #                 _, tra_loss = sess.run(
+    #                     [train_op, cost],
+    #                     feed_dict={self.tf_x: batch_x, self.tf_y: batch_y, self.keep_prob: KEEP_PROB}
+    #                 )
+    #
+    #             # training
+    #             if self.do_show and step % NUM_OF_SAVE_EPOCH == 0:
+    #                 if self.is_cross_valid:
+    #                     train_summary, tra_loss, tra_acc = sess.run(
+    #                         [merged_summary, cost, _accuracy],
+    #                         feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+    #                     )
+    #
+    #                     train_writer.add_summary(train_summary, global_step=step)
+    #                     print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+    #
+    #                     saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+    #                 else:
+    #                     train_summary, tra_loss, tra_acc = sess.run(
+    #                         [merged_summary, cost, _accuracy],
+    #                         feed_dict={self.tf_x: x_train, self.tf_y: y_train, self.keep_prob: KEEP_PROB}
+    #                     )
+    #
+    #                     train_writer.add_summary(train_summary, global_step=step)
+    #                     print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+    #
+    #                     val_summary, val_loss, val_acc = sess.run(
+    #                         [merged_summary, cost, _accuracy],
+    #                         feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: KEEP_PROB}
+    #                     )
+    #
+    #                     # write validation curve on tensor board
+    #                     val_writer.add_summary(val_summary, global_step=step)
+    #                     print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc*100.0))
+    #
+    #                     # save tensor every NUM_OF_SAVE_EPOCH
+    #                     saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
+    #
+    #                     if self.__is_stopped_training(val_loss):
+    #                         break
+    #
+    #         h, p, acc = sess.run([hypothesis, predict, _accuracy],
+    #                              feed_dict={self.tf_x: x_valid, self.tf_y: y_valid, self.keep_prob: 1.0})
+    #
+    #     tf.reset_default_graph()
+    #
+    #     return h, p, acc
 
     def __is_stopped_training(self, val_loss):
         self.val_loss_list.append(val_loss)
@@ -253,6 +366,7 @@ class NeuralNet(TensorModel):
                 # loss_default = loss
 
             if cnt_loss_over_fit == NUM_OF_LOSS_OVER_FIT:
+                self.val_loss_list.clear()
                 return True
             else:
                 return False

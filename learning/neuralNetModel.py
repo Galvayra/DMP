@@ -74,31 +74,52 @@ class TensorModel(MyScore):
             os.mkdir(self.name_of_tensor)
 
     def set_name_of_log(self):
-        if self.is_cross_valid:
-            name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
-            os.mkdir(name_of_log)
-        else:
-            name_of_log = self.name_of_log
+        name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
+        os.mkdir(name_of_log)
 
         if DO_SHOW:
             print("\n======== Directory for Saving ========")
             print("   Log File -", name_of_log)
 
     def set_name_of_tensor(self):
-        if self.is_cross_valid:
-            name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
-            os.mkdir(name_of_tensor)
-        else:
-            name_of_tensor = self.name_of_tensor
+        name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
+        os.mkdir(name_of_tensor)
 
         if DO_SHOW:
             print("Tensor File -", name_of_tensor, "\n\n\n")
 
+    def get_name_of_log(self):
+        return self.name_of_log + "fold_" + str(self.num_of_fold)
+
     def get_name_of_tensor(self):
-        if self.is_cross_valid:
-            return self.name_of_tensor + "fold_" + str(self.num_of_fold)
-        else:
-            return self.name_of_tensor
+        return self.name_of_tensor + "fold_" + str(self.num_of_fold)
+
+    # def set_name_of_log(self):
+    #     if self.is_cross_valid:
+    #         name_of_log = self.name_of_log + "fold_" + str(self.num_of_fold)
+    #         os.mkdir(name_of_log)
+    #     else:
+    #         name_of_log = self.name_of_log
+    #
+    #     if DO_SHOW:
+    #         print("\n======== Directory for Saving ========")
+    #         print("   Log File -", name_of_log)
+    #
+    # def set_name_of_tensor(self):
+    #     if self.is_cross_valid:
+    #         name_of_tensor = self.name_of_tensor + "fold_" + str(self.num_of_fold)
+    #         os.mkdir(name_of_tensor)
+    #     else:
+    #         name_of_tensor = self.name_of_tensor
+    #
+    #     if DO_SHOW:
+    #         print("Tensor File -", name_of_tensor, "\n\n\n")
+    #
+    # def get_name_of_tensor(self):
+    #     if self.is_cross_valid:
+    #         return self.name_of_tensor + "fold_" + str(self.num_of_fold)
+    #     else:
+    #         return self.name_of_tensor
 
     def init_tf_record_tensor(self, key, is_test=False):
         tf_record_path = self.tf_record_path + key + EXTENSION_OF_TF_RECORD
@@ -230,17 +251,24 @@ class EarlyStopping:
                     # print("acc_list -", self._acc_list, '\n')
                     return True
 
-        if self._loss < loss:
-            self._step += 1
+        if self._total_step >= self._minimum_epoch:
+            if self._loss < loss:
+                self._step += 1
 
-            if self._step > self.patience:
-                if self.verbose:
-                    print("Training process is stopped early....")
-                    print("Because validation cost will be not decreased")
-                return True
-        else:
-            self._step = 0
-            self._loss = loss
+                if self._step > self.patience:
+                    if self.verbose:
+                        print("Training process is stopped early....")
+                        print("Because validation cost will be not decreased")
+
+                    self._total_step = 0
+                    self._step = 0
+                    self._loss = float('inf')
+                    self._acc_list = list()
+
+                    return True
+            else:
+                self._step = 0
+                self._loss = loss
 
         # print("total step -", self._total_step, '\tstep -', self._step)
         # print("val acc -", val_acc, "mean acc -", mean_acc, "difference -", val_acc - mean_acc)

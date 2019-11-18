@@ -54,17 +54,17 @@ INITIAL_IMAGE_SIZE = 50
 KEEP_PROB = 0.7
 
 # if valid loss increase X in a row
-NUM_OF_LOSS_OVER_FIT = 5
+NUM_OF_LOSS_OVER_FIT = 10
 
-# save every X epoch
-NUM_OF_SAVE_EPOCH = 1
+# show every X epoch
+NUM_OF_SHOW_EPOCH = 10
 
 # mini-batch size
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 # Image options #
 # set CT image size
 IMAGE_RESIZE = 224
 DO_NORMALIZE = True
 USE_EARLY_STOPPING = True
-USE_EARLY_STOPPING_WITH_VAL_ACC = True
+USE_EARLY_STOPPING_WITH_VAL_ACC = False
