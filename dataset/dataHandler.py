@@ -14,7 +14,7 @@ if sys.argv[0].split('/')[-1] == "parsing.py":
 
 
 HAVE_SYMPTOM = 1
-PROPOSITION = 10
+PROPOSITION = 2
 SEED = 1
 
 # keys for log file
@@ -382,7 +382,8 @@ class DataHandler:
         __append(__condition(header_key=TEMP_COLUMN, condition=float(63.2)))
 
         # 피 검사 데이터가 많이 없는 경우
-        for header in ["AJ", "AZ"]:
+        for header in ["AF", "AG", "AH", "AI", "AJ", "AN", "AO", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ",
+                       "BU", "BV", "BW", "BY", "BZ", "CA", "CB", "CC", "CD"]:
             __append(__condition(header_key=header, condition=float(0)))
             __append(__condition(header_key=header, condition="."))
             __append(__condition(header_key=header, condition="none"))
@@ -392,6 +393,7 @@ class DataHandler:
 
         self.erase_index_list += erase_index_list
         self.erase_index_list = sorted(list(set(self.erase_index_list)), reverse=False)
+
         self.__add_to_log_dict(target=self.erase_index_list, target_key=KEY_ERASE_INDEX)
 
     def __init_erase_index_list_for_ct_image(self):
