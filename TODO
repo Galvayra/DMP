@@ -2,3 +2,8 @@ vgg_16 option 중 is_training 옵션은 무조건 False로 두어야 test시 wei
 
 minimize할 때 fc8만 학습하거나 전체 weight를 학습하는 것으로 나뉨
 
+
+
+batch_normalization 적용 + dropout 0.7
+./run.sh --model ffnn --show 1 --vector modeling/vectors/vector --tensor_dir ffnn --delete 1 --hidden 4 --epoch 400 --learn 0.0003
+

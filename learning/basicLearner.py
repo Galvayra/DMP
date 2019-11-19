@@ -37,8 +37,13 @@ class NeuralNet(TensorModel):
                                        name="h_bias_" + str(i + 1) + '_' + str(self.num_of_fold)))
             layer = tf.add(tf.matmul(tf_layer[i], tf_weight[i]), tf_bias[i])
 
-            # append hidden layer
+            # batch normalization
+            layer = tf.layers.batch_normalization(layer, training=True)
+
+            # activate function
             hidden_layer = tf.nn.relu(layer)
+
+            # append layer and use dropout
             tf_layer.append(tf.nn.dropout(hidden_layer, keep_prob=self.keep_prob,
                                           name="dropout_" + str(i + 1) + '_' + str(self.num_of_fold)))
 
@@ -107,6 +112,7 @@ class NeuralNet(TensorModel):
         self.tf_y = tf.placeholder(dtype=tf.float32, shape=[None, self.num_of_output_nodes],
                                    name=NAME_Y + '_' + str(self.num_of_fold))
         self.keep_prob = tf.placeholder(tf.float32, name=NAME_PROB + '_' + str(self.num_of_fold))
+        # self.batch_prob = tf.placeholder(tf.bool, name=NAME_BATCH_PROB + '_' + str(self.num_of_fold))
 
     def feed_forward(self, x_train, y_train, x_valid, y_valid, input_layer):
         # initialize neural network
@@ -398,7 +404,7 @@ class NeuralNet(TensorModel):
             saver = tf.train.import_meta_graph(path + '.meta')
             saver.restore(sess, path)
 
-            print("\n\n\ncheckpoint -", path, "\nBest Epoch -", self.best_epoch, "\n")
+            print("\n\n\ncheckpoint -", path, "\nBest Epoch -", self.best_epoch_list[-1], "\n")
 
             # load tensor
             graph = tf.get_default_graph()
@@ -470,14 +476,13 @@ class ConvolutionNet(NeuralNet):
         super().__init__(is_cross_valid=is_cross_valid)
 
     def training(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
-        # self.show_sets(y_train, y_valid)
         self.init_place_holder(x_train, y_train)
 
         # concat CNN to Feed Forward NN
         if train_ct_image:
             convolution_layer, num_of_dimension = self.__init_convolution_layer_model_for_ct(self.num_of_input_nodes)
         else:
-            convolution_layer, num_of_dimension = self.__init_convolution_layer_model_2(self.num_of_input_nodes)
+            convolution_layer, num_of_dimension = self.__init_convolution_layer_model(self.num_of_input_nodes)
 
         self.num_of_input_nodes = num_of_dimension
         self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=convolution_layer)
@@ -487,7 +492,6 @@ class ConvolutionNet(NeuralNet):
         num_of_image = int(math.sqrt(num_of_input_nodes))
         num_of_filter = [20, 50, 500]
         size_of_filter = 7
-
         tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
 
         # 7 x 7 x 1 x 20
@@ -496,10 +500,11 @@ class ConvolutionNet(NeuralNet):
             name="cnn_filter_1")
         conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID",
                               name="conv_1_" + str(self.num_of_fold))
-        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+        bn_1 = tf.layers.batch_normalization(conv_1, training=True, name="bn_1_" + str(self.num_of_fold))
+        relu_1 = tf.nn.relu(bn_1, name="relu_1_" + str(self.num_of_fold))
+        dropout_1 = tf.nn.dropout(relu_1, keep_prob=self.keep_prob, name="dropout_1_" + str(self.num_of_fold))
+        pool_1 = tf.nn.max_pool(dropout_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
                                 name="pool_1_" + str(self.num_of_fold))
-        pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob,
-                               name="dropout_1_" + str(self.num_of_fold))
 
         # 7 x 7 x 20 x 50
         filter_2 = tf.Variable(
@@ -507,10 +512,11 @@ class ConvolutionNet(NeuralNet):
             name="cnn_filter_2")
         conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID",
                               name="conv_2_" + str(self.num_of_fold))
-        pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+        bn_2 = tf.layers.batch_normalization(conv_2, training=True, name="bn_2_" + str(self.num_of_fold))
+        relu_2 = tf.nn.relu(bn_2, name="relu_2_" + str(self.num_of_fold))
+        dropout_2 = tf.nn.dropout(relu_2, keep_prob=self.keep_prob, name="dropout_2_" + str(self.num_of_fold))
+        pool_2 = tf.nn.max_pool(dropout_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
                                 name="pool_2_" + str(self.num_of_fold))
-        pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob,
-                               name="dropout_2_" + str(self.num_of_fold))
 
         # 7 x 7 x 50 x 500
         filter_3 = tf.Variable(
@@ -518,14 +524,13 @@ class ConvolutionNet(NeuralNet):
             name="cnn_filter_3")
         conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
                               name="conv_3_" + str(self.num_of_fold))
-        pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+        bn_3 = tf.layers.batch_normalization(conv_3, training=True, name="bn_3_" + str(self.num_of_fold))
+        relu_3 = tf.nn.relu(bn_3, name="relu_3_" + str(self.num_of_fold))
+        dropout_3 = tf.nn.dropout(relu_3, keep_prob=self.keep_prob, name="dropout_3_" + str(self.num_of_fold))
+        pool_3 = tf.nn.max_pool(dropout_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
                                 name="pool_3_" + str(self.num_of_fold))
-        pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob,
-                               name="dropout_3_" + str(self.num_of_fold))
 
-        relu_layer = tf.nn.relu(pool_3)
-
-        convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]],
+        convolution_layer = tf.reshape(pool_3, [-1, num_of_filter[-1]],
                                        name="cnn_span_layer_" + str(self.num_of_fold))
 
         if self.do_show:
@@ -543,68 +548,68 @@ class ConvolutionNet(NeuralNet):
 
         return convolution_layer, num_of_filter[-1]
 
-    # The model of our Paper
-    def __init_convolution_layer_model_2(self, num_of_input_nodes):
-        num_of_image = int(math.sqrt(num_of_input_nodes))
-        num_of_filter = [50, 50, 200]
-        size_of_filter = 7
-        # num_of_filter = [20, 50, 200]
-        # size_of_filter = 5
-
-        tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
-
-        # 5 x 5 x 1 x 20
-        filter_1 = tf.Variable(
-            tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
-            name="cnn_filter_1")
-        conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID",
-                              name="conv_1_" + str(self.num_of_fold))
-        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
-                                name="pool_1_" + str(self.num_of_fold))
-        pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob,
-                               name="dropout_1_" + str(self.num_of_fold))
-
-        # 5 x 5 x 20 x 50
-        filter_2 = tf.Variable(
-            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
-            name="cnn_filter_2")
-        conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID",
-                              name="conv_2_" + str(self.num_of_fold))
-        pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
-                                name="pool_2_" + str(self.num_of_fold))
-        pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob,
-                               name="dropout_2_" + str(self.num_of_fold))
-
-        # 5 x 5 x 50 x 200
-        filter_3 = tf.Variable(
-            tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
-            name="cnn_filter_3")
-        conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
-                              name="conv_3_" + str(self.num_of_fold))
-        pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
-                                name="pool_3_" + str(self.num_of_fold))
-        pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob,
-                               name="dropout_3_" + str(self.num_of_fold))
-
-        relu_layer = tf.nn.relu(pool_3)
-
-        convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]],
-                                       name="cnn_span_layer_" + str(self.num_of_fold))
-
-        if self.do_show:
-            print("\n\n======== Convolution Layer ========")
-            print("tf_x     -", self.tf_x.shape)
-            print("tf_x_img -", tf_x_img.shape)
-
-            print("\n\nconv_1 -", conv_1.shape)
-            print("pool_1 -", pool_1.shape)
-            print("\n\nconv_2 -", conv_2.shape)
-            print("pool_2 -", pool_2.shape)
-            print("\n\nconv_3 -", conv_3.shape)
-            print("pool_3 -", pool_3.shape)
-            print("\n\ncnn_span_layer -", convolution_layer.shape)
-
-        return convolution_layer, num_of_filter[-1]
+    # # The model of our Paper
+    # def __init_convolution_layer_model_2(self, num_of_input_nodes):
+    #     num_of_image = int(math.sqrt(num_of_input_nodes))
+    #     num_of_filter = [50, 50, 200]
+    #     size_of_filter = 7
+    #     # num_of_filter = [20, 50, 200]
+    #     # size_of_filter = 5
+    #
+    #     tf_x_img = tf.reshape(self.tf_x, [-1, num_of_image, num_of_image, 1])
+    #
+    #     # 5 x 5 x 1 x 20
+    #     filter_1 = tf.Variable(
+    #         tf.random_normal([size_of_filter, size_of_filter, 1, num_of_filter[0]], stddev=0.01),
+    #         name="cnn_filter_1")
+    #     conv_1 = tf.nn.conv2d(tf_x_img, filter_1, strides=[1, 1, 1, 1], padding="VALID",
+    #                           name="conv_1_" + str(self.num_of_fold))
+    #     pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+    #                             name="pool_1_" + str(self.num_of_fold))
+    #     pool_1 = tf.nn.dropout(pool_1, keep_prob=self.keep_prob,
+    #                            name="dropout_1_" + str(self.num_of_fold))
+    #
+    #     # 5 x 5 x 20 x 50
+    #     filter_2 = tf.Variable(
+    #         tf.random_normal([size_of_filter, size_of_filter, num_of_filter[0], num_of_filter[1]], stddev=0.01),
+    #         name="cnn_filter_2")
+    #     conv_2 = tf.nn.conv2d(pool_1, filter_2, strides=[1, 1, 1, 1], padding="VALID",
+    #                           name="conv_2_" + str(self.num_of_fold))
+    #     pool_2 = tf.nn.max_pool(conv_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+    #                             name="pool_2_" + str(self.num_of_fold))
+    #     pool_2 = tf.nn.dropout(pool_2, keep_prob=self.keep_prob,
+    #                            name="dropout_2_" + str(self.num_of_fold))
+    #
+    #     # 5 x 5 x 50 x 200
+    #     filter_3 = tf.Variable(
+    #         tf.random_normal([size_of_filter, size_of_filter, num_of_filter[1], num_of_filter[2]], stddev=0.01),
+    #         name="cnn_filter_3")
+    #     conv_3 = tf.nn.conv2d(pool_2, filter_3, strides=[1, 1, 1, 1], padding="VALID",
+    #                           name="conv_3_" + str(self.num_of_fold))
+    #     pool_3 = tf.nn.max_pool(conv_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID",
+    #                             name="pool_3_" + str(self.num_of_fold))
+    #     pool_3 = tf.nn.dropout(pool_3, keep_prob=self.keep_prob,
+    #                            name="dropout_3_" + str(self.num_of_fold))
+    #
+    #     relu_layer = tf.nn.relu(pool_3)
+    #
+    #     convolution_layer = tf.reshape(relu_layer, [-1, num_of_filter[-1]],
+    #                                    name="cnn_span_layer_" + str(self.num_of_fold))
+    #
+    #     if self.do_show:
+    #         print("\n\n======== Convolution Layer ========")
+    #         print("tf_x     -", self.tf_x.shape)
+    #         print("tf_x_img -", tf_x_img.shape)
+    #
+    #         print("\n\nconv_1 -", conv_1.shape)
+    #         print("pool_1 -", pool_1.shape)
+    #         print("\n\nconv_2 -", conv_2.shape)
+    #         print("pool_2 -", pool_2.shape)
+    #         print("\n\nconv_3 -", conv_3.shape)
+    #         print("pool_3 -", pool_3.shape)
+    #         print("\n\ncnn_span_layer -", convolution_layer.shape)
+    #
+    #     return convolution_layer, num_of_filter[-1]
 
     def __init_convolution_layer_model_for_ct(self, num_of_dimension):
         num_of_image = int(math.sqrt(num_of_dimension))

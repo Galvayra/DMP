@@ -17,6 +17,7 @@ NAME_PREDICT = "predict"
 NAME_X = "tf_x"
 NAME_Y = "tf_y"
 NAME_PROB = "keep_prob"
+NAME_BATCH_PROB = "batch_prob"
 NAME_ACC = "accuracy"
 NAME_LEARNING_RATE = "learning_rate"
 NAME_HIDDEN = "num_of_hidden"
@@ -62,7 +63,7 @@ NUM_OF_LOSS_OVER_FIT = 10
 NUM_OF_SHOW_EPOCH = 10
 
 # mini-batch size
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 
 # Image options #
 # set CT image size
