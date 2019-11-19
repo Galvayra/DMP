@@ -1,4 +1,5 @@
 from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_score, accuracy_score
+from sklearn.model_selection import train_test_split
 from pandas import DataFrame
 from .variables import *
 from .plot import MyPlot
@@ -45,7 +46,10 @@ class MyScore(MyPlot):
         {
           1 (k_fold):
             {
-              'Training' :
+              'Train' :
+               { "survive": int, "death": int, "total" : int},
+
+              'Valid' :
                { "survive": int, "death": int, "total" : int},
 
               'Test' :
@@ -239,13 +243,17 @@ class MyScore(MyPlot):
                 print("\t\t\t\t" + str(self.num_of_fold) + " Fold Performance\n")
 
                 if self.count_dict:
-                    print("Training  Count -", str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_TOTAL]).rjust(4),
+                    print("Training    Count -", str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_TOTAL]).rjust(4),
                           "\t Survive Count -",
                           str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_IMMORTALITY]).rjust(3),
                           "\t Death   Count -",
                           str(self.count_dict[self.num_of_fold][KEY_TRAIN][KEY_MORTALITY]).rjust(4))
-
-                    print("Test      Count -", str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_TOTAL]).rjust(4),
+                    print("Validation  Count -", str(self.count_dict[self.num_of_fold][KEY_VALID][KEY_TOTAL]).rjust(4),
+                          "\t Survive Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_VALID][KEY_IMMORTALITY]).rjust(3),
+                          "\t Death   Count -",
+                          str(self.count_dict[self.num_of_fold][KEY_VALID][KEY_MORTALITY]).rjust(4))
+                    print("Test        Count -", str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_TOTAL]).rjust(4),
                           "\t Survive Count -",
                           str(self.count_dict[self.num_of_fold][KEY_TEST][KEY_IMMORTALITY]).rjust(3),
                           "\t Death   Count -",
@@ -274,12 +282,19 @@ class MyScore(MyPlot):
 
             return count
 
+        y_train, y_valid = train_test_split(y_train, test_size=0.2, random_state=SPLIT_SEED, shuffle=True)
+
         if self.num_of_fold not in self.count_dict:
             self.count_dict[self.num_of_fold] = {
                 KEY_TRAIN: {
                     KEY_IMMORTALITY: len(y_train) - __get_death_count(y_train),
                     KEY_MORTALITY: __get_death_count(y_train),
                     KEY_TOTAL: len(y_train)
+                },
+                KEY_VALID: {
+                    KEY_IMMORTALITY: len(y_valid) - __get_death_count(y_valid),
+                    KEY_MORTALITY: __get_death_count(y_valid),
+                    KEY_TOTAL: len(y_valid)
                 },
                 KEY_TEST: {
                     KEY_IMMORTALITY: len(y_test) - __get_death_count(y_test),
@@ -308,7 +323,12 @@ class MyScore(MyPlot):
 
         num_of_total_fold = len(self.score_dict)
         loop_cnt = (len(self.score) + NUM_OF_BLANK)
-        set_list = [KEY_TRAIN, KEY_TEST]
+        set_list = [KEY_TRAIN, KEY_VALID, KEY_TEST]
+        epoch_values = ["" for _ in range(loop_cnt)]
+
+        for epoch in best_epoch:
+            epoch_values.append(epoch)
+            epoch_values += ["" for _ in range(1, loop_cnt)]
 
         data_frame = {
             "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],
@@ -324,7 +344,7 @@ class MyScore(MyPlot):
             KEY_TOTAL: list(),
             "  ": ["" for _ in range(loop_cnt * num_of_total_fold)],
             "# of dimension": [num_of_dimension] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
-            "Epoch": [best_epoch] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
+            "Best epoch": epoch_values,
             "# of hidden layer": [num_of_hidden] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
             "learning rate": [learning_rate] + ["" for _ in range(1, loop_cnt * num_of_total_fold)],
         }

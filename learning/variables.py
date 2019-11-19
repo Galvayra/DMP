@@ -53,6 +53,8 @@ INITIAL_IMAGE_SIZE = 50
 # drop out ratio
 KEEP_PROB = 0.7
 
+SPLIT_SEED = 7
+
 # if valid loss increase X in a row
 NUM_OF_LOSS_OVER_FIT = 10
 

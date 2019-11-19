@@ -4,15 +4,13 @@ from sklearn.model_selection import train_test_split
 from .neuralNetModel import TensorModel, EarlyStopping
 from .variables import *
 
-SEED = 7
-
 
 class NeuralNet(TensorModel):
     def __init__(self, is_cross_valid=True):
         super().__init__(is_cross_valid=is_cross_valid)
         self.num_of_input_nodes = int()
         self.num_of_output_nodes = int()
-        self.early_stopping = EarlyStopping(patience=NUM_OF_LOSS_OVER_FIT, verbose=1)
+        self.early_stopping = EarlyStopping(patience=NUM_OF_LOSS_OVER_FIT, verbose=0)
 
     def __init_feed_forward_layer(self, num_of_input_nodes, num_of_output_nodes, input_layer):
         if NUM_HIDDEN_DIMENSION:
@@ -61,8 +59,7 @@ class NeuralNet(TensorModel):
         # return X*W + b
         return tf.add(tf.matmul(tf_layer[-1], tf_weight[-1]), tf_bias[-1])
 
-    def show_sets(self, y_train, y_test):
-
+    def show_sets(self, y_train, y_valid, y_test):
         def __counting_mortality(_data):
             count = 0
 
@@ -76,23 +73,28 @@ class NeuralNet(TensorModel):
 
         if self.do_show:
             len_alive_train = len(y_train)
+            len_alive_valid = len(y_valid)
             len_alive_test = len(y_test)
 
             len_death_train = __counting_mortality(y_train)
+            len_death_valid = __counting_mortality(y_valid)
             len_death_test = __counting_mortality(y_test)
 
-            print("\nAll   total count -", str(len_alive_train + len_alive_test).rjust(4),
-                  "\tAlive count -", str(len_alive_train + len_alive_test - len_death_train - len_death_test).rjust(4),
-                  "\tDeath count -", str(len_death_train + len_death_test).rjust(4))
+            print("\nAll   total count -", str(len_alive_train + len_alive_valid + len_alive_test).rjust(4),
+                  "\tAlive count -", str(len_alive_train + len_alive_valid + len_alive_test -
+                                         len_death_train - len_death_valid - len_death_test).rjust(4),
+                  "\tDeath count -", str(len_death_train + len_death_valid + len_death_test).rjust(4))
             print("Train total count -", str(len_alive_train).rjust(4),
                   "\tAlive count -", str(len_alive_train - len_death_train).rjust(4),
                   "\tDeath count -", str(len_death_train).rjust(4))
+            print("Valid total count -", str(len_alive_valid).rjust(4),
+                  "\tAlive count -", str(len_alive_valid - len_death_valid).rjust(4),
+                  "\tDeath count -", str(len_death_valid).rjust(4))
             print("Test  total count -", str(len_alive_test).rjust(4),
                   "\tAlive count -", str(len_alive_test - len_death_test).rjust(4),
                   "\tDeath count -", str(len_death_test).rjust(4), "\n\n")
 
     def training(self, x_train, y_train, x_valid, y_valid):
-        self.show_sets(y_train, y_valid)
         self.init_place_holder(x_train, y_train)
         self.feed_forward(x_train, y_train, x_valid, y_valid, input_layer=self.tf_x)
 
@@ -162,8 +164,10 @@ class NeuralNet(TensorModel):
         # split train, valid
         x_train, x_valid, y_train, y_valid = train_test_split(x_data, y_data,
                                                               test_size=0.2,
-                                                              random_state=SEED,
+                                                              random_state=SPLIT_SEED,
                                                               shuffle=True)
+
+        self.show_sets(y_train, y_valid, y_test)
 
         # set file names for saving
         self.set_name_of_log()
@@ -212,17 +216,11 @@ class NeuralNet(TensorModel):
 
                 saver.save(sess, global_step=step, save_path=self.get_name_of_tensor() + "/model")
 
-                # training
-                if self.do_show and step % NUM_OF_SHOW_EPOCH == 0:
-                    print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
-                    print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc * 100.0))
-
-                    if math.isnan(tra_loss) or math.isnan(val_loss):
-                        print("Vanishing weights!!\n\n")
-                        exit(-1)
-
                 if self.early_stopping.validate(val_loss, val_acc):
+                    self.__show_loss(step, tra_loss, val_loss, tra_acc, val_acc, do_show=True)
                     break
+
+                self.__show_loss(step, tra_loss, val_loss, tra_acc, val_acc)
 
             h, p, acc = sess.run([hypothesis, predict, _accuracy],
                                  feed_dict={self.tf_x: x_test, self.tf_y: y_test, self.keep_prob: 1.0})
@@ -230,6 +228,18 @@ class NeuralNet(TensorModel):
         tf.reset_default_graph()
 
         return h, p, acc
+
+    def __show_loss(self, step, tra_loss, val_loss, tra_acc, val_acc, do_show=False):
+        if self.do_show and step % NUM_OF_SHOW_EPOCH == 0:
+            do_show = True
+
+        if do_show:
+            print("Step %5d, train loss =  %.5f, train  acc = %.2f" % (step, tra_loss, tra_acc * 100.0))
+            print("            valid loss =  %.5f, valid  acc = %.2f" % (val_loss, val_acc * 100.0))
+
+            if math.isnan(tra_loss) or math.isnan(val_loss):
+                print("Vanishing weights!!\n\n")
+                exit(-1)
 
     # def __sess_run(self, hypothesis, x_train, y_train, x_valid, y_valid):
     #     if self.do_show:
@@ -376,12 +386,12 @@ class NeuralNet(TensorModel):
         checkpoint = tf.train.get_checkpoint_state(self.get_name_of_tensor())
         paths = checkpoint.all_model_checkpoint_paths
 
-        if self.is_cross_valid:
-            path = paths[-1]
-        else:
-            path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
+        # if self.is_cross_valid:
+        #     path = paths[-1]
+        # else:
+        path = paths[len(paths) - (NUM_OF_LOSS_OVER_FIT + 1)]
 
-        self.best_epoch = int(path.split("/")[-1].split("model-")[-1])
+        self.best_epoch_list.append(int(path.split("/")[-1].split("model-")[-1]))
         self.num_of_dimension = len(x_test[0])
 
         with tf.Session() as sess:
@@ -443,7 +453,7 @@ class NeuralNet(TensorModel):
         self.show_performance()
 
         if self.is_cross_valid:
-            self.save_score_cross_valid(best_epoch=self.best_epoch,
+            self.save_score_cross_valid(best_epoch=self.best_epoch_list,
                                         num_of_dimension=self.num_of_dimension,
                                         num_of_hidden=self.num_of_hidden,
                                         learning_rate=self.learning_rate)
@@ -460,7 +470,7 @@ class ConvolutionNet(NeuralNet):
         super().__init__(is_cross_valid=is_cross_valid)
 
     def training(self, x_train, y_train, x_valid, y_valid, train_ct_image=False):
-        self.show_sets(y_train, y_valid)
+        # self.show_sets(y_train, y_valid)
         self.init_place_holder(x_train, y_train)
 
         # concat CNN to Feed Forward NN

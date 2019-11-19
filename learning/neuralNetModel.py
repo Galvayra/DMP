@@ -33,6 +33,7 @@ class TensorModel(MyScore):
         self.keep_prob = None
         self.hypothesis = None
         self.best_epoch = EPOCH
+        self.best_epoch_list = list()
         self.num_of_dimension = int()
         self.num_of_hidden = NUM_HIDDEN_LAYER
         # self.num_of_hidden = int()
@@ -50,10 +51,10 @@ class TensorModel(MyScore):
         if current_script == "training.py" or current_script == "fine_tuning.py":
             if DO_SHOW:
                 print("\n=============== hyper-parameters ===============")
-                if self.is_cross_valid:
-                    print("Epoch -", self.best_epoch)
-                else:
-                    print("Epoch - unlimited")
+                # if self.is_cross_valid:
+                print("Epoch -", self.best_epoch)
+                # else:
+                #     print("Epoch - unlimited")
                 print("Learning Rate -", self.learning_rate)
                 print("Mini-batch Size -", BATCH_SIZE, '\n\n')
 
