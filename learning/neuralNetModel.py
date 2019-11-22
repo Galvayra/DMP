@@ -9,7 +9,7 @@ from DMP.modeling.tfRecorder import *
 import tensorflow as tf
 import numpy as np
 
-MINI_EPOCH = 50
+MINI_EPOCH = 100
 current_script = sys.argv[0].split('/')[-1]
 if current_script == "training.py":
     from DMP.utils.arg_training import DO_SHOW, NUM_HIDDEN_LAYER, EPOCH, DO_DELETE, TENSOR_DIR_NAME, LEARNING_RATE, \
