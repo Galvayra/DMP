@@ -357,8 +357,8 @@ class DataHandler:
 
     def __random_forest(self):
         rf = RandomForestClassifier(n_estimators=NUM_OF_TREE, n_jobs=4, max_features='auto', random_state=0)
-        return rf.fit(self.x_train, self.y_train)
-        # return rf.fit(self.x_train + self.x_valid + self.x_test, self.y_train + self.y_valid + self.y_test)
+        # return rf.fit(self.x_train, self.y_train)
+        return rf.fit(self.x_train + self.x_valid + self.x_test, self.y_train + self.y_valid + self.y_test)
 
     def __get_importance_features(self, feature, reverse=False):
         # reverse == T
