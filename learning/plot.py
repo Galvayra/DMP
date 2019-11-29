@@ -75,7 +75,7 @@ class MyPlot:
                 self.tpr = tpr
 
             if not title:
-                self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='ROC %d (AUC = %0.1f)' % (k, self.auc))
+                self.my_plot.plot(self.fpr, self.tpr, alpha=0.3, label='%d Fold (AUC = %0.1f)' % (k, self.auc))
             else:
                 self.my_plot.plot(self.fpr, self.tpr, alpha=0.5, label='%s' % title)
 

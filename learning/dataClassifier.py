@@ -426,6 +426,8 @@ class OlderClassifier(MyScore):
     def load_svm(self, x_train, y_train, x_test):
         self.num_of_fold += 1
         svc = SVC(kernel=SVM_KERNEL, C=1.0, random_state=SEED, probability=True)
+
+        x_train, _, y_train, _ = self.train_valid_split(x_data=x_train, y_data=y_train)
         svc.fit(x_train, self.get_y_set(y_train))
 
         y_predict = svc.predict(x_test)

@@ -267,6 +267,13 @@ class MyScore(MyPlot):
         if DO_SHOW:
             print("\n\n")
 
+    @staticmethod
+    def train_valid_split(y_data, x_data=None):
+        if x_data:
+            return train_test_split(x_data, y_data, test_size=0.2, random_state=SPLIT_SEED, shuffle=True)
+        else:
+            return train_test_split(y_data, test_size=0.2, random_state=SPLIT_SEED, shuffle=True)
+
     def set_training_count(self, y_train, y_test):
         def __get_death_count(target_list):
             count = int()
@@ -282,7 +289,8 @@ class MyScore(MyPlot):
 
             return count
 
-        y_train, y_valid = train_test_split(y_train, test_size=0.2, random_state=SPLIT_SEED, shuffle=True)
+        y_train, y_valid = self.train_valid_split(y_data=y_train)
+        # y_train, y_valid = train_test_split(y_train, test_size=0.2, random_state=SPLIT_SEED, shuffle=True)
 
         if self.num_of_fold not in self.count_dict:
             self.count_dict[self.num_of_fold] = {
@@ -324,11 +332,14 @@ class MyScore(MyPlot):
         num_of_total_fold = len(self.score_dict)
         loop_cnt = (len(self.score) + NUM_OF_BLANK)
         set_list = [KEY_TRAIN, KEY_VALID, KEY_TEST]
-        epoch_values = ["" for _ in range(loop_cnt)]
 
-        for epoch in best_epoch:
-            epoch_values.append(epoch)
-            epoch_values += ["" for _ in range(1, loop_cnt)]
+        if best_epoch:
+            epoch_values = ["" for _ in range(loop_cnt)]
+            for epoch in best_epoch:
+                epoch_values.append(epoch)
+                epoch_values += ["" for _ in range(1, loop_cnt)]
+        else:
+            epoch_values = ["" for _ in range(loop_cnt * num_of_total_fold)]
 
         data_frame = {
             "Set": set_list + ["" for _ in range(len(set_list), loop_cnt)],

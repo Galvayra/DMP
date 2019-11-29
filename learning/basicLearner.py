@@ -1,6 +1,5 @@
 import tensorflow as tf
 import math
-from sklearn.model_selection import train_test_split
 from .neuralNetModel import TensorModel, EarlyStopping
 from .variables import *
 
@@ -168,11 +167,12 @@ class NeuralNet(TensorModel):
             train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(cost)
 
         # split train, valid
-        x_train, x_valid, y_train, y_valid = train_test_split(x_data, y_data,
-                                                              test_size=0.2,
-                                                              random_state=SPLIT_SEED,
-                                                              shuffle=True)
+        # x_train, x_valid, y_train, y_valid = train_test_split(x_data, y_data,
+        #                                                       test_size=0.2,
+        #                                                       random_state=SPLIT_SEED,
+        #                                                       shuffle=True)
 
+        x_train, x_valid, y_train, y_valid = self.train_valid_split(x_data=x_data, y_data=y_data)
         self.show_sets(y_train, y_valid, y_test)
 
         # set file names for saving
