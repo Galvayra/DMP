@@ -43,6 +43,7 @@ KEY_ACCURACY = "accuracy"
 KEY_AUC = "auc"
 
 NUM_OF_K_FOLD = 5
+USE_BALANCING_DATA = True
 
 # gray scale for convolution neural network
 GRAY_SCALE = 255

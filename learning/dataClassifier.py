@@ -108,38 +108,38 @@ class DataClassifier:
                     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
                     # exit(-1)
 
-        elif VERSION == 2:
-            x_train = self.dataHandler.x_train
-            y_train = self.dataHandler.y_train
-            x_valid = self.dataHandler.x_valid
-            y_valid = self.dataHandler.y_valid
-
-            if TYPE_OF_MODEL == "ffnn":
-                nn = NeuralNet(is_cross_valid=False)
-                nn.training(x_train, y_train, x_valid, y_valid)
-            elif TYPE_OF_MODEL == "cnn":
-                if IMAGE_PATH:
-                    self.dataHandler.set_image_path([x_train, x_valid],
-                                                    [y_train, y_valid],
-                                                    key_list=["train", "valid"])
-                else:
-                    self.dataHandler.expand4square_matrix(x_train, x_valid)
-                nn = ConvolutionNet(is_cross_valid=False)
-                nn.training(x_train, y_train, x_valid, y_valid)
-
-            elif TYPE_OF_MODEL == "transfer":
-                nn = TransferLearner(is_cross_valid=False)
-
-                image_maker = ImageMaker(self.dataHandler.img_pickles_path)
-                img_train = self.dataHandler.img_train
-                img_valid = self.dataHandler.img_valid
-
-                x_img_train = image_maker.get_matrix_from_pickle(img_train)
-                x_img_test = image_maker.get_matrix_from_pickle(img_valid, key="test")
-                x_train, y_train = self.__get_matrix_from_img_path(img_train, image_maker)
-                x_test, y_test = self.__get_matrix_from_img_path(img_valid, image_maker)
-
-                nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
+        # elif VERSION == 2:
+        #     x_train = self.dataHandler.x_train
+        #     y_train = self.dataHandler.y_train
+        #     x_valid = self.dataHandler.x_valid
+        #     y_valid = self.dataHandler.y_valid
+        #
+        #     if TYPE_OF_MODEL == "ffnn":
+        #         nn = NeuralNet(is_cross_valid=False)
+        #         nn.training(x_train, y_train, x_valid, y_valid)
+        #     elif TYPE_OF_MODEL == "cnn":
+        #         if IMAGE_PATH:
+        #             self.dataHandler.set_image_path([x_train, x_valid],
+        #                                             [y_train, y_valid],
+        #                                             key_list=["train", "valid"])
+        #         else:
+        #             self.dataHandler.expand4square_matrix(x_train, x_valid)
+        #         nn = ConvolutionNet(is_cross_valid=False)
+        #         nn.training(x_train, y_train, x_valid, y_valid)
+        #
+        #     elif TYPE_OF_MODEL == "transfer":
+        #         nn = TransferLearner(is_cross_valid=False)
+        #
+        #         image_maker = ImageMaker(self.dataHandler.img_pickles_path)
+        #         img_train = self.dataHandler.img_train
+        #         img_valid = self.dataHandler.img_valid
+        #
+        #         x_img_train = image_maker.get_matrix_from_pickle(img_train)
+        #         x_img_test = image_maker.get_matrix_from_pickle(img_valid, key="test")
+        #         x_train, y_train = self.__get_matrix_from_img_path(img_train, image_maker)
+        #         x_test, y_test = self.__get_matrix_from_img_path(img_valid, image_maker)
+        #
+        #         nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
 
         nn.save_process_time()
 
@@ -171,6 +171,24 @@ class DataClassifier:
         def __get_expended_x_data(vector_list, path_list):
             return [[vector] + [path] for vector, path in zip(vector_list, path_list)]
 
+        def __set_balanced_data():
+            if USE_BALANCING_DATA:
+                alive_index_list = list()
+                index, alive_count, death_count = 0, 0, 0
+
+                for x, y in zip(x_data, y_data):
+                    if y == [0]:
+                        alive_index_list.append(index)
+                        alive_count += 1
+                    else:
+                        death_count += 1
+                    index += 1
+
+                random.seed(SEED)
+                for index in sorted(random.sample(alive_index_list, alive_count - death_count), reverse=True):
+                    x_data.pop(index)
+                    y_data.pop(index)
+
         if has_img_paths:
             x_train = __get_expended_x_data(self.dataHandler.x_train, self.dataHandler.img_train)
             x_valid = __get_expended_x_data(self.dataHandler.x_valid, self.dataHandler.img_valid)
@@ -186,6 +204,7 @@ class DataClassifier:
 
         x_data = x_train + x_valid + x_test
         y_data = y_train + y_valid + y_test
+        __set_balanced_data()
 
         return self.__get_set(x_data, y_data)
 
@@ -275,35 +294,35 @@ class DataClassifier:
                 nn.show_process_time()
                 nn.show_plot()
 
-        elif VERSION == 2:
-            if TYPE_OF_MODEL == "svm":
-                x_train = self.dataHandler.x_train
-                y_train = self.dataHandler.y_train
-
-                ocf = OlderClassifier(is_cross_valid=False)
-                ocf.init_plot()
-
-                # initialize support vector machine
-                h, y_predict = ocf.load_svm(x_train, y_train, x_test)
-                ocf.predict(h, y_predict, y_test, is_cross_valid=False)
-                ocf.save(self.dataHandler)
-                ocf.show_process_time()
-                ocf.show_plot()
-            else:
-                if TYPE_OF_MODEL == "cnn":
-                    if IMAGE_PATH:
-                        self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
-                    else:
-                        self.dataHandler.expand4square_matrix(x_test)
-
-                # initialize Neural Network
-                nn = NeuralNet(is_cross_valid=False)
-                nn.init_plot()
-                h, y_predict = nn.load_nn(x_test, y_test)
-                nn.predict(h, y_predict, y_test, is_cross_valid=False)
-                nn.save(self.dataHandler)
-                nn.show_process_time()
-                nn.show_plot()
+        # elif VERSION == 2:
+        #     if TYPE_OF_MODEL == "svm":
+        #         x_train = self.dataHandler.x_train
+        #         y_train = self.dataHandler.y_train
+        #
+        #         ocf = OlderClassifier(is_cross_valid=False)
+        #         ocf.init_plot()
+        #
+        #         # initialize support vector machine
+        #         h, y_predict = ocf.load_svm(x_train, y_train, x_test)
+        #         ocf.predict(h, y_predict, y_test, is_cross_valid=False)
+        #         ocf.save(self.dataHandler)
+        #         ocf.show_process_time()
+        #         ocf.show_plot()
+        #     else:
+        #         if TYPE_OF_MODEL == "cnn":
+        #             if IMAGE_PATH:
+        #                 self.dataHandler.set_image_path([x_test], [y_test], key_list=["test"])
+        #             else:
+        #                 self.dataHandler.expand4square_matrix(x_test)
+        #
+        #         # initialize Neural Network
+        #         nn = NeuralNet(is_cross_valid=False)
+        #         nn.init_plot()
+        #         h, y_predict = nn.load_nn(x_test, y_test)
+        #         nn.predict(h, y_predict, y_test, is_cross_valid=False)
+        #         nn.save(self.dataHandler)
+        #         nn.show_process_time()
+        #         nn.show_plot()
 
     def predict_tf_record(self):
         nn = SlimLearner(model=TYPE_OF_MODEL, tf_name_vector=self.dataHandler.tf_name_vector)
