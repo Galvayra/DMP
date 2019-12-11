@@ -14,7 +14,8 @@ if sys.argv[0].split('/')[-1] == "parsing.py":
 
 
 HAVE_SYMPTOM = 1
-PROPOSITION = 2
+# proposition of alive and death = x : 1
+PROPOSITION = 0
 SEED = 1
 
 # keys for log file
@@ -571,7 +572,10 @@ class DataHandler:
         #   header_1 : [ data_1 , ... , data_N ], ... , h
         #   header_I
         # }
-        down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * PROPOSITION)
+        if PROPOSITION:
+            down_sampling_count = len(self.y_data) - (self.counting_mortality(self.y_data) * (PROPOSITION + 1))
+        else:
+            down_sampling_count = 0
 
         # apply down sampling
         if self.do_sampling and down_sampling_count > 0:
