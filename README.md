@@ -8,9 +8,9 @@
 First of all, import this project using ~/.bash_profile
 
 
-step 1) Parsing Dataset to erase noise
+step 1) Parsing Dataset to erase noise for split train, validation, and test set
 
-	1-1) set input or ouput name
+	1-1) set input or output name
 	Useage) python parsing.py -input INPUT -output OUTPUT
 	(path of dir,  "input=dataset/origin/"  "output=dataset/parsing/")
 	
@@ -18,7 +18,8 @@ step 1) Parsing Dataset to erase noise
 	Useage) python parsing.py -target s (sepsis) 
 	{s=sepsis, p=pneumonia, b=bacteremia}
 
-	1-3) you can use sampling or set ratio to divide training, valid, and test set
+	You can use sampling or set ratio to divide training, valid, and test set
+
 
 
 step 2) Encoding Dataset to make vector (vectorization)
@@ -105,10 +106,19 @@ Step 4) Get a performance
 
 
 
-Step 1) Building vector for ct image
+Step 1) Parsing Dataset to erase noise for split train, validation, and test set
 
-    ./build_image_data.sh --input 'csv file name' --output 'vector name'
-    (path of dir,  "input=dataset/parsing/", "output=modeling/vectors/")
+    For getting dataset which consist of patients who get a ct image
+    Useage) python parsing.py -input INPUT -output OUTPUT -parsing_image 1
+	(path of dir,  "input=dataset/origin/"  "output=dataset/parsing/")
+
+
+
+step 2) Encoding Dataset to make vector (vectorization)
+	Use encode_image option, it will be making tfRecord and pickle of ct images
+	Useage) python encoding.py -input INPUT -output OUTPUT -encode_image 1 -w2v 0
+	(path of dir,  "input=dataset/parsing/"  "output=modeling/vectors/",  "w2v file=modeling/embedding/")
+
 
 
 Step 2) Training
@@ -119,7 +129,7 @@ Step 2) Training
     If you want to training CNN model, set a "IMAGE_SIZE" variable to "INITIAL_IMAGE_SIZE"
     The "IMAGE_SIZE" variable is in learning/variables.py
     
-    Useage) python fine_tuning.py -model (tuning|cnn) -vector VECTOR -epoch E -hidden H -learn L -tensor_dir TENSOR -delete D -show S -ver V 
+    Useage) python fine_tuning.py -model (transfer|tuning|ffnn|cnn) -vector VECTOR -epoch E -hidden H -learn L -tensor_dir TENSOR -delete D -show S -ver V
 	(path of dir,  "vector=modeling/vectors/"  "tensor_dir=logs/ & modeling/save/")
 	(option,  TENSOR = save a path of log for tensorboard and tensor for loading)
 	(         D = set a delete log or tensor directory (This is useful when you retrain and rewrite))
