@@ -81,6 +81,17 @@ class DataClassifier:
 
                 img_data = img_train + img_valid + img_test
 
+                x_img_train = image_maker.get_matrix_from_pickle(img_train)
+                x_img_valid = image_maker.get_matrix_from_pickle(img_valid, key="valid")
+                x_img_test = image_maker.get_matrix_from_pickle(img_test, key="test")
+                x_train, y_train = self.__get_matrix_from_img_path(img_train, image_maker)
+                x_valid, y_valid = self.__get_matrix_from_img_path(img_valid, image_maker)
+                x_test, y_test = self.__get_matrix_from_img_path(img_test, image_maker)
+
+                nn.show_sets(y_train, y_valid, y_test)
+
+
+                exit(-1)
                 # # use a image respectively
                 # img_matrix = image_maker.get_matrix_from_pickle(img_data)
                 # x_matrix, y_matrix = self.__get_matrix_from_img_path(img_data, image_maker)

@@ -136,6 +136,16 @@ class TfRecorder:
     def save(self):
         print("\n\n\n======== Set of TfRecord ========\n")
         print("# of dimensions  -", str(self.log[KEY_OF_TRAIN + KEY_OF_DIM]).rjust(4))
+        print("Total      Count -",
+              str(self.log[KEY_OF_TRAIN] + self.log[KEY_OF_VALID] + self.log[KEY_OF_TEST]).rjust(4),
+              "\t Alive Count -",
+              str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE] +
+                  self.log[KEY_OF_VALID + KEY_OF_ALIVE] +
+                  self.log[KEY_OF_TEST + KEY_OF_ALIVE]).rjust(4),
+              "\t Death Count -",
+              str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH] +
+                  self.log[KEY_OF_VALID + KEY_OF_DEATH] +
+                  self.log[KEY_OF_TEST + KEY_OF_DEATH]).rjust(3))
         print("Training   Count -", str(self.log[KEY_OF_TRAIN]).rjust(4),
               "\t Alive Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_ALIVE]).rjust(4),
               "\t Death Count -", str(self.log[KEY_OF_TRAIN + KEY_OF_DEATH]).rjust(3))

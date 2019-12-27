@@ -29,7 +29,7 @@ class TransferLearner(NeuralNet):
         }
         self.__model = model
         self.__init_variables()
-        self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
+        # self.early_stopping = EarlyStopping(patience=NUM_OF_EARLY_STOPPING, verbose=1)
 
     @property
     def model(self):
