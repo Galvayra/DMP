@@ -367,7 +367,7 @@ class SlimLearner(TensorModel):
                 while not coord.should_stop():
                     n_iter += 1
                     x_batch, y_batch, x_img, x_name = sess.run(next_train_element)
-                    # x_array = list()
+                    x_array = list()
 
                     # early stop for avoid over-fitting
                     # if not self.early_stopping.is_stop:
@@ -381,6 +381,22 @@ class SlimLearner(TensorModel):
                         #
                         # target = np.array(x_array)
 
+                    for name in x_name:
+                        x_array.append(name.decode('utf-8'))
+
+                    print(x_array)
+
+
+                    target = target.tolist()
+                    # print(type(target))
+                    # print(target[0])
+                    target = np.array(target[0], dtype=np.uint8)
+                    target *= 255
+                    # print(target.shape)
+                    img = Image.fromarray(target)
+                    img.show()
+
+                    exit(-1)
                     if self.model == 'cnn':
                         target = self.image_converter.get_array_from_img(target)
 

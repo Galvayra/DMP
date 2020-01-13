@@ -75,23 +75,28 @@ class DataClassifier:
                 # nn = NeuralNet()
 
                 image_maker = ImageMaker(self.dataHandler.img_pickles_path)
-                img_train = self.dataHandler.img_train
-                img_valid = self.dataHandler.img_valid
-                img_test = self.dataHandler.img_test
+                img_train_path = self.dataHandler.img_train
+                img_valid_path = self.dataHandler.img_valid
+                img_test_path = self.dataHandler.img_test
 
-                img_data = img_train + img_valid + img_test
+                img_data_path = img_train_path + img_valid_path + img_test_path
 
-                x_img_train = image_maker.get_matrix_from_pickle(img_train)
-                x_img_valid = image_maker.get_matrix_from_pickle(img_valid, key="valid")
-                x_img_test = image_maker.get_matrix_from_pickle(img_test, key="test")
-                x_train, y_train = self.__get_matrix_from_img_path(img_train, image_maker)
-                x_valid, y_valid = self.__get_matrix_from_img_path(img_valid, image_maker)
-                x_test, y_test = self.__get_matrix_from_img_path(img_test, image_maker)
+                x_img_train = image_maker.get_matrix_from_pickle(img_train_path)
+                x_img_valid = image_maker.get_matrix_from_pickle(img_valid_path, key="valid")
+                x_img_test = image_maker.get_matrix_from_pickle(img_test_path, key="test")
 
-                nn.show_sets(y_train, y_valid, y_test)
+                x_train, y_train = self.__get_matrix_from_img_path(img_train_path, image_maker)
+                x_valid, y_valid = self.__get_matrix_from_img_path(img_valid_path, image_maker)
+                x_test, y_test = self.__get_matrix_from_img_path(img_test_path, image_maker)
+                nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
 
+                #
+                # # print(x_img_train.shape, x_train.shape, y_train.shape)
+                # # print(x_img_test.shape, x_test.shape, y_test.shape)
+                #
+                # # nn.training(x_train, y_train, x_test, y_test)
+                # nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
 
-                exit(-1)
                 # # use a image respectively
                 # img_matrix = image_maker.get_matrix_from_pickle(img_data)
                 # x_matrix, y_matrix = self.__get_matrix_from_img_path(img_data, image_maker)
@@ -105,19 +110,18 @@ class DataClassifier:
                 #                                                                       cast_numpy=True):
                 #     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
 
-                # use a image by patient
-                for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
-                    x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
-                    x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path, key="test")
-                    x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path, image_maker)
-                    x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path, image_maker)
-
-                    # print(x_img_train.shape, x_train.shape, y_train.shape)
-                    # print(x_img_test.shape, x_test.shape, y_test.shape)
-
-                    # nn.training(x_train, y_train, x_test, y_test)
-                    nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
-                    # exit(-1)
+                # # use a image by patient
+                # for x_train_img_path, _, x_test_img_path, _ in self.__data_generator(img_data, y_data):
+                #     x_img_train = image_maker.get_matrix_from_pickle(x_train_img_path)
+                #     x_img_test = image_maker.get_matrix_from_pickle(x_test_img_path, key="test")
+                #     x_train, y_train = self.__get_matrix_from_img_path(x_train_img_path, image_maker)
+                #     x_test, y_test = self.__get_matrix_from_img_path(x_test_img_path, image_maker)
+                #
+                #     # print(x_img_train.shape, x_train.shape, y_train.shape)
+                #     # print(x_img_test.shape, x_test.shape, y_test.shape)
+                #
+                #     # nn.training(x_train, y_train, x_test, y_test)
+                #     nn.transfer_learning(x_img_train, y_train, x_img_test, y_test)
 
         # elif VERSION == 2:
         #     x_train = self.dataHandler.x_train

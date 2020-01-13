@@ -24,6 +24,8 @@ elif current_script == "predict_tfRecord.py":
     from DMP.utils.arg_predict_tfRecord import DO_SHOW, DO_DELETE, TENSOR_DIR_NAME, EPOCH, NUM_HIDDEN_LAYER, \
         LEARNING_RATE, READ_VECTOR
 
+SEED = 8
+
 
 class TensorModel(MyScore):
     def __init__(self, is_cross_valid=True):
@@ -135,7 +137,7 @@ class TensorModel(MyScore):
             else:
                 tf_recode = tf_recode.repeat()
 
-            tf_recode = tf_recode.shuffle(buffer_size=self.__get_shuffle_buffer_size(key))
+            tf_recode = tf_recode.shuffle(buffer_size=self.__get_shuffle_buffer_size(key), seed=SEED)
 
         tf_recode = tf_recode.batch(BATCH_SIZE)
 

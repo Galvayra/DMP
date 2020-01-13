@@ -1,16 +1,10 @@
 import cv2
 import numpy as np
-from DMP.learning.variables import IMAGE_RESIZE, GRAY_SCALE
-from .variables import EXTENSION_OF_IMAGE, EXTENSION_OF_PICKLE
+from DMP.learning.variables import IMAGE_RESIZE, GRAY_SCALE, DO_NORMALIZE
+from .variables import EXTENSION_OF_IMAGE, EXTENSION_OF_PICKLE, DO_CROPPING, IMG_SIZE, START_POS
 import pickle
 import gzip
 from DMP.utils.progress_bar import show_progress_bar
-
-DO_NORMALIZE = True
-DO_CROPPING = True
-IMG_SIZE = 512
-CROPPING_RATIO = 6
-START_POS = int(IMG_SIZE / CROPPING_RATIO)
 
 
 class ImageMaker:

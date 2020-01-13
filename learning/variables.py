@@ -64,7 +64,7 @@ NUM_OF_LOSS_OVER_FIT = 10
 NUM_OF_SHOW_EPOCH = 10
 
 # mini-batch size
-BATCH_SIZE = 256
+BATCH_SIZE = 16
 
 # Image options #
 # set CT image size

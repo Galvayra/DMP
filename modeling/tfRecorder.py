@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import json
 from os import path
-from .variables import EXTENSION_OF_IMAGE
+from .variables import EXTENSION_OF_IMAGE, DO_CROPPING, IMG_SIZE, START_POS
 from DMP.learning.variables import IMAGE_RESIZE, DO_NORMALIZE, GRAY_SCALE
 from DMP.utils.progress_bar import show_progress_bar
 
@@ -222,6 +222,8 @@ class TfRecorder:
     @staticmethod
     def __load_image(img_path):
         img = cv2.imread(img_path)
+        if DO_CROPPING:
+            img = img[START_POS:IMG_SIZE - START_POS, START_POS:IMG_SIZE - START_POS]
         img = cv2.resize(img, (IMAGE_RESIZE, IMAGE_RESIZE), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
