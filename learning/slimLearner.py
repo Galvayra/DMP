@@ -376,27 +376,29 @@ class SlimLearner(TensorModel):
                     else:
                         target = x_batch
 
-                        # for name, x in zip(x_name, x_batch):
-                        #     x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
-                        #
-                        # target = np.array(x_array)
+                        for name, x in zip(x_name, x_batch):
+                            x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
 
-                    for name in x_name:
-                        x_array.append(name.decode('utf-8'))
-
-                    print(x_array)
-
-
-                    target = target.tolist()
-                    # print(type(target))
-                    # print(target[0])
-                    target = np.array(target[0], dtype=np.uint8)
-                    target *= 255
-                    # print(target.shape)
-                    img = Image.fromarray(target)
-                    img.show()
-
-                    exit(-1)
+                    # for name in x_name:
+                    #     x_array.append(name.decode('utf-8'))
+                    #
+                    # print(x_array)
+                    #
+                    # target = target.tolist()
+                    # # print(type(target))
+                    # # print(target[0])
+                    # target = np.array(target[0], dtype=np.float32)
+                    #
+                    # target *= 255
+                    # target = target.astype(np.uint8)
+                    #
+                    # # exit(-1)
+                    #
+                    # # print(target.shape)
+                    # img = Image.fromarray(target)
+                    # img.show()
+                    #
+                    # exit(-1)
                     if self.model == 'cnn':
                         target = self.image_converter.get_array_from_img(target)
 
