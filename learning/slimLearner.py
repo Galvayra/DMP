@@ -367,7 +367,7 @@ class SlimLearner(TensorModel):
                 while not coord.should_stop():
                     n_iter += 1
                     x_batch, y_batch, x_img, x_name = sess.run(next_train_element)
-                    x_array = list()
+                    # x_array = list()
 
                     # early stop for avoid over-fitting
                     # if not self.early_stopping.is_stop:
@@ -376,8 +376,8 @@ class SlimLearner(TensorModel):
                     else:
                         target = x_batch
 
-                        for name, x in zip(x_name, x_batch):
-                            x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
+                        # for name, x in zip(x_name, x_batch):
+                        #     x_array.append(self.tf_name_vector[name.decode('utf-8')][0])
 
                     # for name in x_name:
                     #     x_array.append(name.decode('utf-8'))
