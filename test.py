@@ -1,10 +1,26 @@
-import numpy as np
+# -*- coding: utf-8 -*-
 
+import sys
+from os import path
 
-def main():
-    a = np.array([1,2,3])
-    print(a)
+try:
+    import DMP
+except ImportError:
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+
+from DMP.dataset.dataParser import DataParser
+from DMP.utils.arg_parsing import READ_FILE, DO_PARSING_IMAGE
+from DMP.dataset.images.variables import *
 
 
 if __name__ == '__main__':
-    main()
+    if DO_PARSING_IMAGE:
+        dataParser = DataParser(READ_FILE, ct_image_path=CT_IMAGE_PATH)
+    else:
+        dataParser = DataParser(READ_FILE)
+    #
+    # dataParser.parsing()
+    # dataParser.save()
+    #
+    # if DO_PARSING_IMAGE:
+    #     dataParser.save_log()
